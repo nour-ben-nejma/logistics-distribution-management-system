@@ -2,15 +2,14 @@
 <template>
   <div class="suppliers-container">
     <!-- Header with category statistics -->
-    <div class="stats-header">
-      <div class="stat-card">
-        <div class="stat-icon total">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex items-center gap-6 hover:shadow-md transition-all duration-300">
+        <div class="w-16 h-16 rounded-2xl bg-premium-midnight/5 flex items-center justify-center text-premium-midnight text-2xl">
           <i class="fas fa-users"></i>
         </div>
-        <div class="stat-content">
-          <h3>Total Suppliers</h3>
-          <div class="stat-value">{{ suppliers.length }}</div>
-          <div class="stat-trend">All categories</div>
+        <div>
+          <h3 class="text-slate-500 text-sm font-medium uppercase tracking-wider mb-1">Total Suppliers</h3>
+          <div class="text-3xl font-bold text-premium-midnight">{{ suppliers.length }}</div>
         </div>
       </div>
     </div>
@@ -43,7 +42,7 @@
           <i class="fas fa-sync-alt"></i>
           Reset
         </button>
-        <button class="action-btn primary" @click="showAddModal = true">
+        <button class="action-btn !bg-premium-midnight !text-white hover:!bg-premium-midnight/90" @click="showAddModal = true">
           <i class="fas fa-plus"></i>
           New Supplier
         </button>
@@ -54,14 +53,14 @@
     <div class="table-container">
       <table class="suppliers-table">
         <thead>
-          <tr>
-            <th></th>
-            <th>Name</th>
-            <th>CONTACT</th>
-            <th>Category</th>
-            <th>Last Order</th>
-            <th>Location</th>
-            <th>ACTIONS</th>
+          <tr class="bg-slate-50/50">
+            <th class="w-12"></th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Name</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">CONTACT</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Category</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Last Order</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Location</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6 text-right px-8">ACTIONS</th>
           </tr>
         </thead>
         <tbody>
@@ -194,8 +193,8 @@
 
     <!-- Add Supplier Modal -->
     <transition name="modal">
-      <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
-        <div class="modal-content">
+      <div v-if="showAddModal" class="modal-overlay z-[2000]" @click.self="showAddModal = false">
+        <div class="modal-content !max-w-2xl">
           <div class="modal-header">
             <div class="modal-title">
               <i class="fas fa-plus-circle"></i>
@@ -296,8 +295,8 @@
 
     <!-- Add/Edit Product Modal -->
     <transition name="modal">
-      <div v-if="showProductModal" class="modal-overlay" @click.self="showProductModal = false">
-        <div class="modal-content">
+      <div v-if="showProductModal" class="modal-overlay z-[2000]" @click.self="showProductModal = false">
+        <div class="modal-content !max-w-md">
           <div class="modal-header">
             <div class="modal-title">
               <i class="fas fa-box-open"></i>
@@ -583,8 +582,8 @@ const formatDate = (dateString: string | Date | null) => {
 // Generate avatar from initials
 const getAvatar = (name: string) => {
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase()
-  // Use premium gold background with midnight text
-  return `https://ui-avatars.com/api/?name=${initials}&background=C4A484&color=1A1F2C&size=128&bold=true`
+  // Use premium gold background with midnight text for a luxury feel
+  return `https://ui-avatars.com/api/?name=${initials}&background=D4AF37&color=1A1F2C&size=128&bold=true`
 }
 
 // Load data
@@ -789,10 +788,14 @@ const handleEditSupplier = async (supplier: Supplier) => {
         </select>` +
         `<input id="location" class="swal2-input" placeholder="Location" value="${supplier.location}">` +
         `<input type="date" id="lastOrder" class="swal2-input" placeholder="Last order date" value="${formattedDate}" max="${new Date().toISOString().split('T')[0]}" title="Last order date cannot be after today">`,
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Save',
-      cancelButtonText: 'Cancel',
+      background: '#ffffff',
+      confirmButtonColor: '#1A1F2C',
+      cancelButtonColor: '#f1f5f9',
+      customClass: {
+        popup: 'premium-swal-popup',
+        confirmButton: 'premium-swal-confirm',
+        cancelButton: 'premium-swal-cancel'
+      },
       preConfirm: () => {
         return {
           name: (document.getElementById('name') as HTMLInputElement).value,
@@ -1402,8 +1405,25 @@ onMounted(() => {
   gap: 0.5rem;
 }
 
-.add-product-btn:hover {
-  background-color: #2563eb;
+.expand-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.expand-btn:hover {
+  background-color: #1A1F2C;
+  color: white;
+  border-color: #1A1F2C;
+  transform: rotate(90deg);
 }
 
 .products-list {
@@ -1478,22 +1498,24 @@ onMounted(() => {
 }
 
 .category-tag {
-  padding: 0.375rem 0.75rem;
-  border-radius: 2rem;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.category-tag.electronics { background-color: #e0e7ff; color: #4f46e5; }
-.category-tag.clothing { background-color: #fef3c7; color: #d97706; }
-.category-tag.food { background-color: #dcfce7; color: #16a34a; }
-.category-tag.furniture { background-color: #fee2e2; color: #dc2626; }
-.category-tag.health { background-color: #e0f2fe; color: #0284c7; }
-.category-tag.beauty { background-color: #f3e8ff; color: #9333ea; }
-.category-tag.sports { background-color: #ffedd5; color: #f97316; }
-.category-tag.automotive { background-color: #d1d5db; color: #374151; }
-.category-tag.home { background-color: #e0e7ff; color: #4f46e5; }
-.category-tag.books { background-color: #dcfce7; color: #16a34a; }
+.category-tag.electronics { background-color: #f1f5f9; color: #475569; }
+.category-tag.clothing { background-color: #f1f5f9; color: #475569; }
+.category-tag.food { background-color: #f1f5f9; color: #475569; }
+.category-tag.furniture { background-color: #f1f5f9; color: #475569; }
+.category-tag.health { background-color: #f1f5f9; color: #475569; }
+.category-tag.beauty { background-color: #f1f5f9; color: #475569; }
+.category-tag.sports { background-color: #f1f5f9; color: #475569; }
+.category-tag.automotive { background-color: #f1f5f9; color: #475569; }
+.category-tag.home { background-color: #f1f5f9; color: #475569; }
+.category-tag.books { background-color: #f1f5f9; color: #475569; }
 
 .last-order {
   display: flex;
@@ -1599,27 +1621,13 @@ onMounted(() => {
   cursor: pointer;
 }
 
+/* Modal style overrides removed to use global index.css rules */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+  @apply cursor-pointer;
 }
 
 .modal-content {
-  background: white;
-  border-radius: 1rem;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  @apply cursor-default;
 }
 
 .modal-header {
@@ -1728,7 +1736,7 @@ onMounted(() => {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
-  background: #3b82f6;
+  background: #1A1F2C; /* Premium Midnight */
   color: white;
   cursor: pointer;
   display: flex;

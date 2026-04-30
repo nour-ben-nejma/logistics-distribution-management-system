@@ -86,8 +86,8 @@
     </div>
 
     <!-- Product Form Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showModal = false"></div>
+    <div v-if="showModal" class="modal-overlay z-50">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showModal = false"></div>
       
       <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-300">
         <!-- Modal Header -->

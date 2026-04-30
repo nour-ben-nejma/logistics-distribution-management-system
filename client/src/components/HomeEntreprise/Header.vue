@@ -26,7 +26,7 @@
           v-for="link in navLinks" 
           :key="link.name" 
           :to="link.path" 
-          class="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-premium-gold transition-colors relative group"
+          class="text-[10px] font-bold uppercase tracking-widest text-premium-midnight hover:text-premium-gold transition-colors relative group"
         >
           {{ link.name }}
           <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-premium-gold transition-all group-hover:w-full"></span>

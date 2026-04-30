@@ -116,11 +116,11 @@ onUnmounted(() => {
       </button>
 
       <div class="search-box relative w-64 group">
-        <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+        <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-premium-midnight group-focus-within:text-premium-gold transition-colors" />
         <input 
           type="text" 
           placeholder="Rechercher..." 
-          class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all placeholder:text-slate-400 font-medium"
+          class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all placeholder:text-slate-500 font-medium"
         />
       </div>
       
@@ -134,13 +134,13 @@ onUnmounted(() => {
     <div class="relative z-10 flex items-center gap-3">
       <!-- Notifications -->
       <button class="relative w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all group">
-        <Bell class="w-5 h-5 text-slate-500 group-hover:text-premium-gold transition-colors" />
+        <Bell class="w-5 h-5 text-premium-midnight group-hover:text-premium-gold transition-colors" />
         <span class="absolute top-2 right-2 w-2 h-2 bg-premium-gold rounded-full border-2 border-white"></span>
       </button>
       
       <!-- Settings -->
       <button class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all group">
-        <Settings class="w-5 h-5 text-slate-500 group-hover:text-premium-gold transition-colors" />
+        <Settings class="w-5 h-5 text-premium-midnight group-hover:text-premium-gold transition-colors" />
       </button>
 
       <div class="h-6 w-[1px] bg-slate-200 mx-3"></div>
@@ -170,7 +170,7 @@ onUnmounted(() => {
             <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
           
-          <ChevronDown class="w-3.5 h-3.5 text-slate-400 group-hover:text-premium-gold transition-colors" />
+          <ChevronDown class="w-3.5 h-3.5 text-premium-midnight group-hover:text-premium-gold transition-colors" />
         </button>
         
         <!-- Dropdown -->

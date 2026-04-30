@@ -185,8 +185,8 @@
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showTransporterModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+    <div v-if="showTransporterModal" class="modal-overlay z-[100]">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
       <div class="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-modal-in">
         <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>

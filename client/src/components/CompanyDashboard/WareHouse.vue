@@ -246,8 +246,8 @@
     </div>
 
     <!-- External Warehouse Modal (Rental) -->
-    <div v-if="showExternalWarehouseModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+    <div v-if="showExternalWarehouseModal" class="modal-overlay z-[100]">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
       <div class="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-modal-in">
         <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
@@ -337,8 +337,8 @@
     </div>
 
     <!-- Add/Edit Warehouse Modal -->
-    <div v-if="showWarehouseModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+    <div v-if="showWarehouseModal" class="modal-overlay z-[100]">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
       <div class="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-modal-in">
         <div class="p-8 border-b border-slate-100 flex items-center justify-between">
           <h3 class="text-2xl font-display font-black text-premium-midnight">{{ isEditing ? 'Modifier' : 'Ajouter' }} un Entrepôt</h3>
@@ -391,8 +391,8 @@
     </div>
 
     <!-- Product Modal -->
-    <div v-if="showProductModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+    <div v-if="showProductModal" class="modal-overlay z-[100]">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
       <div class="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-modal-in">
         <div class="p-8 border-b border-slate-100 flex items-center justify-between">
           <h3 class="text-2xl font-display font-black text-premium-midnight">Ajouter un Produit</h3>

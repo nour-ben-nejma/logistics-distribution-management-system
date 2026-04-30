@@ -2145,8 +2145,8 @@ watch(
     </div>
 
     <!-- Contract Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="closeModal"></div>
+    <div v-if="showModal" class="modal-overlay z-50">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="closeModal"></div>
 
       <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -2447,8 +2447,8 @@ watch(
     </div>
 
     <!-- Contract Details Modal -->
-    <div v-if="showContractDetails && detailedContract" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showContractDetails = false"></div>
+    <div v-if="showContractDetails && detailedContract" class="modal-overlay z-50 fixed inset-0 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showContractDetails = false"></div>
 
       <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -2541,8 +2541,8 @@ watch(
     </div>
 
     <!-- Transporter Config Modal -->
-    <div v-if="showTransporterConfig" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showTransporterConfig = false"></div>
+    <div v-if="showTransporterConfig" class="modal-overlay z-50">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showTransporterConfig = false"></div>
 
       <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -2587,8 +2587,8 @@ watch(
     </div>
 
     <!-- Distribution Plan Modal -->
-    <div v-if="showDistributionPlan" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showDistributionPlan = false"></div>
+    <div v-if="showDistributionPlan" class="modal-overlay z-50">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showDistributionPlan = false"></div>
 
       <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -2757,8 +2757,8 @@ watch(
     </div>
 
     <!-- Resource Management Modal -->
-    <div v-if="showResourceManagement" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showResourceManagement = false"></div>
+    <div v-if="showResourceManagement" class="modal-overlay z-50">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showResourceManagement = false"></div>
 
       <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -2853,8 +2853,8 @@ watch(
     </div>
 
     <!-- Confirmation Modal -->
-    <div v-if="showConfirmation" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-md" @click="closeConfirmation"></div>
+    <div v-if="showConfirmation" class="modal-overlay z-[60]">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-md cursor-pointer" @click="closeConfirmation"></div>
 
       <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-10 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-500">
         <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-emerald-50/50">

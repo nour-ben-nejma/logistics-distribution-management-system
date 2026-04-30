@@ -6,8 +6,8 @@
       <div class="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-premium-midnight/5 blur-[120px] rounded-full"></div>
     </div>
 
-    <div class="relative min-h-screen flex items-center justify-center p-6 md:p-12">
-      <div class="w-full max-w-6xl flex flex-col lg:flex-row glass rounded-[2.5rem] overflow-hidden shadow-2xl border-white/40">
+    <div class="relative min-h-screen flex items-stretch justify-center">
+      <div class="w-full flex flex-col lg:flex-row glass overflow-hidden shadow-2xl border-white/40">
         
         <!-- Left Panel: Brand & Info -->
         <div class="lg:w-2/5 bg-premium-midnight p-8 md:p-12 flex flex-col justify-between text-white relative overflow-hidden">
@@ -57,7 +57,7 @@
         </div>
 
         <!-- Right Panel: Registration Form -->
-        <div class="lg:w-3/5 bg-white/80 backdrop-blur-md p-8 md:p-14 overflow-y-auto max-h-[90vh] lg:max-h-none relative">
+        <div class="lg:w-3/5 bg-white/80 backdrop-blur-md p-8 md:p-14 md:pt-20 overflow-y-auto relative">
           <!-- Back Button -->
           <router-link to="/" class="absolute top-6 left-6 md:left-10 flex items-center gap-2 text-slate-400 hover:text-premium-gold transition-colors group">
             <div class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-premium-gold/10 transition-all">
