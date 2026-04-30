@@ -53,25 +53,8 @@
       </ul>
     </nav>
 
-    <!-- Profile & Footer -->
-    <div class="p-4 mt-auto border-t border-white/5 space-y-4">
-      <!-- User Preview -->
-      <div 
-        class="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
-        :class="{'justify-center': isCollapsed}"
-      >
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-premium-gold to-premium-gold-light flex items-center justify-center shrink-0 shadow-lg">
-          <span class="text-white font-bold">{{ userInitials }}</span>
-        </div>
-        <Transition name="fade">
-          <div v-if="!isCollapsed" class="flex flex-col min-w-0">
-            <span class="text-sm font-bold text-white truncate">{{ userName }}</span>
-            <span class="text-[10px] text-slate-500 font-medium truncate uppercase tracking-widest">Compte Entreprise</span>
-          </div>
-        </Transition>
-      </div>
-
-      <!-- Logout -->
+    <!-- Footer -->
+    <div class="p-4 mt-auto border-t border-white/5">
       <button 
         @click="logout"
         class="w-full flex items-center h-11 px-4 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group"
@@ -115,18 +98,11 @@ const emit = defineEmits(['toggle']);
 
 const route = useRoute();
 const router = useRouter();
-const userName = ref('Entreprise User');
-
-onMounted(() => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (user && user.nom) {
-    userName.value = user.nom;
-  }
+const companyInfo = computed(() => {
+  const stored = localStorage.getItem('companyInfo');
+  return stored ? JSON.parse(stored) : {};
 });
 
-const userInitials = computed(() => {
-  return userName.value.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-});
 
 const isActive = (path: string) => {
   return route.path === path;

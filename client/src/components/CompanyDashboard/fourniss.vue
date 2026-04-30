@@ -583,10 +583,8 @@ const formatDate = (dateString: string | Date | null) => {
 // Generate avatar from initials
 const getAvatar = (name: string) => {
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase()
-  const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33F3']
-  const color = colors[initials.charCodeAt(0) % colors.length]
-  
-  return `https://ui-avatars.com/api/?name=${initials}&background=${color.substring(1)}&color=fff&size=128`
+  // Use premium gold background with midnight text
+  return `https://ui-avatars.com/api/?name=${initials}&background=C4A484&color=1A1F2C&size=128&bold=true`
 }
 
 // Load data
@@ -1186,19 +1184,30 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1a1f2c;
+  transition: all 0.5s ease;
 }
 
-.stat-icon.total { background-color: #e0f2fe; color: #0284c7; }
-.stat-icon.electronics { background-color: #e0e7ff; color: #4f46e5; }
-.stat-icon.clothing { background-color: #fef3c7; color: #d97706; }
-.stat-icon.food { background-color: #dcfce7; color: #16a34a; }
-.stat-icon.furniture { background-color: #fee2e2; color: #dc2626; }
-.stat-icon.health { background-color: #e0f2fe; color: #0284c7; }
-.stat-icon.beauty { background-color: #f3e8ff; color: #9333ea; }
-.stat-icon.sports { background-color: #ffedd5; color: #f97316; }
-.stat-icon.automotive { background-color: #d1d5db; color: #374151; }
-.stat-icon.home { background-color: #e0e7ff; color: #4f46e5; }
-.stat-icon.books { background-color: #dcfce7; color: #16a34a; }
+.stat-card:hover .stat-icon {
+  background-color: #c4a484;
+  color: #1a1f2c;
+  border-color: #c4a484;
+  transform: scale(1.1) rotate(5deg);
+}
+
+.stat-icon.total { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.electronics { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.clothing { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.food { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.furniture { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.health { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.beauty { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.sports { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.automotive { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.home { background-color: #f8fafc; color: #1a1f2c; }
+.stat-icon.books { background-color: #f8fafc; color: #1a1f2c; }
 
 .stat-content {
   flex: 1;

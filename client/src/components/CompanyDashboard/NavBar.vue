@@ -149,19 +149,19 @@ onUnmounted(() => {
       <div class="relative profile-dropdown">
         <button 
           @click="toggleProfileDropdown"
-          class="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-all group"
+          class="flex items-center gap-4 p-1.5 rounded-xl hover:bg-slate-50 transition-all group"
         >
-          <div class="flex flex-col items-end mr-1 hidden sm:flex">
+          <div class="flex flex-col items-end mr-2 hidden sm:flex">
             <span class="text-sm font-bold text-premium-midnight truncate max-w-[120px]">{{ companyInfo.companyName || 'Compte' }}</span>
             <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Entreprise</span>
           </div>
 
           <div class="relative">
-            <div class="w-10 h-10 rounded-xl bg-premium-midnight overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-300">
+            <div class="w-10 h-10 rounded-xl bg-white overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-300 border border-slate-100 flex items-center justify-center p-1">
               <img 
                 v-if="companyInfo.Logo" 
                 :src="companyInfo.Logo" 
-                class="w-full h-full object-cover" 
+                class="w-full h-full object-contain" 
               />
               <div v-else class="w-full h-full flex items-center justify-center text-premium-gold font-bold text-lg">
                 {{ companyInfo.companyName?.[0] || 'L' }}

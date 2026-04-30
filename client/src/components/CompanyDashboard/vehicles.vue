@@ -20,8 +20,8 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
       <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
         <div class="flex justify-between items-start mb-4">
-          <div class="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-premium-midnight transition-colors duration-500">
-            <Truck class="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" />
+          <div class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-premium-gold/10 transition-colors duration-500">
+            <Truck class="w-5 h-5 text-slate-400 group-hover:text-premium-gold transition-colors" />
           </div>
         </div>
         <p class="text-3xl font-display font-black text-premium-midnight">{{ totalTrucks }}</p>
@@ -108,8 +108,8 @@
           <tr v-for="truck in paginatedTrucks" :key="truck._id" class="hover:bg-slate-50/50 transition-colors group">
             <td class="px-8 py-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-premium-midnight flex items-center justify-center shrink-0 shadow-sm">
-                  <Truck class="w-5 h-5 text-premium-gold" />
+                <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 shadow-sm group-hover:border-premium-gold/30 transition-colors">
+                  <Truck class="w-5 h-5 text-premium-midnight group-hover:text-premium-gold transition-colors" />
                 </div>
                 <span class="text-sm font-bold text-premium-midnight">{{ truck.vehicle }}</span>
               </div>

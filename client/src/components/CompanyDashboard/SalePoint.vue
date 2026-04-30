@@ -48,10 +48,10 @@
       <div v-for="point in paginatedSalePoints" :key="point._id" class="card-premium flex flex-col group transition-all duration-300 hover:-translate-y-1">
         <div class="flex justify-between items-start mb-4">
           <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-premium-midnight to-slate-800 flex items-center justify-center text-premium-gold shadow-md shrink-0">
-              <i v-if="point.type === 'Store'" class="fas fa-store text-xl"></i>
-              <i v-else-if="point.type === 'Pickup Point'" class="fas fa-box text-xl"></i>
-              <i v-else class="fas fa-building text-xl"></i>
+            <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-premium-midnight shadow-sm shrink-0 group-hover:border-premium-gold/30 transition-all">
+              <i v-if="point.type === 'Store'" class="fas fa-store text-xl group-hover:text-premium-gold transition-colors"></i>
+              <i v-else-if="point.type === 'Pickup Point'" class="fas fa-box text-xl group-hover:text-premium-gold transition-colors"></i>
+              <i v-else class="fas fa-building text-xl group-hover:text-premium-gold transition-colors"></i>
             </div>
             <div>
               <h3 class="text-lg font-bold text-premium-midnight line-clamp-1" :title="point.name">{{ point.name }}</h3>

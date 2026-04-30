@@ -26,7 +26,7 @@
     <!-- KPI Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
-        <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-premium-midnight transition-colors duration-500">
+        <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 group-hover:bg-premium-gold/10 transition-colors duration-500">
           <WarehouseIcon class="w-6 h-6 text-slate-400 group-hover:text-premium-gold transition-colors" />
         </div>
         <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">{{ filteredWarehouses.length }}</p>
@@ -98,8 +98,8 @@
         <!-- Card Header -->
         <div class="p-8 pb-0 flex items-start justify-between">
           <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-premium-midnight flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
-              <WarehouseIcon class="w-7 h-7 text-premium-gold" />
+            <div class="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:border-premium-gold/30 transition-all duration-500">
+              <WarehouseIcon class="w-7 h-7 text-premium-midnight group-hover:text-premium-gold transition-colors" />
             </div>
             <div>
               <div class="flex items-center gap-2 mb-0.5">
@@ -269,8 +269,8 @@
             <div v-for="warehouse in externalWarehouses" :key="warehouse._id" class="p-6 rounded-3xl border border-slate-100 bg-slate-50/30 hover:border-premium-gold/30 transition-all group">
               <div class="flex items-start justify-between mb-6">
                 <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 rounded-xl bg-premium-midnight flex items-center justify-center shadow-lg">
-                    <WarehouseIcon class="w-5 h-5 text-premium-gold" />
+                  <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
+                    <WarehouseIcon class="w-5 h-5 text-premium-midnight" />
                   </div>
                   <div>
                     <h3 class="font-display font-black text-premium-midnight tracking-tight">{{ warehouse.name }}</h3>

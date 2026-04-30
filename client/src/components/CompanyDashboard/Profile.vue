@@ -41,11 +41,11 @@
         <div class="absolute top-0 right-0 w-80 h-80 bg-premium-gold/10 blur-[80px] -mr-20 -mt-20"></div>
         <div class="absolute bottom-0 left-0 w-60 h-60 bg-blue-500/5 blur-[60px] -ml-10 -mb-10"></div>
 
-        <div class="relative z-10 p-10 flex flex-col sm:flex-row items-center sm:items-start gap-8">
+        <div class="relative z-10 p-10 flex flex-col sm:flex-row items-center sm:items-start gap-10">
           <!-- Logo -->
           <div class="relative shrink-0">
-            <div class="w-28 h-28 rounded-2xl overflow-hidden bg-white/10 border-2 border-white/10 shadow-xl">
-              <img v-if="company.Logo" :src="company.Logo" :alt="company.companyName" class="w-full h-full object-cover" />
+            <div class="w-28 h-28 rounded-2xl overflow-hidden bg-white border-2 border-slate-100 shadow-xl flex items-center justify-center p-2">
+              <img v-if="company.Logo" :src="company.Logo" :alt="company.companyName" class="w-full h-full object-contain" />
               <div v-else class="w-full h-full flex items-center justify-center text-4xl font-black text-premium-gold">
                 {{ company.companyName?.[0]?.toUpperCase() || 'C' }}
               </div>
@@ -56,7 +56,7 @@
           </div>
 
           <!-- Identity -->
-          <div class="text-center sm:text-left">
+          <div class="text-center sm:text-left sm:ml-2">
             <h2 class="text-3xl font-display font-black text-white tracking-tight mb-1">{{ company.companyName }}</h2>
             <div class="flex flex-wrap items-center gap-3 justify-center sm:justify-start mt-3">
               <span class="px-3 py-1 rounded-full bg-premium-gold/20 border border-premium-gold/30 text-premium-gold text-[10px] font-bold uppercase tracking-widest">

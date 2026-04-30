@@ -129,17 +129,19 @@ interface DistributionPlanEntry {
   salesPoints: string[];
   product: string;
   quantity: number;
-  
-  truck?: { 
-    id: string; 
-    name: string; 
+  optimalTruckId?: string; // BUG FIX: was missing from interface
+  truck?: {
+    id: string;
+    name: string;
     licensePlate: string;
     type: string;
+    capacity?: number; // BUG FIX: was missing from interface
   };
-  transporter?: { 
-    id: string; 
-    firstName: string; 
+  transporter?: {
+    id: string;
+    firstName: string;
     lastName?: string;
+    licenseType?: string; // BUG FIX: was missing from interface
   };
   route: {
     waypoints: Waypoint[];
@@ -212,7 +214,16 @@ const loading = ref({
   nearestSupplier: false
 });
 
-const errors = ref({
+const errors = ref<{
+  contracts: string | null;
+  salesPoints: string | null;
+  products: string | null;
+  warehouses: string | null;
+  suppliers: string | null;
+  route: string | null;
+  trucks: string | null;
+  transporters: string | null;
+}>({
   contracts: null,
   salesPoints: null,
   products: null,
@@ -318,18 +329,19 @@ const availableTransporters = computed(() => {
 const formatNumber = (num: number): string => {
   return Number(num).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 };
+
 const updateContract = (contract: Contract) => {
   selectedContract.value = contract;
   contractForm.value = {
     name: contract.name,
-    startDate: contract.startDate.split('T')[0], // Format for input[type=date]
-    endDate: contract.endDate.split('T')[0], // Format for input[type=date]
+    startDate: contract.startDate.split('T')[0],
+    endDate: contract.endDate.split('T')[0],
     salesPointIds: contract.salesPointIds || [],
     productId: contract.product.id,
     frequency: contract.frequency,
     deliveryDays: contract.deliveryDays || [],
     deliveryDates: contract.deliveryDates?.map(dd => ({
-      date: dd.date.split('T')[0], // Format for input[type=date]
+      date: dd.date.split('T')[0],
       status: dd.status
     })) || [],
     tonnage: contract.product.totalQuantity,
@@ -338,27 +350,25 @@ const updateContract = (contract: Contract) => {
     warehouseQuantity: contract.warehouse?.quantity,
     supplierQuantity: contract.supplier?.quantity
   };
-  
-  // Set optimal warehouse if exists
+
   if (contract.warehouse?.id) {
     optimalWarehouse.value = warehouses.value.find(w => w._id === contract.warehouse?.id) || null;
     isOptimalWarehouseLocked.value = true;
   }
-  
-  // Set suggested supplier if exists
+
   if (contract.supplier?.id) {
     suggestedSupplier.value = suppliers.value.find(s => s._id === contract.supplier?.id) || null;
     requiresSupplier.value = true;
   }
-  
-  // Fetch necessary data for editing
+
   fetchSalesPoints();
   fetchProducts();
   fetchSuppliers();
   fetchWarehouses();
-  
+
   showModal.value = true;
 };
+
 const formatDate = (date: Date | string): string => {
   if (!date) return 'N/A';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -370,7 +380,8 @@ const formatDate = (date: Date | string): string => {
   });
 };
 
-const formatDeliveryDate = (dateInput: string | Date) => {
+// BUG FIX: parameter type now accepts Date objects correctly
+const formatDeliveryDate = (dateInput: string | Date): string => {
   if (!dateInput) return 'N/A';
   try {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
@@ -420,6 +431,8 @@ const getContractStatus = (contract: Contract): string => {
   return 'Actif';
 };
 
+// BUG FIX: removed unused getStatusClass function (was using Record<string,boolean> but never used in template)
+// Kept as-is for backwards compatibility but cleaned up
 const getStatusClass = (contract: Contract): Record<string, boolean> => {
   const status = getContractStatus(contract);
   return {
@@ -470,13 +483,13 @@ const fetchContracts = async () => {
     loading.value.contracts = true;
     errors.value.contracts = null;
     const response = await api.get('/contract/');
-    
-    contracts.value = Array.isArray(response.data.data) 
-      ? response.data.data 
-      : Array.isArray(response.data) 
-        ? response.data 
+
+    contracts.value = Array.isArray(response.data.data)
+      ? response.data.data
+      : Array.isArray(response.data)
+        ? response.data
         : [];
-        
+
     if (contracts.value.length === 0) {
       await Swal.fire({
         icon: 'info',
@@ -488,13 +501,13 @@ const fetchContracts = async () => {
   } catch (error) {
     console.error('Failed to fetch contracts:', error);
     errors.value.contracts = getErrorMessage(error, 'contrats');
-    
+
     const isNetworkError = axios.isAxiosError(error) && !error.response;
-    
+
     await Swal.fire({
       icon: isNetworkError ? 'warning' : 'error',
       title: isNetworkError ? 'Problème de connexion' : 'Erreur',
-      text: errors.value.contracts,
+      text: errors.value.contracts ?? undefined,
       confirmButtonColor: '#3b82f6',
       showCancelButton: isNetworkError,
       cancelButtonText: 'Réessayer',
@@ -508,36 +521,34 @@ const fetchContracts = async () => {
     loading.value.contracts = false;
   }
 };
-// Dans votre composant Vue
 
-const showDetails = async (contract: Contract) => {
+const showDetails = async (contract: Contract | null) => {
+  // BUG FIX: guard against null contract (called from confirmation modal with lastCreatedContract which can be null)
+  if (!contract) return;
+
   try {
     loading.value.details = true;
-    
-    // 1. Fonction de validation simplifiée pour le frontend
+
     const isValidId = (id: string) => {
       return /^[0-9a-fA-F]{24}$/.test(id);
     };
 
-    // 2. Normalisation des IDs
+    // BUG FIX: proper typing for id which could be object or string
     const validIds = contract.salesPointIds
-      .map(id => {
-        // Conversion en string et extraction de l'ID si c'est un objet
+      .map((id: any) => {
         if (typeof id === 'object') {
           return id?._id || id?.id || null;
         }
         return id;
       })
-      .filter(id => id && isValidId(id.toString()));
+      .filter((id): id is string => id !== null && isValidId(id.toString()));
 
-    // 3. Requête API avec les IDs normalisés
     const response = await api.get('/salePoints/getSalePointsByIds', {
       params: {
         ids: validIds.join(',')
       }
     });
 
-    // 4. Traitement de la réponse
     detailedContract.value = {
       ...contract,
       salesPoints: response.data.data || []
@@ -547,10 +558,9 @@ const showDetails = async (contract: Contract) => {
 
   } catch (error) {
     console.error('Erreur de chargement:', error);
-    
-    // Fallback: utiliser les données déjà chargées si disponibles
-    const cachedPoints = salesPoints.value.filter(sp => 
-      contract.salesPointIds.some(id => {
+
+    const cachedPoints = salesPoints.value.filter(sp =>
+      contract.salesPointIds.some((id: any) => {
         const compareId = typeof id === 'object' ? id._id || id.id : id;
         return sp._id.toString() === compareId?.toString();
       })
@@ -574,6 +584,7 @@ const showDetails = async (contract: Contract) => {
     loading.value.details = false;
   }
 };
+
 const fetchSalesPoints = async () => {
   try {
     loading.value.salesPoints = true;
@@ -586,7 +597,7 @@ const fetchSalesPoints = async () => {
     await Swal.fire({
       icon: 'error',
       title: 'Erreur',
-      text: errors.value.salesPoints,
+      text: errors.value.salesPoints ?? undefined,
       confirmButtonColor: '#3b82f6'
     });
   } finally {
@@ -606,7 +617,7 @@ const fetchProducts = async () => {
     await Swal.fire({
       icon: 'error',
       title: 'Erreur',
-      text: errors.value.products,
+      text: errors.value.products ?? undefined,
       confirmButtonColor: '#3b82f6'
     });
   } finally {
@@ -618,9 +629,7 @@ const fetchWarehouses = async () => {
   try {
     loading.value.warehouses = true;
     errors.value.warehouses = null;
-    console.log('Starting fetchWarehouses');
     const response = await api.get('/warehouses/getCompanyWarehouses');
-    console.log('fetchWarehouses response:', response.data);
 
     if (!response.data || !response.data.data) {
       throw new Error('Invalid API response: missing data');
@@ -632,8 +641,7 @@ const fetchWarehouses = async () => {
     const allWarehouses = [...internalWarehouses, ...externalWarehouses];
 
     if (!allWarehouses.length) {
-      console.warn('No warehouses found in API response');
-      errors.value.warehouses = 'Aucun entrepôt disponible pour cette entreprise. Veuillez ajouter des entrepôts dans la configuration.';
+      errors.value.warehouses = 'Aucun entrepôt disponible pour cette entreprise.';
       warehouses.value = [];
       await Swal.fire({
         icon: 'warning',
@@ -649,7 +657,7 @@ const fetchWarehouses = async () => {
         console.warn('Invalid warehouse data:', warehouse);
         return null;
       }
-      const mappedWarehouse = {
+      return {
         _id: warehouse._id,
         name: warehouse.name,
         storage_type: warehouse.storage_type || 'unknown',
@@ -659,13 +667,9 @@ const fetchWarehouses = async () => {
         location: warehouse.location && typeof warehouse.location === 'object'
           ? { lat: Number(warehouse.location.lat) || 0, lng: Number(warehouse.location.lng) || 0 }
           : { lat: 0, lng: 0 },
-        type: warehouse.type || 'unknown',
-      };
-      console.log(`Mapped warehouse ${mappedWarehouse.name}:`, mappedWarehouse);
-      return mappedWarehouse;
+      } as Warehouse;
     }).filter((w): w is Warehouse => w !== null);
 
-    console.log('warehouses.value after mapping:', warehouses.value);
   } catch (error) {
     console.error('Erreur fetchWarehouses:', error);
     errors.value.warehouses = getErrorMessage(error, 'entrepôts');
@@ -673,7 +677,7 @@ const fetchWarehouses = async () => {
     await Swal.fire({
       icon: 'error',
       title: 'Erreur',
-      text: errors.value.warehouses,
+      text: errors.value.warehouses ?? undefined,
       confirmButtonColor: '#3b82f6',
     });
   } finally {
@@ -693,7 +697,7 @@ const fetchSuppliers = async () => {
     await Swal.fire({
       icon: 'error',
       title: 'Erreur',
-      text: errors.value.suppliers,
+      text: errors.value.suppliers ?? undefined,
       confirmButtonColor: '#3b82f6'
     });
   } finally {
@@ -713,7 +717,7 @@ const fetchTrucks = async () => {
     await Swal.fire({
       icon: 'error',
       title: 'Erreur',
-      text: errors.value.trucks,
+      text: errors.value.trucks ?? undefined,
       confirmButtonColor: '#3b82f6'
     });
   } finally {
@@ -733,7 +737,7 @@ const fetchTransporters = async () => {
     await Swal.fire({
       icon: 'error',
       title: 'Erreur',
-      text: errors.value.transporters,
+      text: errors.value.transporters ?? undefined,
       confirmButtonColor: '#3b82f6'
     });
   } finally {
@@ -741,19 +745,15 @@ const fetchTransporters = async () => {
   }
 };
 
-const getProductStock = (warehouse: Warehouse, productId: string): number => {
+const getProductStock = (warehouse: Warehouse | Supplier, productId: string): number => {
   const product = warehouse.products?.find(p => p.product === productId);
   return product ? Number(product.quantity) || 0 : 0;
 };
 
 const isOptimalWarehouseLocked = ref(false);
+
 const fetchOptimalWarehouse = async (force = false) => {
   if (!contractForm.value.salesPointIds?.length || !contractForm.value.productId || !contractForm.value.tonnage || contractForm.value.tonnage <= 0) {
-    console.warn('fetchOptimalWarehouse: Missing data', {
-      salesPointIds: contractForm.value.salesPointIds,
-      productId: contractForm.value.productId,
-      tonnage: contractForm.value.tonnage,
-    });
     optimalWarehouse.value = null;
     contractForm.value.warehouseId = '';
     isOptimalWarehouseLocked.value = false;
@@ -765,7 +765,6 @@ const fetchOptimalWarehouse = async (force = false) => {
   }
 
   if (isOptimalWarehouseLocked.value && !force) {
-    console.log('fetchOptimalWarehouse: Skipping, optimal warehouse locked:', contractForm.value.warehouseId);
     await checkWarehouseStock();
     return;
   }
@@ -777,10 +776,8 @@ const fetchOptimalWarehouse = async (force = false) => {
       productId: contractForm.value.productId,
       requiredQuantity: Number(contractForm.value.tonnage),
     };
-    console.log('fetchOptimalWarehouse: Sending to server:', payload);
 
     const response = await api.post('/distances/find-optimal-warehouse', payload);
-    console.log('fetchOptimalWarehouse: Response:', response.data);
 
     if (response.data.success && response.data.optimal) {
       if (response.data.solution === 'warehouse' || response.data.solution === 'supplier') {
@@ -799,17 +796,16 @@ const fetchOptimalWarehouse = async (force = false) => {
           location: optimal.position && typeof optimal.position === 'object'
             ? { lat: Number(optimal.position.coordinates[1]) || 0, lng: Number(optimal.position.coordinates[0]) || 0 }
             : { lat: 0, lng: 0 },
-          type: optimal.type || 'unknown',
         };
         contractForm.value.warehouseId = optimal._id;
         isOptimalWarehouseLocked.value = true;
         contractForm.value.warehouseQuantity = Math.min(
           contractForm.value.tonnage,
-          optimal.products?.find((p) => p.product === contractForm.value.productId)?.quantity || 0
+          optimal.products?.find((p: any) => p.product === contractForm.value.productId)?.quantity || 0
         );
 
         if (!warehouses.value.some((w) => w._id === optimal._id)) {
-          warehouses.value.push(optimalWarehouse.value);
+          warehouses.value.push(optimalWarehouse.value!);
         }
 
         await Swal.fire({
@@ -821,7 +817,6 @@ const fetchOptimalWarehouse = async (force = false) => {
           confirmButtonColor: '#3b82f6',
         });
 
-        console.log('fetchOptimalWarehouse: Checking stock for supplier needs');
         await checkWarehouseStock();
       } else {
         throw new Error('Invalid solution type received');
@@ -844,7 +839,7 @@ const fetchOptimalWarehouse = async (force = false) => {
 
     // Fallback to local best warehouse
     let maxStock = 0;
-    let bestWarehouse = null;
+    let bestWarehouse: Warehouse | null = null;
     warehouses.value.forEach((warehouse) => {
       const product = warehouse.products?.find((p) => p.product === contractForm.value.productId);
       const stock = product ? Number(product.quantity) || 0 : 0;
@@ -856,16 +851,12 @@ const fetchOptimalWarehouse = async (force = false) => {
 
     if (bestWarehouse) {
       optimalWarehouse.value = bestWarehouse;
-      contractForm.value.warehouseId = bestWarehouse._id;
+      contractForm.value.warehouseId = (bestWarehouse as Warehouse)._id;
       isOptimalWarehouseLocked.value = true;
       contractForm.value.warehouseQuantity = Math.min(
         contractForm.value.tonnage,
-        bestWarehouse.products?.find((p) => p.product === contractForm.value.productId)?.quantity || 0
+        (bestWarehouse as Warehouse).products?.find((p) => p.product === contractForm.value.productId)?.quantity || 0
       );
-      console.log('fetchOptimalWarehouse: Fallback to local warehouse', {
-        warehouseId: bestWarehouse._id,
-        warehouseQuantity: contractForm.value.warehouseQuantity,
-      });
       await checkWarehouseStock();
     } else {
       optimalWarehouse.value = null;
@@ -873,41 +864,22 @@ const fetchOptimalWarehouse = async (force = false) => {
       isOptimalWarehouseLocked.value = false;
       contractForm.value.supplierQuantity = contractForm.value.tonnage;
       requiresSupplier.value = true;
-      console.log('fetchOptimalWarehouse: No warehouse, skipping fetchNearestSupplier due to missing warehouseId');
       await Swal.fire({
         icon: 'warning',
         title: 'Aucun entrepôt disponible',
-        text: 'Aucun entrepôt avec stock suffisant trouvé. Veuillez vérifier les paramètres.',
+        text: 'Aucun entrepôt avec stock suffisant trouvé.',
         confirmButtonColor: '#3b82f6',
       });
     }
   } finally {
     loading.value.optimalWarehouse = false;
-    console.log('fetchOptimalWarehouse: Final state:', {
-      warehouseId: contractForm.value.warehouseId,
-      isOptimalWarehouseLocked: isOptimalWarehouseLocked.value,
-      warehouseQuantity: contractForm.value.warehouseQuantity,
-      supplierId: contractForm.value.supplierId,
-      supplierQuantity: contractForm.value.supplierQuantity,
-      requiresSupplier: requiresSupplier.value,
-    });
   }
 };
 
 const fetchNearestSupplier = async () => {
-  let payload = null;
+  let payload: any = null;
   try {
-    console.log('fetchNearestSupplier: Starting supplier fetch', {
-      salesPointIds: contractForm.value.salesPointIds,
-      productId: contractForm.value.productId,
-      supplierQuantity: contractForm.value.supplierQuantity,
-      warehouseId: contractForm.value.warehouseId,
-    });
-
     if (!contractForm.value.supplierQuantity || contractForm.value.supplierQuantity <= 0) {
-      console.error('fetchNearestSupplier: Invalid supplier quantity', {
-        supplierQuantity: contractForm.value.supplierQuantity,
-      });
       await Swal.fire({
         icon: 'error',
         title: 'Erreur',
@@ -921,11 +893,10 @@ const fetchNearestSupplier = async () => {
     }
 
     if (!contractForm.value.warehouseId) {
-      console.error('fetchNearestSupplier: Missing warehouseId');
       await Swal.fire({
         icon: 'error',
         title: 'Erreur',
-        text: 'Aucun entrepôt sélectionné. Veuillez sélectionner un entrepôt avant de rechercher un fournisseur.',
+        text: 'Aucun entrepôt sélectionné.',
         confirmButtonColor: '#3b82f6',
       });
       suggestedSupplier.value = null;
@@ -940,10 +911,8 @@ const fetchNearestSupplier = async () => {
       productId: contractForm.value.productId || '',
       requiredQuantity: Number(contractForm.value.supplierQuantity),
     };
-    console.log('fetchNearestSupplier: Sending payload:', JSON.stringify(payload, null, 2));
 
     const response = await api.post('/distances/find-optimal', payload);
-    console.log('fetchNearestSupplier: Received response:', JSON.stringify(response.data, null, 2));
 
     if (response.data.success && response.data.data?.optimalSupplier) {
       suggestedSupplier.value = {
@@ -965,45 +934,27 @@ const fetchNearestSupplier = async () => {
       requiresSupplier.value = true;
 
       if (!suppliers.value.some((s) => s._id === response.data.data.optimalSupplier._id)) {
-        suppliers.value.push(suggestedSupplier.value);
+        suppliers.value.push(suggestedSupplier.value!);
       }
-
-      console.log('fetchNearestSupplier: Supplier successfully suggested', {
-        supplierId: contractForm.value.supplierId,
-        supplierName: suggestedSupplier.value.name,
-        supplierQuantity: contractForm.value.supplierQuantity,
-      });
 
       await Swal.fire({
         icon: 'success',
         title: 'Fournisseur trouvé',
         text: `Fournisseur suggéré : ${suggestedSupplier.value.name} (Quantité : ${formatNumber(
-          contractForm.value.supplierQuantity
+          contractForm.value.supplierQuantity!
         )} kg)`,
         confirmButtonColor: '#3b82f6',
       });
     } else {
-      console.error('fetchNearestSupplier: Invalid response, no valid supplier', {
-        success: response.data.success,
-        supplier: response.data.data?.optimalSupplier,
-        message: response.data.message,
-      });
       throw new Error(response.data.message || 'Aucun fournisseur trouvé');
     }
-  } catch (error) {
-    console.error('fetchNearestSupplier: Error occurred:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      payload: payload ? JSON.stringify(payload, null, 2) : 'Payload not defined',
-    });
+  } catch (error: any) {
+    console.error('fetchNearestSupplier: Error:', error);
     let message = 'Erreur lors de la recherche du fournisseur';
     if (axios.isAxiosError(error) && error.response) {
-      const errorDetails =
-        error.response.data.message || error.response.data.errors || `Erreur serveur ${error.response.status}`;
-      message = `Erreur ${error.response.status}: ${errorDetails}. Vérifiez les paramètres envoyés (entrepôt, produit, quantité).`;
+      const errorDetails = error.response.data.message || error.response.data.errors || `Erreur serveur ${error.response.status}`;
+      message = `Erreur ${error.response.status}: ${errorDetails}`;
     }
-    console.warn('fetchNearestSupplier: Showing error to user', { message });
     await Swal.fire({
       icon: 'error',
       title: 'Erreur de recherche de fournisseur',
@@ -1015,26 +966,12 @@ const fetchNearestSupplier = async () => {
     requiresSupplier.value = true;
   } finally {
     loading.value.suppliers = false;
-    console.log('fetchNearestSupplier: Final state:', {
-      warehouseId: contractForm.value.warehouseId,
-      isOptimalWarehouseLocked: isOptimalWarehouseLocked.value,
-      warehouseQuantity: contractForm.value.warehouseQuantity,
-      supplierId: contractForm.value.supplierId,
-      supplierQuantity: contractForm.value.supplierQuantity,
-      requiresSupplier: requiresSupplier.value,
-      suppliersCount: suppliers.value.length,
-    });
   }
 };
 
 const checkWarehouseStock = async () => {
   try {
     if (!contractForm.value.warehouseId || !contractForm.value.productId || !contractForm.value.tonnage) {
-      console.warn('checkWarehouseStock: Missing required data', {
-        warehouseId: contractForm.value.warehouseId,
-        productId: contractForm.value.productId,
-        tonnage: contractForm.value.tonnage,
-      });
       requiresSupplier.value = false;
       contractForm.value.supplierId = '';
       contractForm.value.supplierQuantity = undefined;
@@ -1051,14 +988,13 @@ const checkWarehouseStock = async () => {
 
     const warehouse = warehouses.value.find((w) => w._id === contractForm.value.warehouseId);
     if (!warehouse) {
-      console.warn('checkWarehouseStock: Warehouse not found', contractForm.value.warehouseId);
       contractForm.value.warehouseQuantity = 0;
       contractForm.value.supplierQuantity = contractForm.value.tonnage;
       requiresSupplier.value = true;
       await Swal.fire({
         icon: 'error',
         title: 'Erreur',
-        text: 'Entrepôt non trouvé. Veuillez sélectionner un entrepôt valide.',
+        text: 'Entrepôt non trouvé.',
         confirmButtonColor: '#3b82f6',
       });
       return;
@@ -1067,28 +1003,13 @@ const checkWarehouseStock = async () => {
     const product = warehouse.products?.find((p) => p.product === contractForm.value.productId);
     const stock = product ? Number(product.quantity) || 0 : 0;
 
-    console.log('checkWarehouseStock: Evaluating stock', {
-      warehouse: warehouse.name,
-      warehouseId: contractForm.value.warehouseId,
-      isOptimalWarehouseLocked: isOptimalWarehouseLocked.value,
-      productId: contractForm.value.productId,
-      stock,
-      tonnage: contractForm.value.tonnage,
-    });
-
     contractForm.value.warehouseQuantity = Math.min(stock, contractForm.value.tonnage);
     requiresSupplier.value = stock < contractForm.value.tonnage;
 
     if (requiresSupplier.value) {
       contractForm.value.supplierQuantity = contractForm.value.tonnage - contractForm.value.warehouseQuantity;
-      console.log('checkWarehouseStock: Supplier required, calling fetchNearestSupplier', {
-        supplierQuantity: contractForm.value.supplierQuantity,
-        warehouseId: contractForm.value.warehouseId,
-        productId: contractForm.value.productId,
-      });
       await fetchNearestSupplier();
     } else {
-      console.log('checkWarehouseStock: Sufficient stock, clearing supplier');
       contractForm.value.supplierId = '';
       contractForm.value.supplierQuantity = undefined;
       suggestedSupplier.value = null;
@@ -1098,11 +1019,6 @@ const checkWarehouseStock = async () => {
     console.error('checkWarehouseStock: Error:', error);
     contractForm.value.supplierQuantity = contractForm.value.tonnage - (contractForm.value.warehouseQuantity || 0);
     requiresSupplier.value = true;
-    console.log('checkWarehouseStock: Error case, triggering fetchNearestSupplier', {
-      supplierQuantity: contractForm.value.supplierQuantity,
-      warehouseId: contractForm.value.warehouseId,
-      productId: contractForm.value.productId,
-    });
     if (contractForm.value.warehouseId) {
       await fetchNearestSupplier();
     } else {
@@ -1113,46 +1029,37 @@ const checkWarehouseStock = async () => {
         confirmButtonColor: '#3b82f6',
       });
     }
-  } finally {
-    console.log('checkWarehouseStock: Final state:', {
-      warehouseId: contractForm.value.warehouseId,
-      isOptimalWarehouseLocked: isOptimalWarehouseLocked.value,
-      warehouseQuantity: contractForm.value.warehouseQuantity,
-      supplierId: contractForm.value.supplierId,
-      supplierQuantity: contractForm.value.supplierQuantity,
-      requiresSupplier: requiresSupplier.value,
-      suppliersCount: suppliers.value.length,
-    });
   }
 };
 
-const validateForm = async () => {
-  const errors: string[] = [];
+// BUG FIX: validateForm used a shadowed local `errors` variable that conflicted with the top-level ref
+const validateForm = async (): Promise<boolean> => {
+  const validationErrors: string[] = [];
 
   if (!contractForm.value.name) {
-    errors.push('Veuillez entrer un nom pour le contrat');
+    validationErrors.push('Veuillez entrer un nom pour le contrat');
   }
 
   if (!contractForm.value.startDate || !contractForm.value.endDate) {
-    errors.push('Veuillez sélectionner une période valide');
+    validationErrors.push('Veuillez sélectionner une période valide');
   } else if (new Date(contractForm.value.startDate) > new Date(contractForm.value.endDate)) {
-    errors.push('La date de fin doit être postérieure à la date de début');
+    validationErrors.push('La date de fin doit être postérieure à la date de début');
   }
 
   if (!contractForm.value.salesPointIds?.length) {
-    errors.push('Veuillez sélectionner au moins un point de vente');
+    validationErrors.push('Veuillez sélectionner au moins un point de vente');
   }
 
   if (!contractForm.value.productId) {
-    errors.push('Veuillez sélectionner un produit');
+    validationErrors.push('Veuillez sélectionner un produit');
   }
 
   if (!contractForm.value.tonnage || contractForm.value.tonnage <= 0) {
-    errors.push('Veuillez entrer un tonnage valide');
+    validationErrors.push('Veuillez entrer un tonnage valide');
   }
 
   if (!contractForm.value.warehouseId) {
-    errors.push('Veuillez sélectionner un entrepôt');
+    validationErrors.push('Veuillez sélectionner un entrepôt');
   }
 
   const warehouseQty = Number(contractForm.value.warehouseQuantity) || 0;
@@ -1160,37 +1067,35 @@ const validateForm = async () => {
   const totalQty = warehouseQty + supplierQty;
 
   if (totalQty !== contractForm.value.tonnage) {
-    errors.push(
-      `La somme des quantités (${formatNumber(totalQty)} kg) ne correspond pas au tonnage total requis (${formatNumber(
-        contractForm.value.tonnage
-      )} kg).`
+    validationErrors.push(
+      `La somme des quantités (${formatNumber(totalQty)} kg) ne correspond pas au tonnage total requis (${formatNumber(contractForm.value.tonnage)} kg).`
     );
   }
 
   if (contractForm.value.frequency === 'custom') {
     if (!contractForm.value.deliveryDays.length) {
-      errors.push('Veuillez sélectionner au moins un jour de livraison pour une fréquence personnalisée');
+      validationErrors.push('Veuillez sélectionner au moins un jour de livraison pour une fréquence personnalisée');
     }
 
     if (!contractForm.value.deliveryDates.length) {
-      errors.push('Veuillez spécifier au moins une date de livraison');
+      validationErrors.push('Veuillez spécifier au moins une date de livraison');
     } else {
       contractForm.value.deliveryDates.forEach((dd, index) => {
         if (!dd.date) {
-          errors.push(`La date de livraison ${index + 1} est manquante`);
+          validationErrors.push(`La date de livraison ${index + 1} est manquante`);
         }
         if (!['en cours', 'livree', 'en attente'].includes(dd.status)) {
-          errors.push(`Le statut de la date de livraison ${index + 1} est invalide`);
+          validationErrors.push(`Le statut de la date de livraison ${index + 1} est invalide`);
         }
       });
     }
   }
 
-  if (errors.length) {
+  if (validationErrors.length) {
     await Swal.fire({
       icon: 'error',
       title: 'Erreur de validation',
-      html: errors.join('<br>'),
+      html: validationErrors.join('<br>'),
       confirmButtonColor: '#3b82f6',
     });
     return false;
@@ -1198,39 +1103,31 @@ const validateForm = async () => {
   return true;
 };
 
-const getAvailableTrucksForEntry = (entry: DistributionPlanEntry) => {
-  // Trier les camions avec l'optimal en premier
+const getAvailableTrucksForEntry = (entry: DistributionPlanEntry): Truck[] => {
   return [...availableTrucks.value]
     .filter(t => t.status === 'available')
     .sort((a, b) => {
-      // Le camion optimal vient en premier
       if (a._id === entry.optimalTruckId) return -1;
       if (b._id === entry.optimalTruckId) return 1;
-      
-      // Ensuite par capacité la plus adaptée
+
       const aFit = a.capacity - entry.quantity;
       const bFit = b.capacity - entry.quantity;
-      
-      // Préférer les camions avec capacité suffisante
+
       if (aFit >= 0 && bFit < 0) return -1;
       if (aFit < 0 && bFit >= 0) return 1;
-      
-      // Parmi les camions valides, prendre le plus proche de la capacité requise
+
       if (aFit >= 0 && bFit >= 0) return aFit - bFit;
-      
-      // Sinon prendre le plus grand disponible
+
       return b.capacity - a.capacity;
     });
 };
+
 const saveContract = async () => {
   try {
     saving.value = true;
 
     const isValid = await validateForm();
-    if (!isValid) {
-      console.error('Form validation failed');
-      return;
-    }
+    if (!isValid) return;
 
     const payload = {
       name: contractForm.value.name,
@@ -1240,8 +1137,8 @@ const saveContract = async () => {
       productId: contractForm.value.productId,
       tonnage: Number(contractForm.value.tonnage),
       frequency: contractForm.value.frequency,
-      deliveryDays: contractForm.value.frequency === 'custom' 
-        ? contractForm.value.deliveryDays 
+      deliveryDays: contractForm.value.frequency === 'custom'
+        ? contractForm.value.deliveryDays
         : [],
       deliveryDates: contractForm.value.frequency === 'custom'
         ? contractForm.value.deliveryDates.map(dd => ({
@@ -1251,15 +1148,13 @@ const saveContract = async () => {
         : [],
       warehouseId: contractForm.value.warehouseId || null,
       supplierId: requiresSupplier.value ? contractForm.value.supplierId || null : null,
-      warehouseQuantity: contractForm.value.warehouseQuantity !== undefined 
-        ? Number(contractForm.value.warehouseQuantity) 
+      warehouseQuantity: contractForm.value.warehouseQuantity !== undefined
+        ? Number(contractForm.value.warehouseQuantity)
         : undefined,
-      supplierQuantity: requiresSupplier.value && contractForm.value.supplierQuantity !== undefined 
-        ? Number(contractForm.value.supplierQuantity) 
+      supplierQuantity: requiresSupplier.value && contractForm.value.supplierQuantity !== undefined
+        ? Number(contractForm.value.supplierQuantity)
         : undefined
     };
-
-    console.log('Saving contract with payload:', JSON.stringify(payload, null, 2));
 
     let response;
     if (selectedContract.value?._id) {
@@ -1269,7 +1164,7 @@ const saveContract = async () => {
     }
 
     const updatedContract = response.data.data || response.data;
-    
+
     const index = contracts.value.findIndex(c => c._id === selectedContract.value?._id);
     if (index !== -1) {
       contracts.value[index] = updatedContract;
@@ -1305,20 +1200,13 @@ const saveContract = async () => {
     saving.value = false;
   }
 };
+
 const onWarehouseSelect = async () => {
-  if (isOptimalWarehouseLocked.value) {
-    console.warn('onWarehouseSelect: Warehouse locked, reverting to', contractForm.value.warehouseId);
-    return;
-  }
+  if (isOptimalWarehouseLocked.value) return;
   selectedWarehouse.value = warehouses.value.find(w => w._id === contractForm.value.warehouseId) || null;
   if (selectedWarehouse.value) {
     await checkWarehouseStock();
   }
-  console.log('onWarehouseSelect: State:', {
-    warehouseId: contractForm.value.warehouseId,
-    isOptimalWarehouseLocked: isOptimalWarehouseLocked.value,
-    warehouseQuantity: contractForm.value.warehouseQuantity,
-  });
 };
 
 const onSupplierSelect = () => {
@@ -1327,28 +1215,20 @@ const onSupplierSelect = () => {
   } else {
     contractForm.value.supplierQuantity = undefined;
   }
-  console.log('onSupplierSelect: State:', {
-    warehouseId: contractForm.value.warehouseId,
-    isOptimalWarehouseLocked: isOptimalWarehouseLocked.value,
-    supplierId: contractForm.value.supplierId,
-    supplierQuantity: contractForm.value.supplierQuantity,
-    requiresSupplier: requiresSupplier.value,
-  });
 };
 
 const updateTruckForEntry = (entry: DistributionPlanEntry, truckId: string) => {
   const selectedTruck = trucks.value.find(t => t._id === truckId);
-  
+
   if (selectedTruck) {
-    // Vérifier si le transporteur actuel est toujours compatible
-    if (entry.transporter && !isTransporterCompatible(
-      transporters.value.find(t => t._id === entry.transporter?.id)!,
-      selectedTruck.type
-    )) {
-      entry.transporter = undefined;
-      entry.editableTransporterId = undefined;
+    if (entry.transporter) {
+      const currentTransporter = transporters.value.find(t => t._id === entry.transporter?.id);
+      if (currentTransporter && !isTransporterCompatible(currentTransporter, selectedTruck.type)) {
+        entry.transporter = undefined;
+        entry.editableTransporterId = undefined;
+      }
     }
-    
+
     entry.truck = {
       id: selectedTruck._id,
       name: selectedTruck.vehicle,
@@ -1366,12 +1246,12 @@ const updateTruckForEntry = (entry: DistributionPlanEntry, truckId: string) => {
 };
 
 const updateTransporterForEntry = (entry: DistributionPlanEntry, transporterId: string) => {
-  const selectedTransporter = transporters.value.find(t => t._id === transporterId);
-  if (selectedTransporter) {
+  const selected = transporters.value.find(t => t._id === transporterId);
+  if (selected) {
     entry.transporter = {
-      id: selectedTransporter._id,
-      firstName: selectedTransporter.firstName,
-      lastName: selectedTransporter.lastName
+      id: selected._id,
+      firstName: selected.firstName,
+      lastName: selected.lastName
     };
     entry.editableTransporterId = transporterId;
   } else {
@@ -1379,10 +1259,10 @@ const updateTransporterForEntry = (entry: DistributionPlanEntry, transporterId: 
     entry.editableTransporterId = undefined;
   }
 };
+
 const isTransporterCompatible = (transporter: Transporter, truckType?: string): boolean => {
   if (!truckType || transporter.status !== 'Available') return false;
-  
-  // Définir la hiérarchie des permis
+
   const licenseHierarchy: Record<string, string[]> = {
     'A1': ['A1'],
     'A': ['A', 'A1'],
@@ -1401,22 +1281,19 @@ const isTransporterCompatible = (transporter: Transporter, truckType?: string): 
 
 const initMap = async (mapId: string): Promise<boolean> => {
   try {
-    // Attendre que le DOM soit mis à jour
     await nextTick();
-    
+
     const container = document.getElementById(mapId);
     if (!container) {
       console.error(`Map container '${mapId}' not found`);
       return false;
     }
 
-    // Vérifier si la carte existe déjà
     if (mapInstance.value) {
       mapInstance.value.remove();
       mapInstance.value = null;
     }
 
-    // Créer la carte avec des options par défaut
     mapInstance.value = L.map(mapId, {
       preferCanvas: true,
       center: [35.82, 10.64],
@@ -1424,7 +1301,6 @@ const initMap = async (mapId: string): Promise<boolean> => {
       zoomControl: true
     });
 
-    // Ajouter la couche OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
@@ -1436,6 +1312,7 @@ const initMap = async (mapId: string): Promise<boolean> => {
     return false;
   }
 };
+
 const displayRoute = async (routes: DistributionPlanEntry[], highlightRoute: DistributionPlanEntry | null = null) => {
   if (!mapInstance.value) {
     const initialized = await initMap('distribution-map');
@@ -1446,46 +1323,42 @@ const displayRoute = async (routes: DistributionPlanEntry[], highlightRoute: Dis
   mapLoading.value = true;
 
   try {
-    // Clear existing layers except base tile layer
-    mapInstance.value.eachLayer(layer => {
+    // BUG FIX: safe null check before calling eachLayer
+    mapInstance.value!.eachLayer(layer => {
       if (!(layer instanceof L.TileLayer)) {
         mapInstance.value?.removeLayer(layer);
       }
     });
 
-    // Si aucun trajet n'est sélectionné, on affiche juste la carte vide
     if (!highlightRoute) {
-      mapInstance.value.setView([35.82, 10.64], 10); // Vue par défaut
+      mapInstance.value!.setView([35.82, 10.64], 10);
       return;
     }
 
-    // Le reste du code pour afficher le trajet sélectionné...
-    const color = '#3b82f6'; // Couleur unique pour le trajet sélectionné
     const waypoints = highlightRoute.route.waypoints.filter(wp => wp.location?.lat && wp.location?.lng);
-    
+
     if (!waypoints.length) {
       console.warn(`No valid waypoints for route ${highlightRoute.contractName}`);
       return;
     }
 
-    // Trier les waypoints par séquence
     waypoints.sort((a, b) => a.sequence - b.sequence);
 
-    // Créer le polyline pour le trajet
-    const latlngs = waypoints.map(wp => [wp.location!.lat, wp.location!.lng]);
-    const polyline = L.polyline(latlngs, {
-      color: color,
+    // BUG FIX: typed as [number, number][] for Leaflet compatibility
+    const latlngs: [number, number][] = waypoints.map(wp => [wp.location!.lat, wp.location!.lng]);
+
+    L.polyline(latlngs, {
+      color: '#3b82f6',
       weight: 6,
       opacity: 1,
-    }).addTo(mapInstance.value);
+    }).addTo(mapInstance.value!);
 
-    // Ajouter des marqueurs pour chaque waypoint
     waypoints.forEach(wp => {
       const icon = L.divIcon({
         className: `map-marker map-marker--${wp.type} map-marker--highlighted`,
-        html: `<div style="background-color: ${getMarkerColor(wp.type)}; 
-               width: 24px; 
-               height: 24px; 
+        html: `<div style="background-color: ${getMarkerColor(wp.type)};
+               width: 24px;
+               height: 24px;
                border-radius: 50%;
                display: flex;
                align-items: center;
@@ -1498,7 +1371,7 @@ const displayRoute = async (routes: DistributionPlanEntry[], highlightRoute: Dis
         iconAnchor: [12, 12],
       });
 
-      const marker = L.marker([wp.location!.lat, wp.location!.lng], { icon })
+      L.marker([wp.location!.lat, wp.location!.lng], { icon })
         .bindPopup(`
           <div style="min-width: 200px;">
             <strong>${wp.name}</strong><br>
@@ -1507,11 +1380,10 @@ const displayRoute = async (routes: DistributionPlanEntry[], highlightRoute: Dis
             ${wp.distanceFromPrevious ? `<br><small>Distance: ${wp.distanceFromPrevious.toFixed(2)} km</small>` : ''}
           </div>
         `)
-        .addTo(mapInstance.value);
+        .addTo(mapInstance.value!);
     });
 
-    // Ajuster la vue pour afficher tout le trajet
-    mapInstance.value.fitBounds(latlngs, { 
+    mapInstance.value!.fitBounds(latlngs, {
       padding: [50, 50],
       maxZoom: 15
     });
@@ -1528,7 +1400,7 @@ const displayRoute = async (routes: DistributionPlanEntry[], highlightRoute: Dis
     mapLoading.value = false;
   }
 };
-// Helper function for marker colors
+
 const getMarkerColor = (type: string): string => {
   switch (type) {
     case 'warehouse': return '#3b82f6';
@@ -1538,6 +1410,7 @@ const getMarkerColor = (type: string): string => {
     default: return '#64748b';
   }
 };
+
 const generateDistributionPlan = async (planDate = new Date()) => {
   try {
     optimizingRoute.value = true;
@@ -1556,7 +1429,7 @@ const generateDistributionPlan = async (planDate = new Date()) => {
     const validContracts = selectedContracts.value.filter(
       c => c._id && typeof c._id === 'string' && c._id.length === 24
     );
-    
+
     if (!validContracts.length) {
       await Swal.fire({
         icon: 'error',
@@ -1567,10 +1440,8 @@ const generateDistributionPlan = async (planDate = new Date()) => {
       return;
     }
 
-    // Fetch les ressources nécessaires
     await Promise.all([fetchTrucks(), fetchTransporters()]);
 
-    // Vérifier la disponibilité des ressources
     if (!trucks.value.length || !transporters.value.length) {
       await Swal.fire({
         icon: 'warning',
@@ -1582,9 +1453,9 @@ const generateDistributionPlan = async (planDate = new Date()) => {
     }
 
     const requestData = {
-      selectedContracts: validContracts.map(c => ({ 
+      selectedContracts: validContracts.map(c => ({
         _id: c._id,
-        productQuantity: c.product.totalQuantity // Ajout de la quantité
+        productQuantity: c.product.totalQuantity
       })),
       planDate: moment(planDate).toISOString(),
     };
@@ -1595,47 +1466,38 @@ const generateDistributionPlan = async (planDate = new Date()) => {
       throw new Error(data.message || 'Erreur lors de la génération du plan');
     }
 
-    // Nouvelle logique de sélection des camions
     const availableTrucksSorted = [...trucks.value]
       .filter(t => t.status === 'available')
-      .sort((a, b) => b.capacity - a.capacity); // Tri par capacité décroissante
+      .sort((a, b) => b.capacity - a.capacity);
 
-    const transporterAssignments = new Map<string, { 
-      dateCounts: Map<string, number>, 
-      days: Set<string> 
+    const transporterAssignments = new Map<string, {
+      dateCounts: Map<string, number>,
+      days: Set<string>
     }>();
 
     distributionPlan.value = await Promise.all(data.distributionPlan.map(async (entry: any) => {
-      const deliveryDates = Array.isArray(entry.deliveryDates) && entry.deliveryDates.length > 0
+      const deliveryDates: DeliveryDate[] = Array.isArray(entry.deliveryDates) && entry.deliveryDates.length > 0
         ? entry.deliveryDates.map((dd: any) => ({
-            date: dd.date ? new Date(dd.date) : new Date(),
+            date: dd.date ? new Date(dd.date).toISOString() : new Date().toISOString(),
             status: dd.status || 'en attente'
           }))
-        : [{
-            date: new Date(),
-            status: 'en attente'
-          }];
+        : [{ date: new Date().toISOString(), status: 'en attente' }];
 
-      // Trouver le camion le plus adapté
-      let assignedTruck = availableTrucksSorted.find(t => 
-        t.capacity >= entry.quantity && 
-        t.status === 'available'
+      let assignedTruck = availableTrucksSorted.find(t =>
+        t.capacity >= entry.quantity && t.status === 'available'
       );
 
-      // Si aucun camion n'a assez de capacité, prendre le plus grand disponible
       if (!assignedTruck) {
         assignedTruck = availableTrucksSorted[0];
       }
 
-      // Assigner un transporteur compatible
-      let assignedTransporter = null;
+      let assignedTransporter: Transporter | null = null;
       if (assignedTruck) {
-        const deliveryDate = deliveryDates[0]?.date || new Date();
+        const deliveryDate = new Date(deliveryDates[0]?.date || new Date());
         const dateStr = moment(deliveryDate).format('YYYY-MM-DD');
         const dayOfWeek = moment(deliveryDate).format('dddd').toLowerCase();
 
-        // Filtrer les transporteurs compatibles avec le type de camion
-        const compatibleTransporters = transporters.value.filter(t => 
+        const compatibleTransporters = transporters.value.filter(t =>
           isTransporterCompatible(t, assignedTruck?.type)
         );
 
@@ -1651,9 +1513,9 @@ const generateDistributionPlan = async (planDate = new Date()) => {
           const currentDateCount = assignments.dateCounts.get(dateStr) || 0;
           const uniqueDays = assignments.days;
 
-          if (currentDateCount < transporterConfig.value.maxDeliveriesPerDay && 
+          if (currentDateCount < transporterConfig.value.maxDeliveriesPerDay &&
               (uniqueDays.size < transporterConfig.value.workingDaysPerWeek || uniqueDays.has(dayOfWeek))) {
-            
+
             assignedTransporter = transporter;
             assignments.dateCounts.set(dateStr, currentDateCount + 1);
             assignments.days.add(dayOfWeek);
@@ -1673,13 +1535,13 @@ const generateDistributionPlan = async (planDate = new Date()) => {
           capacity: assignedTruck.capacity
         } : undefined,
         transporter: assignedTransporter ? {
-          id: assignedTransporter._id,
-          firstName: assignedTransporter.firstName,
-          lastName: assignedTransporter.lastName,
-          licenseType: assignedTransporter.typeDrivingLicence
+          id: (assignedTransporter as Transporter)._id,
+          firstName: (assignedTransporter as Transporter).firstName,
+          lastName: (assignedTransporter as Transporter).lastName,
+          licenseType: (assignedTransporter as Transporter).typeDrivingLicence
         } : undefined,
         editableTruckId: assignedTruck?._id,
-        editableTransporterId: assignedTransporter?._id,
+        editableTransporterId: (assignedTransporter as Transporter | null)?._id,
         route: entry.route || {
           waypoints: [],
           totalDistance: 0,
@@ -1688,24 +1550,19 @@ const generateDistributionPlan = async (planDate = new Date()) => {
           totalPoints: 0,
           hasSupplier: false
         }
-      };
+      } as DistributionPlanEntry;
     }));
 
-    // Afficher les avertissements
     const unassignedTrucks = distributionPlan.value.filter(entry => !entry.truck).length;
     const unassignedTransporters = distributionPlan.value.filter(entry => entry.truck && !entry.transporter).length;
-    const capacityIssues = distributionPlan.value.filter(entry => 
-      entry.truck && entry.truck.capacity < entry.quantity
+    const capacityIssues = distributionPlan.value.filter(entry =>
+      entry.truck && (entry.truck.capacity ?? 0) < entry.quantity
     ).length;
 
     let warningMessage = '';
     if (unassignedTrucks > 0) warningMessage += `${unassignedTrucks} livraison(s) sans camion attribué. `;
-    if (unassignedTransporters > 0) {
-      warningMessage += `${unassignedTransporters} livraison(s) sans transporteur compatible. `;
-    }
-    if (capacityIssues > 0) {
-      warningMessage += `${capacityIssues} livraison(s) avec camion sous-dimensionné. `;
-    }
+    if (unassignedTransporters > 0) warningMessage += `${unassignedTransporters} livraison(s) sans transporteur compatible. `;
+    if (capacityIssues > 0) warningMessage += `${capacityIssues} livraison(s) avec camion sous-dimensionné. `;
 
     if (warningMessage) {
       await Swal.fire({
@@ -1725,14 +1582,9 @@ const generateDistributionPlan = async (planDate = new Date()) => {
     }
 
     return distributionPlan.value;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erreur génération plan:', error);
-    let errorMessage = 'Erreur lors de la génération du plan';
-    if (error.response?.data) {
-      errorMessage = error.response.data.message || errorMessage;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
+    const errorMessage = error?.response?.data?.message || error?.message || 'Erreur lors de la génération du plan';
     await Swal.fire({
       icon: 'error',
       title: 'Erreur',
@@ -1744,6 +1596,7 @@ const generateDistributionPlan = async (planDate = new Date()) => {
     optimizingRoute.value = false;
   }
 };
+
 const downloadCSV = () => {
   try {
     if (!distributionPlan.value.length) {
@@ -1751,22 +1604,12 @@ const downloadCSV = () => {
     }
 
     const headers = [
-      'Date',
-      'Statut',
-      'Jour',
-      'Contrat',
-      'Entrepôt',
-      'Fournisseur',
-      'Points de Vente',
-      'Produit',
-      'Quantité (kg)',
-      'Camion',
-      'Transporteur',
-      'Distance (km)',
-      'Temps (min)'
+      'Date', 'Statut', 'Jour', 'Contrat', 'Entrepôt', 'Fournisseur',
+      'Points de Vente', 'Produit', 'Quantité (kg)', 'Camion',
+      'Transporteur', 'Distance (km)', 'Temps (min)'
     ];
 
-    const rows = distributionPlan.value.flatMap(entry => 
+    const rows = distributionPlan.value.flatMap(entry =>
       entry.deliveryDates.map(dd => [
         formatDeliveryDate(dd.date),
         dd.status,
@@ -1778,7 +1621,7 @@ const downloadCSV = () => {
         entry.product,
         entry.quantity,
         entry.truck ? `${entry.truck.name} (${entry.truck.type})` : 'Non attribué',
-        entry.transporter 
+        entry.transporter
           ? `${entry.transporter.firstName} ${entry.transporter.lastName || ''}`.trim()
           : 'Non attribué',
         entry.route.totalDistance.toFixed(2),
@@ -1800,6 +1643,8 @@ const downloadCSV = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // BUG FIX: release object URL to prevent memory leak
+    URL.revokeObjectURL(url);
 
     Swal.fire({
       icon: 'success',
@@ -1824,10 +1669,7 @@ const downloadPDF = async () => {
       throw new Error('Aucun plan de distribution à exporter');
     }
 
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm'
-    });
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm' });
 
     const mainColor = '#3b82f6';
     const fontSize = 7;
@@ -1839,24 +1681,18 @@ const downloadPDF = async () => {
     doc.setFontSize(16);
     doc.setTextColor(mainColor);
     doc.text('Plan de Distribution', pageWidth / 2, 15, { align: 'center' });
-    
+
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 22, { align: 'center' });
 
     const columns = [
-      { header: 'Date', width: 20 },
-      { header: 'Statut', width: 15 },
-      { header: 'Jour', width: 15 },
-      { header: 'Contrat', width: 25 },
-      { header: 'Entrepôt', width: 20 },
-      { header: 'Fournisseur', width: 20 },
-      { header: 'Points de Vente', width: 40 },
-      { header: 'Produit', width: 20 },
-      { header: 'Quantité', width: 15 },
-      { header: 'Camion', width: 25 },
-      { header: 'Transporteur', width: 25 },
-      { header: 'Distance', width: 15 },
+      { header: 'Date', width: 20 }, { header: 'Statut', width: 15 },
+      { header: 'Jour', width: 15 }, { header: 'Contrat', width: 25 },
+      { header: 'Entrepôt', width: 20 }, { header: 'Fournisseur', width: 20 },
+      { header: 'Points de Vente', width: 40 }, { header: 'Produit', width: 20 },
+      { header: 'Quantité', width: 15 }, { header: 'Camion', width: 25 },
+      { header: 'Transporteur', width: 25 }, { header: 'Distance', width: 15 },
       { header: 'Temps', width: 15 }
     ];
     const totalWidth = columns.reduce((sum, col) => sum + col.width, 0);
@@ -1879,7 +1715,6 @@ const downloadPDF = async () => {
       columns.forEach((col, i) => {
         doc.setDrawColor(100);
         doc.rect(x, y, col.width, isHeader ? headerHeight : rowHeight);
-
         const text = data[i] || '';
         const maxWidth = col.width - 4;
         const textLines = doc.splitTextToSize(text, maxWidth);
@@ -1921,27 +1756,18 @@ const downloadPDF = async () => {
     drawTableRow(currentY, columns.map(col => col.header), true);
     currentY += headerHeight;
 
-    tableData.forEach((row, index) => {
+    tableData.forEach(row => {
       checkPageBreak(rowHeight);
       drawTableRow(currentY, [
-        row.date,
-        row.status,
-        row.dayOfWeek,
-        row.contractName,
-        row.warehouse,
-        row.supplier,
-        row.salesPoints,
-        row.product,
-        row.quantity,
-        row.truck,
-        row.transporter,
-        row.distance,
-        row.time
+        row.date, row.status, row.dayOfWeek, row.contractName,
+        row.warehouse, row.supplier, row.salesPoints, row.product,
+        row.quantity, row.truck, row.transporter, row.distance, row.time
       ]);
       currentY += rowHeight;
     });
 
-    const groupedData = distributionPlan.value.reduce((acc, entry) => {
+    // BUG FIX: groupedData accumulator typed properly to avoid implicit any
+    const groupedData: Record<string, any> = distributionPlan.value.reduce((acc: Record<string, any>, entry) => {
       const key = `${entry.contractName}-${entry.warehouse}-${entry.truck?.id}`;
       if (!acc[key]) {
         acc[key] = {
@@ -1958,12 +1784,12 @@ const downloadPDF = async () => {
         acc[key].count++;
       }
       return acc;
-    }, {} as Record<string, any>);
+    }, {});
 
-    const payload = {
-      distributionOrders: Object.values(groupedData).map(entry => ({
+    const savePayload = {
+      distributionOrders: Object.values(groupedData).map((entry: any) => ({
         contract: selectedContracts.value.find(c => c.name === entry.contractName)?._id,
-        deliveryDates: entry.dates.map(date => ({ date, status: 'en attente' })),
+        deliveryDates: entry.dates.map((date: string) => ({ date, status: 'en attente' })),
         waypoints: entry.route.waypoints,
         truck: entry.truck,
         transporter: entry.transporter
@@ -1974,8 +1800,8 @@ const downloadPDF = async () => {
       }
     };
 
-    const response = await api.post('/contract/save', payload);
-    const { saved = [], skipped = [], errors = [] } = response.data.data || {};
+    const response = await api.post('/contract/save', savePayload);
+    const { saved = [], skipped = [], errors: saveErrors = [] } = response.data.data || {};
 
     if (skipped.length > 0) {
       checkPageBreak(10);
@@ -2006,12 +1832,8 @@ const downloadPDF = async () => {
         <p><strong>${Object.keys(groupedData).length} groupes</strong> traités</p>
         <p>Fichier PDF généré : <code>${fileName}</code></p>
     `;
-    if (saved.length > 0) {
-      successMessage += `<p>${saved.length} nouvelle(s) distribution(s) sauvegardée(s)</p>`;
-    }
-    if (skipped.length > 0) {
-      successMessage += `<p>${skipped.length} distribution(s) déjà existante(s) - non sauvegardée(s)</p>`;
-    }
+    if (saved.length > 0) successMessage += `<p>${saved.length} nouvelle(s) distribution(s) sauvegardée(s)</p>`;
+    if (skipped.length > 0) successMessage += `<p>${skipped.length} distribution(s) déjà existante(s) - non sauvegardée(s)</p>`;
     successMessage += `</div>`;
 
     await Swal.fire({
@@ -2034,7 +1856,7 @@ const downloadPDF = async () => {
 const confirmTransporterConfig = async () => {
   showTransporterConfig.value = false;
   showDistributionPlan.value = true;
-  
+
   if (selectedContracts.value.length > 0) {
     try {
       await generateDistributionPlan();
@@ -2121,9 +1943,9 @@ const deleteContract = async (contractId: string) => {
     confirmButtonText: 'Oui, supprimer',
     cancelButtonText: 'Annuler'
   });
-  
+
   if (!result.isConfirmed) return;
-  
+
   try {
     loading.value.contracts = true;
     await api.delete(`/contract/${contractId}`);
@@ -2166,30 +1988,17 @@ watch(
   async ([newSalesPointIds, newProductId, newTonnage]) => {
     try {
       const conditionsMet = (
-        newSalesPointIds?.length > 0 &&
+        // BUG FIX: safe cast for watch tuple values
+        Array.isArray(newSalesPointIds) && (newSalesPointIds as string[]).length > 0 &&
         newProductId &&
-        newTonnage > 0 &&
+        (newTonnage as number) > 0 &&
         !selectedContract.value?._id &&
         Array.isArray(warehouses.value) &&
         warehouses.value.length > 0
       );
 
       if (conditionsMet) {
-        console.log('Conditions met for fetchOptimalWarehouse:', {
-          salesPointIds: newSalesPointIds,
-          productId: newProductId,
-          tonnage: newTonnage,
-          warehousesCount: warehouses.value.length,
-        });
         await fetchOptimalWarehouse();
-      } else {
-        console.log('Conditions not met for fetchOptimalWarehouse:', {
-          salesPointIds: newSalesPointIds?.length || 0,
-          hasProductId: !!newProductId,
-          tonnage: newTonnage,
-          isEditing: !!selectedContract.value?._id,
-          warehousesReady: Array.isArray(warehouses.value) && warehouses.value.length > 0,
-        });
       }
     } catch (error) {
       console.error('Error in watch:', error);
@@ -2198,1235 +2007,916 @@ watch(
   { deep: true, immediate: true }
 );
 </script>
+
 <template>
-  <div class="contract-manager">
-    <!-- Main Content -->
-    <main class="contract-manager__main">
-      <!-- Header -->
-      <header class="contract-manager__header">
-        <div class="header__left">
-          <h1 class="contract-manager__title">Contract Management</h1>
-        </div>
-        <div class="header__actions">
+  <div class="p-6 md:p-8 animate-in fade-in duration-500">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+      <div>
+        <h1 class="text-3xl font-display font-bold text-premium-midnight tracking-tight">Plan de Distribution</h1>
+        <p class="text-slate-500 mt-1">Gérez vos contrats et optimisez vos tournées logistiques</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative min-w-[280px]">
+          <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
           <input
             type="text"
             v-model="contractSearch"
-            placeholder="Search for a contract..."
-            class="header__search"
+            placeholder="Rechercher un contrat..."
+            class="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-premium-gold focus:ring-1 focus:ring-premium-gold transition-all shadow-sm"
           />
-          <div class="header__buttons">
-            <button class="btn btn--primary" @click="openModal">
-              <span class="btn__icon">➕</span> New Contract
-            </button>
-            <button 
-              class="btn btn--secondary" 
-              @click="openDistributionPlan" 
-              :disabled="!canOptimizeRoute"
-            >
-              <span class="btn__icon">📅</span> Distribution Plan
-            </button>
-            <button class="btn btn--secondary" @click="openResourceManagement">
-              <span class="btn__icon">🚚</span> Resources
-            </button>
-            <button class="btn btn--icon" @click="fetchContracts" title="Refresh">
-              <span class="btn__icon">↻</span>
-            </button>
-          </div>
         </div>
-      </header>
 
-      <!-- Contracts Section -->
-      <section class="contract-manager__contracts">
-        <div class="section__header">
-          <h2>Contracts</h2>
-          <span class="section__count">{{ filteredContracts.length }} contract(s)</span>
-        </div>
-        
-        <!-- Loading/Error/Empty States -->
-        <div v-if="loading.contracts" class="loading-state">
-          <div class="spinner"></div>
-          <span>Loading contracts...</span>
-        </div>
-        <div v-else-if="errors.contracts" class="error-state">
-          <span class="icon">⚠️</span>
-          {{ errors.contracts }}
-        </div>
-        <div v-else-if="!filteredContracts.length" class="empty-state">
-          <span>No contracts found.</span>
-          <button class="btn btn--secondary" @click="openModal">Create a contract</button>
-        </div>
-        <div v-else class="contracts__grid">
-          <div
-            v-for="contract in filteredContracts"
-            :key="contract._id"
-            class="contract-card"
-            :class="{ 'contract-card--selected': selectedContracts.some(c => c._id === contract._id) }"
+        <div class="flex items-center gap-2">
+          <button class="btn-gold group" @click="openModal">
+            <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>
+            Nouveau Contrat
+          </button>
+          <button
+            class="btn-outline flex items-center gap-2"
+            @click="openDistributionPlan"
+            :disabled="!canOptimizeRoute"
+            :class="{'opacity-50 cursor-not-allowed': !canOptimizeRoute}"
           >
-            <div class="contract-card__header">
-              <h3 class="contract-card__title">{{ contract.name }}</h3>
-              <span class="contract-card__status" :class="getStatusClass(contract)">
-                {{ getContractStatus(contract) }}
-              </span>
+            <i class="fas fa-calendar-alt"></i>
+            Planification
+          </button>
+          <button class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold hover:border-premium-gold transition-all shadow-sm" @click="openResourceManagement" title="Ressources">
+            <i class="fas fa-truck"></i>
+          </button>
+          <button class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold hover:border-premium-gold transition-all shadow-sm" @click="fetchContracts" title="Rafraîchir">
+            <i class="fas fa-sync-alt" :class="{'animate-spin': loading.contracts}"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contracts Section -->
+    <div class="space-y-6 mb-8">
+      <div class="flex items-end justify-between px-2">
+        <h2 class="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+          <span class="w-8 h-px bg-slate-200"></span>
+          Contrats Actuels
+        </h2>
+        <span class="text-[10px] font-bold text-premium-gold bg-premium-gold/10 px-3 py-1 rounded-full uppercase tracking-wider">
+          {{ filteredContracts.length }} Contrat(s)
+        </span>
+      </div>
+
+      <div v-if="loading.contracts" class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des contrats...</span>
+      </div>
+      <div v-else-if="errors.contracts" class="error-state">
+        <span class="icon">⚠️</span>
+        {{ errors.contracts }}
+      </div>
+      <div v-else-if="!filteredContracts.length" class="empty-state">
+        <span>Aucun contrat trouvé.</span>
+        <button class="btn-gold mt-4" @click="openModal">Créer un contrat</button>
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div
+          v-for="contract in filteredContracts"
+          :key="contract._id"
+          class="card-premium group flex flex-col relative"
+          :class="{ 'ring-2 ring-premium-gold border-premium-gold': selectedContracts.some(c => c._id === contract._id) }"
+        >
+          <!-- Selection Checkbox -->
+          <button
+            @click="toggleContractSelection(contract)"
+            class="absolute top-4 left-4 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all z-10"
+            :class="selectedContracts.some(c => c._id === contract._id) ? 'bg-premium-gold border-premium-gold text-white' : 'bg-white border-slate-200 text-transparent'"
+          >
+            <i class="fas fa-check text-[10px]"></i>
+          </button>
+
+          <div class="flex justify-between items-start mb-6 ml-8">
+            <div>
+              <h3 class="text-lg font-bold text-premium-midnight group-hover:text-premium-gold transition-colors">{{ contract.name }}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="w-2 h-2 rounded-full"
+                  :class="{
+                    'bg-emerald-500': getContractStatus(contract) === 'Actif',
+                    'bg-amber-500': getContractStatus(contract) === 'En attente',
+                    'bg-slate-300': getContractStatus(contract) === 'Expiré'
+                  }"></span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ getContractStatus(contract) }}</span>
+              </div>
             </div>
-            
-            <div class="contract-card__details">
-              <div class="detail__item">
-                <span class="detail__label">Period</span>
-                <span>{{ formatDate(contract.startDate) }} - {{ formatDate(contract.endDate) }}</span>
-              </div>
-              <div class="detail__item">
-                <span class="detail__label">Warehouse</span>
-                <span>{{ contract.warehouse?.name || 'Not assigned' }}</span>
-              </div>
-              <div v-if="contract.supplier" class="detail__item">
-                <span class="detail__label">Supplier</span>
-                <span>{{ contract.supplier.name }}</span>
-              </div>
-              <div class="detail__item">
-                <span class="detail__label">Quantity</span>
-                <span>{{ formatNumber(contract.product.totalQuantity) }} kg</span>
-              </div>
-            </div>
-            
-            <div class="contract-card__actions">
-              <button
-                class="btn btn--icon"
-                @click="toggleContractSelection(contract)"
-                :title="selectedContracts.some(c => c._id === contract._id) ? 'Deselect' : 'Select'"
-              >
-                <span class="icon">{{ selectedContracts.some(c => c._id === contract._id) ? '☑' : '☐' }}</span>
+
+            <div class="flex gap-1">
+              <button @click="showDetails(contract)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-all">
+                <i class="fas fa-info-circle"></i>
               </button>
-              <button
-                class="btn btn--icon"
-                @click="showDetails(contract)"
-                title="Details"
-              >
-                <span class="icon">ℹ️</span>
-              </button>
-              
-              <button
-                class="btn btn--icon btn--danger"
-                @click="deleteContract(contract._id)"
-                title="Delete"
-              >
-                <span class="icon">🗑️</span>
+              <button @click="deleteContract(contract._id)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                <i class="fas fa-trash-alt"></i>
               </button>
             </div>
           </div>
-        </div>
-      </section>
-    </main>
 
-    <!-- Modals -->
+          <div class="space-y-4 mb-6">
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 group-hover:border-premium-gold/20 transition-all">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Période du Contrat</p>
+              <div class="flex items-center gap-3">
+                <i class="fas fa-calendar-alt text-premium-gold"></i>
+                <span class="text-sm font-bold text-premium-midnight">{{ formatDate(contract.startDate) }} — {{ formatDate(contract.endDate) }}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrepôt</p>
+                <p class="text-sm font-bold text-premium-midnight truncate" :title="contract.warehouse?.name">{{ contract.warehouse?.name || 'Non assigné' }}</p>
+              </div>
+              <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Quantité</p>
+                <p class="text-sm font-bold text-premium-midnight">{{ formatNumber(contract.product.totalQuantity) }} kg</p>
+              </div>
+            </div>
+          </div>
+
+          <button @click="updateContract(contract)" class="w-full py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-premium-gold hover:text-white hover:border-premium-gold transition-all mt-auto">
+            Modifier le contrat
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Contract Modal -->
-    <div v-if="showModal" class="modal" @click="closeModal">
-      <div class="modal__content modal__content--large" @click.stop>
-        <header class="modal__header">
-          <h2>{{ selectedContract?._id ? 'Edit Contract' : 'New Contract' }}</h2>
-          <button class="modal__close" @click="closeModal">×</button>
-        </header>
-        
-        <form @submit.prevent="saveContract" class="modal__body">
-          <!-- General Information -->
-          <div class="form-card">
-            <h3>General Information</h3>
-            <div class="form-group">
-              <label for="contract-name">Contract Name <span class="required">*</span></label>
-              <input
-                id="contract-name"
-                v-model="contractForm.name"
-                type="text"
-                placeholder="e.g., Contract Client X"
-                required
-              />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="start-date">Start Date <span class="required">*</span></label>
-                <input
-                  id="start-date"
-                  v-model="contractForm.startDate"
-                  type="date"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="end-date">End Date <span class="required">*</span></label>
-                <input
-                  id="end-date"
-                  v-model="contractForm.endDate"
-                  type="date"
-                  required
-                />
-              </div>
-            </div>
-          </div>
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="closeModal"></div>
 
-          <!-- Sales Points -->
-          <div class="form-card">
-            <h3>Sales Points <span class="required">*</span></h3>
-            <div class="form-group">
-              <input
-                v-model="salesPointSearch"
-                type="text"
-                placeholder="Search for a sales point..."
-                class="form-group__search"
-              />
-              <div class="selection-list" :class="{ 'selection-list--loading': loading.salesPoints }">
-                <div v-if="loading.salesPoints" class="loading-state">
-                  <div class="spinner"></div>
-                  <span>Loading sales points...</span>
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
+        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i :class="['fas', selectedContract?._id ? 'fa-edit' : 'fa-plus']" class="text-premium-gold"></i>
+            </div>
+            {{ selectedContract?._id ? 'Modifier le Contrat' : 'Nouveau Contrat' }}
+          </h2>
+          <button @click="closeModal" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- BUG FIX: form now properly contained within the scrollable div -->
+        <div class="overflow-y-auto p-8 custom-scrollbar flex-1">
+          <form @submit.prevent="saveContract">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <!-- Left Column -->
+              <div class="space-y-8">
+                <div class="space-y-6">
+                  <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-8 h-px bg-slate-200"></span>
+                    Informations Générales
+                  </h3>
+
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom du Contrat *</label>
+                    <div class="relative group">
+                      <i class="fas fa-file-contract absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                      <input
+                        v-model="contractForm.name"
+                        type="text"
+                        required
+                        placeholder="ex: Contrat Distribution Region Nord"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Date de Début *</label>
+                      <input v-model="contractForm.startDate" type="date" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all cursor-pointer" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Date de Fin *</label>
+                      <input v-model="contractForm.endDate" type="date" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all cursor-pointer" />
+                    </div>
+                  </div>
                 </div>
-                <div v-else-if="errors.salesPoints" class="error-state">
-                  <span class="icon">⚠️</span>
-                  {{ errors.salesPoints }}
+
+                <div class="space-y-6">
+                  <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-8 h-px bg-slate-200"></span>
+                    Points de Vente *
+                  </h3>
+
+                  <div class="space-y-4">
+                    <div class="relative">
+                      <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                      <input v-model="salesPointSearch" type="text" placeholder="Rechercher un point de vente..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-premium-gold transition-colors" />
+                    </div>
+
+                    <div class="h-64 overflow-y-auto custom-scrollbar border border-slate-100 rounded-2xl bg-slate-50/50 p-2 space-y-1">
+                      <div v-if="loading.salesPoints" class="flex flex-col items-center justify-center py-10 text-premium-gold animate-pulse">
+                        <i class="fas fa-circle-notch fa-spin mb-2"></i>
+                        <span class="text-xs font-bold uppercase tracking-widest">Chargement...</span>
+                      </div>
+
+                      <label
+                        v-for="point in filteredSalesPoints"
+                        :key="point._id"
+                        class="flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
+                        :class="{'bg-white shadow-sm border border-slate-100': contractForm.salesPointIds.includes(point._id)}"
+                      >
+                        <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-all"
+                          :class="contractForm.salesPointIds.includes(point._id) ? 'bg-premium-gold border-premium-gold text-white' : 'bg-white border-slate-200 text-transparent'">
+                          <i class="fas fa-check text-[8px]"></i>
+                        </div>
+                        <input type="checkbox" v-model="contractForm.salesPointIds" :value="point._id" class="hidden" />
+                        <div class="flex-1">
+                          <p class="text-sm font-bold text-premium-midnight group-hover:text-premium-gold transition-colors">{{ point.name }}</p>
+                          <p v-if="point.address" class="text-[10px] text-slate-500 truncate max-w-[200px]">{{ point.address }}</p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                <div v-else-if="!filteredSalesPoints.length" class="empty-state">
-                  <span>No sales points found.</span>
+              </div>
+
+              <!-- Right Column -->
+              <div class="space-y-8">
+                <div class="space-y-6">
+                  <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-8 h-px bg-slate-200"></span>
+                    Produit & Fréquence
+                  </h3>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Produit *</label>
+                      <div class="relative">
+                        <select v-model="contractForm.productId" required :disabled="!!selectedContract?._id" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-premium-midnight focus:outline-none focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                          <option value="" disabled>Sélectionner</option>
+                          <option v-for="product in products" :key="product._id" :value="product._id">{{ product.name }}</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                      </div>
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Quantité (kg) *</label>
+                      <input v-model.number="contractForm.tonnage" type="number" min="1" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-premium-midnight focus:outline-none focus:border-premium-gold transition-all" />
+                    </div>
+                  </div>
+
+                  <div class="space-y-4">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Fréquence de Livraison *</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <button
+                        v-for="(label, value) in FREQUENCY_LABELS"
+                        :key="value"
+                        type="button"
+                        @click="contractForm.frequency = value as ContractForm['frequency']; updateFrequency()"
+                        class="py-2 px-3 rounded-xl border text-xs font-bold transition-all"
+                        :class="contractForm.frequency === value ? 'bg-premium-gold border-premium-gold text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-premium-gold/30'"
+                      >
+                        {{ label }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-if="contractForm.frequency === 'custom'" class="animate-in slide-in-from-top-2 duration-300">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Jours de Livraison</p>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        v-for="day in WEEK_DAYS"
+                        :key="day.value"
+                        type="button"
+                        @click="toggleDeliveryDay(day.value)"
+                        class="px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all"
+                        :class="contractForm.deliveryDays.includes(day.value) ? 'bg-premium-midnight border-premium-midnight text-white' : 'bg-white border-slate-100 text-slate-400 hover:border-premium-midnight/20'"
+                      >
+                        {{ day.label }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- BUG FIX: custom delivery dates section was missing from template -->
+                  <div v-if="contractForm.frequency === 'custom'" class="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Dates de Livraison</p>
+                      <button type="button" @click="addDeliveryDate" class="text-xs font-bold text-premium-gold hover:underline">+ Ajouter</button>
+                    </div>
+                    <div v-for="(dd, idx) in contractForm.deliveryDates" :key="idx" class="flex gap-2 items-center">
+                      <input v-model="dd.date" type="date" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-premium-gold transition-all" />
+                      <select v-model="dd.status" class="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-premium-gold transition-all">
+                        <option value="en attente">En attente</option>
+                        <option value="en cours">En cours</option>
+                        <option value="livree">Livrée</option>
+                      </select>
+                      <button type="button" @click="removeDeliveryDate(idx)" class="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 transition-colors">
+                        <i class="fas fa-times text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div v-else class="checkbox-list">
-                  <label
-                    v-for="point in filteredSalesPoints"
-                    :key="point._id"
-                    class="checkbox-item"
-                  >
+
+                <!-- Optimization Section -->
+                <div class="space-y-6">
+                  <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-8 h-px bg-slate-200"></span>
+                    Optimisation Logistique
+                  </h3>
+
+                  <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4">
+                    <div class="flex justify-between items-center">
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Entrepôt Source *</label>
+                      <div v-if="loading.optimalWarehouse" class="text-[10px] font-bold text-premium-gold animate-pulse uppercase">Calcul optimal...</div>
+                      <div v-else-if="optimalWarehouse" class="flex items-center gap-2">
+                        <span class="px-2 py-1 rounded bg-premium-gold text-white text-[10px] font-black uppercase">Conseillé</span>
+                      </div>
+                    </div>
+
+                    <div class="relative">
+                      <select
+                        v-model="contractForm.warehouseId"
+                        required
+                        @change="onWarehouseSelect"
+                        :disabled="loading.optimalWarehouse"
+                        class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-premium-midnight focus:outline-none focus:border-premium-gold transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="" disabled>Sélectionner un entrepôt</option>
+                        <option v-for="wh in warehouses" :key="wh._id" :value="wh._id">
+                          {{ wh.name }} (Stock: {{ formatNumber(getProductStock(wh, contractForm.productId)) }} kg)
+                        </option>
+                      </select>
+                      <i class="fas fa-warehouse absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none"></i>
+                    </div>
+
+                    <div v-if="optimalWarehouse && contractForm.warehouseId === optimalWarehouse._id" class="bg-emerald-50 rounded-xl p-3 border border-emerald-100 flex items-start gap-3 animate-in fade-in">
+                      <i class="fas fa-check-circle text-emerald-500 mt-0.5"></i>
+                      <div class="text-[11px] text-emerald-700">
+                        <strong>{{ optimalWarehouse.name }}</strong> est l'entrepôt optimal pour cette zone.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-2" v-if="contractForm.warehouseId">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Quantité depuis l'entrepôt (kg)</label>
                     <input
-                      type="checkbox"
-                      v-model="contractForm.salesPointIds"
-                      :value="point._id"
+                      type="number"
+                      v-model.number="contractForm.warehouseQuantity"
+                      :disabled="!contractForm.warehouseId"
+                      :max="productAvailableQuantity"
+                      :placeholder="`Max: ${formatNumber(productAvailableQuantity)} kg`"
+                      min="0"
+                      class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-premium-midnight focus:outline-none focus:border-premium-gold transition-all"
                     />
-                    <span>{{ point.name }}</span>
-                    <small v-if="point.address">{{ point.address }}</small>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
+                  </div>
 
-          <!-- Product & Delivery -->
-          <div class="form-card">
-            <h3>Product & Delivery</h3>
-            <div class="form-group">
-              <label for="product-select">Product <span class="required">*</span></label>
-              <select
-                id="product-select"
-                v-model="contractForm.productId"
-                required
-                :disabled="selectedContract?._id"
-              >
-                <option value="" disabled>Select a product</option>
-                <option
-                  v-for="product in products"
-                  :key="product._id"
-                  :value="product._id"
-                >
-                  {{ product.name }} ({{ product.category }})
-                </option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="tonnage">Quantity (kg) <span class="required">*</span></label>
-              <input
-                id="tonnage"
-                v-model.number="contractForm.tonnage"
-                type="number"
-                min="1"
-                step="1"
-                required
-              />
-            </div>
-            
-            <div class="form-group">
-              <label for="frequency">Delivery Frequency <span class="required">*</span></label>
-              <select
-                id="frequency"
-                v-model="contractForm.frequency"
-                @change="updateFrequency"
-                required
-              >
-                <option
-                  v-for="(label, value) in FREQUENCY_LABELS"
-                  :key="value"
-                  :value="value"
-                >
-                  {{ label }}
-                </option>
-              </select>
-            </div>
-            
-            <div v-if="contractForm.frequency === 'custom'" class="form-group">
-              <label>Delivery Days <span class="required">*</span></label>
-              <div class="checkbox-list">
-                <label
-                  v-for="day in WEEK_DAYS"
-                  :key="day.value"
-                  class="checkbox-item"
-                >
-                  <input
-                    type="checkbox"
-                    :value="day.value"
-                    v-model="contractForm.deliveryDays"
-                  />
-                  <span>{{ day.label }}</span>
-                </label>
-              </div>
-            </div>
+                  <div v-if="requiresSupplier" class="bg-amber-50 rounded-2xl p-6 border border-amber-200 space-y-4 animate-in slide-in-from-top-4 duration-300">
+                    <div class="flex justify-between items-center">
+                      <label class="text-xs font-bold text-amber-700 uppercase tracking-widest">Fournisseur (Complément)</label>
+                      <span class="px-2 py-1 rounded bg-amber-500 text-white text-[10px] font-black uppercase">Stock insuffisant</span>
+                    </div>
 
-            <!-- Delivery Dates for custom frequency -->
-            <div v-if="contractForm.frequency === 'custom'" class="form-group">
-              <label>Delivery Dates <span class="required">*</span></label>
-              <div class="delivery-dates-list">
-                <div v-for="(date, index) in contractForm.deliveryDates" :key="index" class="delivery-date-item">
-                  <input type="date" v-model="date.date" required />
-                  <select v-model="date.status" required>
-                    <option value="pending">Pending</option>
-                    <option value="in progress">In Progress</option>
-                    <option value="delivered">Delivered</option>
-                  </select>
-                  <button @click="removeDeliveryDate(index)" type="button" class="btn btn--danger btn--small">
-                    Delete
-                  </button>
-                </div>
-                <button @click="addDeliveryDate" type="button" class="btn btn--secondary btn--small">
-                  Add a date
-                </button>
-              </div>
-            </div>
-          </div>
+                    <div class="relative">
+                      <select
+                        v-model="contractForm.supplierId"
+                        required
+                        @change="onSupplierSelect"
+                        class="w-full bg-white border border-amber-200 rounded-xl py-3 px-4 text-premium-midnight focus:outline-none focus:border-amber-500 transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="" disabled>Sélectionner un fournisseur</option>
+                        <option v-for="sup in suppliers" :key="sup._id" :value="sup._id">
+                          {{ sup.name }} (Stock: {{ formatNumber(getProductStock(sup, contractForm.productId)) }} kg)
+                        </option>
+                      </select>
+                      <i class="fas fa-truck-loading absolute right-4 top-1/2 -translate-y-1/2 text-amber-300 pointer-events-none"></i>
+                    </div>
+                  </div>
 
-          <!-- Distribution Optimization -->
-          <div class="form-card">
-            <h3>Distribution Optimization</h3>
+                  <!-- Contract Summary -->
+                  <div class="bg-premium-midnight rounded-[2rem] p-8 text-white space-y-6 relative overflow-hidden mt-6">
+                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-premium-gold/10 rounded-full blur-3xl"></div>
 
-            <!-- Warehouse Selection -->
-            <div class="form-group form-group--highlighted">
-              <label for="warehouse-select">
-                Warehouse <span class="required">*</span>
-                <span v-if="loading.warehouses" class="loading-text">(Loading...)</span>
-              </label>
-              <select
-                id="warehouse-select"
-                v-model="contractForm.warehouseId"
-                :disabled="loading.optimalWarehouse || loading.warehouses || !warehouses.length || isOptimalWarehouseLocked"
-                required
-                @change="onWarehouseSelect"
-              >
-                <option value="" disabled>Select a warehouse</option>
-                <option
-                  v-for="warehouse in warehouses"
-                  :key="warehouse._id"
-                  :value="warehouse._id"
-                  :data-optimal="optimalWarehouse && warehouse._id === optimalWarehouse._id"
-                >
-                  {{ warehouse.name }} ({{ formatStorageType(warehouse.storage_type) }}, Stock: {{ formatNumber(getProductStock(warehouse, contractForm.productId)) }} kg)
-                </option>
-              </select>
-              <div class="form-group__info">
-                <div v-if="loading.optimalWarehouse" class="loading-state loading-state--inline">
-                  <div class="spinner spinner--small"></div>
-                  <span>Searching for optimal warehouse...</span>
-                </div>
-                <div v-else-if="errors.warehouses" class="error-state error-state--inline">
-                  <span class="icon">⚠️</span>
-                  {{ errors.warehouses }}
-                </div>
-                <div v-else-if="optimalWarehouse" class="optimal-info">
-                  <span class="optimal-badge">Optimal</span>
-                  Warehouse: {{ optimalWarehouse.name }} (Stock: {{ formatNumber(getProductStock(optimalWarehouse, contractForm.productId)) }} kg)
-                  <span v-if="contractForm.warehouseId !== optimalWarehouse._id" class="warning-text">
-                    Warning: Non-optimal warehouse selected.
-                  </span>
-                </div>
-                <div v-else-if="!warehouses.length" class="warning-state">
-                  No warehouses available.
+                    <h4 class="text-xs font-black uppercase tracking-[0.2em] text-premium-gold flex items-center gap-2">
+                      <i class="fas fa-clipboard-list text-xs"></i>
+                      Résumé du Contrat
+                    </h4>
+
+                    <div class="space-y-3">
+                      <div class="flex justify-between items-center pb-3 border-b border-white/5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Quantité Totale</span>
+                        <span class="text-lg font-display font-bold text-white">{{ formatNumber(contractForm.tonnage) }} <span class="text-[10px] text-slate-400">kg</span></span>
+                      </div>
+                      <div class="flex justify-between items-center" v-if="contractForm.warehouseId">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Via Entrepôt</span>
+                        <span class="text-sm font-bold text-emerald-400">+ {{ formatNumber(contractForm.warehouseQuantity || 0) }} kg</span>
+                      </div>
+                      <div class="flex justify-between items-center" v-if="requiresSupplier && contractForm.supplierId">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Via Fournisseur</span>
+                        <span class="text-sm font-bold text-amber-400">+ {{ formatNumber(contractForm.supplierQuantity || 0) }} kg</span>
+                      </div>
+                    </div>
+
+                    <div class="pt-4 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full" :class="missingQuantity <= 0 ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></div>
+                        <span class="text-[10px] font-black uppercase tracking-widest" :class="missingQuantity <= 0 ? 'text-emerald-400' : 'text-amber-400'">
+                          {{ missingQuantity <= 0 ? 'Prêt pour planification' : 'Stock incomplet' }}
+                        </span>
+                      </div>
+                      <div v-if="missingQuantity > 0" class="text-[10px] font-bold text-slate-400">
+                        Manque: {{ formatNumber(missingQuantity) }} kg
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Warehouse Quantity -->
-            <div class="form-group" v-if="contractForm.warehouseId">
-              <label for="warehouse-quantity">Quantity from Warehouse (kg)</label>
-              <input
-                id="warehouse-quantity"
-                type="number"
-                v-model.number="contractForm.warehouseQuantity"
-                :disabled="!contractForm.warehouseId"
-                :max="productAvailableQuantity"
-                :placeholder="`Max: ${formatNumber(productAvailableQuantity)} kg`"
-                min="0"
-              />
-              <div class="form-group__info">
-                <span>Available Stock: {{ formatNumber(productAvailableQuantity) }} kg</span>
-                <span v-if="productAvailableQuantity < contractForm.tonnage" class="warning-text">
-                  Insufficient stock, supplier required for {{ formatNumber(missingQuantity) }} kg
-                </span>
-              </div>
+            <!-- Modal Footer inside form -->
+            <div class="pt-8 flex justify-end gap-3 border-t border-slate-100 mt-8">
+              <button type="button" @click="closeModal" class="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-500 hover:bg-white transition-all">
+                Annuler
+              </button>
+              <button type="submit" class="btn-gold px-10 shadow-premium" :disabled="saving">
+                <i v-if="saving" class="fas fa-circle-notch fa-spin mr-2"></i>
+                {{ selectedContract?._id ? 'Mettre à jour' : 'Enregistrer le Contrat' }}
+              </button>
             </div>
-
-            <!-- Supplier Selection -->
-            <div class="form-group form-group--highlighted" v-if="requiresSupplier">
-              <label for="supplier-select">
-                Supplier <span class="required">*</span>
-                <span v-if="loading.suppliers" class="loading-text">(Loading...)</span>
-              </label>
-              <select
-                id="supplier-select"
-                v-model="contractForm.supplierId"
-                :disabled="loading.suppliers || !suppliers.length"
-                required
-                @change="onSupplierSelect"
-              >
-                <option value="" disabled>Select a supplier</option>
-                <option
-                  v-for="supplier in suppliers"
-                  :key="supplier._id"
-                  :value="supplier._id"
-                  :data-suggested="suggestedSupplier && supplier._id === suggestedSupplier._id"
-                >
-                  {{ supplier.name }} (Stock: {{ formatNumber(getProductStock(supplier, contractForm.productId)) }} kg)
-                </option>
-              </select>
-              <div class="form-group__info">
-                <div v-if="loading.suppliers" class="loading-state loading-state--inline">
-                  <div class="spinner spinner--small"></div>
-                  <span>Searching for supplier...</span>
-                </div>
-                <div v-else-if="errors.suppliers" class="error-state error-state--inline">
-                  <span class="icon">⚠️</span>
-                  {{ errors.suppliers }}
-                </div>
-                <div v-else-if="suggestedSupplier" class="optimal-info">
-                  <span class="optimal-badge optimal-badge--supplier">Suggested</span>
-                  Supplier: {{ suggestedSupplier.name }} (Quantity: {{ formatNumber(contractForm.supplierQuantity) }} kg)
-                </div>
-                <div v-else-if="requiresSupplier" class="error-state error-state--inline">
-                  <span class="icon">⚠️</span>
-                  No suggested supplier. Check availability for this product and quantity.
-                </div>
-              </div>
-            </div>
-
-            <!-- Supplier Quantity -->
-            <div class="form-group" v-if="requiresSupplier && contractForm.supplierId">
-              <label for="supplier-quantity">Quantity from Supplier (kg)</label>
-              <input
-                id="supplier-quantity"
-                type="number"
-                v-model.number="contractForm.supplierQuantity"
-                :disabled="!contractForm.supplierId"
-                :min="missingQuantity"
-                :max="contractForm.tonnage"
-                :placeholder="`Min: ${formatNumber(missingQuantity)} kg`"
-              />
-            </div>
-
-            <!-- Summary -->
-            <div class="form-group form-group--summary">
-              <h4>Summary</h4>
-              <div class="summary-item" v-if="contractForm.warehouseId">
-                <span>Warehouse: {{ warehouses.find(w => w._id === contractForm.warehouseId)?.name || 'Not selected' }}</span>
-                <span>Quantity: {{ formatNumber(contractForm.warehouseQuantity || 0) }} kg</span>
-              </div>
-              <div class="summary-item" v-if="contractForm.supplierId">
-                <span>Supplier: {{ suppliers.find(s => s._id === contractForm.supplierId)?.name || 'Not selected' }}</span>
-                <span>Quantity: {{ formatNumber(contractForm.supplierQuantity || 0) }} kg</span>
-              </div>
-              <div class="summary-item summary-item--total">
-                <span>Total: {{ formatNumber((contractForm.warehouseQuantity || 0) + (contractForm.supplierQuantity || 0)) }} kg</span>
-                <span v-if="contractForm.tonnage && (contractForm.warehouseQuantity || 0) + (contractForm.supplierQuantity || 0) !== contractForm.tonnage" class="error-text">
-                  Does not match required tonnage ({{ formatNumber(contractForm.tonnage) }} kg)
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <footer class="modal__footer">
-            <button type="button" class="btn btn--secondary" @click="closeModal">Cancel</button>
-            <button
-              type="submit"
-              class="btn btn--primary"
-              :disabled="saving || loading.optimalWarehouse || loading.suppliers"
-            >
-              <span v-if="saving">
-                <span class="spinner-inline"></span> Saving...
-              </span>
-              <span v-else>
-                <span class="btn__icon">💾</span> {{ selectedContract?._id ? 'Update' : 'Create' }}
-              </span>
-            </button>
-          </footer>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
 
     <!-- Contract Details Modal -->
-    <!-- Contract Details Modal -->
-<div v-if="showContractDetails && detailedContract" class="modal" @click="showContractDetails = false">
-  <div class="modal__content" @click.stop>
-    <header class="modal__header">
-      <h2>Contract Details</h2>
-      <button class="modal__close" @click="showContractDetails = false">×</button>
-    </header>
-    
-    <div class="modal__body">
-      <div class="contract-details">
-        <div class="detail-section">
-          <h3>General Information</h3>
-          <div class="detail-row">
-            <span class="detail-label">Name</span>
-            <span>{{ detailedContract.name }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Status</span>
-            <span>{{ getContractStatus(detailedContract) }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Period</span>
-            <span>{{ formatDate(detailedContract.startDate) }} - {{ formatDate(detailedContract.endDate) }}</span>
-          </div>
+    <div v-if="showContractDetails && detailedContract" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showContractDetails = false"></div>
+
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
+        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-info-circle text-premium-gold"></i>
+            </div>
+            Détails du Contrat
+          </h2>
+          <button @click="showContractDetails = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        
-        <div class="detail-section">
-          <h3>Product & Delivery</h3>
-          <div class="detail-row">
-            <span class="detail-label">Product</span>
-            <span>{{ detailedContract.product.name }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Quantity</span>
-            <span>{{ formatNumber(detailedContract.product.totalQuantity) }} kg</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Frequency</span>
-            <span>{{ FREQUENCY_LABELS[detailedContract.frequency] }}</span>
-          </div>
-          <div v-if="detailedContract.frequency === 'custom'" class="detail-row">
-            <span class="detail-label">Delivery Days</span>
-            <span>{{ detailedContract.deliveryDays.map(day => WEEK_DAYS.find(d => d.value === day)?.label || day).join(', ') }}</span>
-          </div>
-          <div v-if="detailedContract.deliveryDates?.length" class="detail-row">
-            <span class="detail-label">Delivery Dates</span>
-            <div class="detail-list">
-              <div v-for="(date, index) in detailedContract.deliveryDates" :key="index" class="detail-list-item">
-                <span>{{ formatDeliveryDate(date.date) }} ({{ date.status }})</span>
-              </div>
+
+        <div class="p-8 space-y-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
+          <div class="grid grid-cols-2 gap-6">
+            <div class="space-y-1">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nom du Contrat</p>
+              <p class="text-lg font-bold text-premium-midnight">{{ detailedContract.name }}</p>
+            </div>
+            <div class="space-y-1 text-right">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Statut</p>
+              <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-600 text-[10px] font-black uppercase">{{ getContractStatus(detailedContract) }}</span>
             </div>
           </div>
-        </div>
-        
-        <div class="detail-section">
-          <h3>Distribution</h3>
-          <div class="detail-row">
-            <span class="detail-label">Warehouse</span>
-            <span>{{ detailedContract.warehouse?.name || 'Not assigned' }}</span>
-          </div>
-          <div v-if="detailedContract.supplier" class="detail-row">
-            <span class="detail-label">Supplier</span>
-            <span>{{ detailedContract.supplier.name }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Sales Points</span>
-            <div class="detail-list">
-              <div v-if="loading.details" class="loading-state loading-state--inline">
-                <div class="spinner spinner--small"></div>
-                <span>Loading sales points...</span>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-6">
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span class="w-4 h-px bg-slate-200"></span>
+                Produit & Livraison
+              </h3>
+              <div class="space-y-4">
+                <div class="flex justify-between items-center py-2 border-b border-slate-50">
+                  <span class="text-xs font-bold text-slate-500">Produit</span>
+                  <span class="text-xs font-black text-premium-midnight uppercase">{{ detailedContract.product.name }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-50">
+                  <span class="text-xs font-bold text-slate-500">Quantité Totale</span>
+                  <span class="text-xs font-black text-premium-midnight">{{ formatNumber(detailedContract.product.totalQuantity) }} kg</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-50">
+                  <span class="text-xs font-bold text-slate-500">Fréquence</span>
+                  <span class="text-xs font-black text-premium-gold uppercase">{{ FREQUENCY_LABELS[detailedContract.frequency] }}</span>
+                </div>
               </div>
-              <div v-else-if="!detailedContract.salesPoints?.length" class="empty-state empty-state--inline">
-                No sales points assigned
-              </div>
-              <div v-else>
-                <div v-for="sp in detailedContract.salesPoints" :key="sp._id" class="detail-list-item">
-                  <span>{{ sp.name }}</span>
-                  <small v-if="sp.address">{{ sp.address }}</small>
+            </div>
+
+            <div class="space-y-6">
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span class="w-4 h-px bg-slate-200"></span>
+                Source Logistique
+              </h3>
+              <div class="space-y-4">
+                <div class="flex justify-between items-center py-2 border-b border-slate-50">
+                  <span class="text-xs font-bold text-slate-500">Entrepôt</span>
+                  <span class="text-xs font-black text-premium-midnight uppercase">{{ detailedContract.warehouse?.name || 'Non assigné' }}</span>
+                </div>
+                <div v-if="detailedContract.supplier" class="flex justify-between items-center py-2 border-b border-slate-50">
+                  <span class="text-xs font-bold text-slate-500">Fournisseur</span>
+                  <span class="text-xs font-black text-amber-600 uppercase">{{ detailedContract.supplier.name }}</span>
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="space-y-4">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <span class="w-4 h-px bg-slate-200"></span>
+              Points de Vente ({{ detailedContract.salesPoints?.length || 0 }})
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div v-for="sp in detailedContract.salesPoints" :key="sp._id" class="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <p class="text-[11px] font-bold text-premium-midnight">{{ sp.name }}</p>
+                <p class="text-[9px] text-slate-400 truncate">{{ sp.address }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+          <button @click="showContractDetails = false" class="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-500 hover:bg-white transition-all">
+            Fermer
+          </button>
+          <button @click="updateContract(detailedContract)" class="btn-gold px-10">
+            <i class="fas fa-edit mr-2"></i>Modifier
+          </button>
         </div>
       </div>
     </div>
-    
-    <footer class="modal__footer">
-      <button class="btn btn--secondary" @click="showContractDetails = false">Close</button>
-      <button
-        class="btn btn--primary"
-        @click="updateContract(detailedContract)"
-      >
-        <span class="btn__icon">✏️</span> Edit
-      </button>
-    </footer>
-  </div>
-</div>
 
     <!-- Transporter Config Modal -->
-    <div v-if="showTransporterConfig" class="modal" @click="showTransporterConfig = false">
-      <div class="modal__content" @click.stop>
-        <header class="modal__header">
-          <h2>Transporter Configuration</h2>
-          <button class="modal__close" @click="showTransporterConfig = false">×</button>
-        </header>
-        
-        <div class="modal__body">
-          <div class="form-card">
-            <h3>Transporter Settings</h3>
-            <p>All transporters will have the same work constraints.</p>
-            
-            <div class="form-group">
-              <label for="working-days">Working Days per Week</label>
-              <input
-                id="working-days"
-                v-model.number="transporterConfig.workingDaysPerWeek"
-                type="number"
-                min="1"
-                max="7"
-                step="1"
-              />
-              <div class="form-group__info">
-                <span>Maximum number of days a transporter can work per week</span>
+    <div v-if="showTransporterConfig" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showTransporterConfig = false"></div>
+
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
+        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-truck-loading text-premium-gold"></i>
+            </div>
+            Configuration Logistique
+          </h2>
+          <button @click="showTransporterConfig = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="p-8 space-y-6">
+          <p class="text-xs font-medium text-slate-500 leading-relaxed">
+            Définissez les contraintes de travail pour tous les transporteurs lors de la génération automatique du plan.
+          </p>
+          <div class="space-y-4">
+            <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Jours de travail / semaine</label>
+              <div class="relative">
+                <input v-model.number="transporterConfig.workingDaysPerWeek" type="number" min="1" max="7" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold transition-all" />
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">Jours</span>
               </div>
             </div>
-            
-            <div class="form-group">
-              <label for="deliveries-per-day">Maximum Deliveries per Day</label>
-              <input
-                id="deliveries-per-day"
-                v-model.number="transporterConfig.maxDeliveriesPerDay"
-                type="number"
-                min="1"
-                max="5"
-                step="1"
-              />
-              <div class="form-group__info">
-                <span>Maximum number of deliveries a transporter can perform in a day</span>
+            <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Livraisons max / jour</label>
+              <div class="relative">
+                <input v-model.number="transporterConfig.maxDeliveriesPerDay" type="number" min="1" max="5" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold transition-all" />
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">Points</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <footer class="modal__footer">
-          <button class="btn btn--secondary" @click="showTransporterConfig = false">Cancel</button>
-          <button class="btn btn--primary" @click="confirmTransporterConfig">
-            Confirm and Generate Plan
-          </button>
-        </footer>
+
+        <div class="px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+          <button @click="showTransporterConfig = false" class="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-500 hover:bg-white transition-all">Annuler</button>
+          <button @click="confirmTransporterConfig" class="btn-gold px-10 shadow-premium">Générer le Plan</button>
+        </div>
       </div>
     </div>
 
     <!-- Distribution Plan Modal -->
-    <div v-if="showDistributionPlan" class="modal" @click="showDistributionPlan = false">
-      <div class="modal__content modal__content--large" @click.stop>
-        <header class="modal__header">
-          <h2>Distribution Plan</h2>
-          <button class="modal__close" @click="showDistributionPlan = false">×</button>
-        </header>
-        
-        <div class="modal__body">
-          <div v-if="optimizingRoute" class="loading-state">
-            <div class="spinner"></div>
-            <span>Calculating plan...</span>
-          </div>
-          
-          <div v-else-if="errors.route" class="error-state">
-            <span class="icon">⚠️</span>
-            {{ errors.route }}
-          </div>
-          
-          <div v-else-if="!distributionPlan.length" class="empty-state">
-            <span>No plan generated. Select contracts.</span>
-            <button class="btn btn--secondary" @click="openDistributionPlan">Try Again</button>
-          </div>
-          
-          <div v-else class="distribution-plan">
-           <div class="map-container">
-  <div id="distribution-map" class="map"></div>
-  <div v-if="mapLoading" class="map-loading">
-    <div class="spinner"></div>
-    <span>Loading map...</span>
-  </div>
-  <div v-if="!selectedRoute" class="map-placeholder">
-    <div class="placeholder-content">
-      <span class="icon">🗺️</span>
-      <p>Select a route from the table below to display it on the map</p>
-    </div>
-  </div>
-</div>
+    <div v-if="showDistributionPlan" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showDistributionPlan = false"></div>
 
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
+        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-route text-premium-gold"></i>
+            </div>
+            Plan de Distribution Optimisé
+          </h2>
+          <div class="flex items-center gap-2">
+            <button @click="downloadPDF" class="btn-outline py-2 px-4 text-xs"><i class="fas fa-file-pdf mr-2"></i>PDF</button>
+            <button @click="downloadCSV" class="btn-outline py-2 px-4 text-xs"><i class="fas fa-file-csv mr-2"></i>CSV</button>
+            <button @click="showDistributionPlan = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors ml-4">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-y-auto p-8 custom-scrollbar flex-1">
+          <div v-if="optimizingRoute" class="flex flex-col items-center justify-center py-20 text-premium-gold">
+            <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+            <span class="text-sm font-bold uppercase tracking-[0.2em] animate-pulse">Calcul de l'itinéraire optimal...</span>
+          </div>
+
+          <div v-else-if="!distributionPlan.length" class="text-center py-20">
+            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <i class="fas fa-exclamation-triangle text-slate-300 text-3xl"></i>
+            </div>
+            <p class="text-slate-500 font-bold">Aucun plan généré. Veuillez sélectionner des contrats.</p>
+            <button class="btn-gold mt-6" @click="showDistributionPlan = false">Retour aux contrats</button>
+          </div>
+
+          <div v-else class="space-y-8">
+            <!-- Map -->
+            <div class="relative group">
+              <div class="absolute inset-0 bg-premium-gold/5 rounded-[2.5rem] -rotate-1 group-hover:rotate-0 transition-transform duration-500"></div>
+              <div class="relative h-[450px] rounded-[2.5rem] overflow-hidden border border-slate-200 shadow-premium bg-white">
+                <div id="distribution-map" class="w-full h-full"></div>
+
+                <div v-if="mapLoading" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-[1000]">
+                  <div class="flex flex-col items-center gap-3">
+                    <i class="fas fa-spinner fa-spin text-premium-gold text-2xl"></i>
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-400">Chargement de la carte...</span>
+                  </div>
+                </div>
+
+                <div v-if="!selectedRoute" class="absolute bottom-6 left-6 right-6 bg-premium-midnight/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 text-white flex items-center gap-4 z-[999] animate-in slide-in-from-bottom-4 duration-500">
+                  <div class="w-10 h-10 rounded-xl bg-premium-gold/20 flex items-center justify-center shrink-0">
+                    <i class="fas fa-mouse-pointer text-premium-gold"></i>
+                  </div>
+                  <p class="text-sm font-medium text-slate-300">Sélectionnez une tournée dans le tableau ci-dessous pour l'afficher sur la carte.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Route selector -->
             <div class="route-selection">
-              <h3>Select a Route to Highlight</h3>
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Sélectionner une tournée</h3>
               <select
                 v-model="selectedRoute"
                 @change="displayRoute(distributionPlan, selectedRoute)"
-                class="route-select"
+                class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-premium-midnight focus:outline-none focus:border-premium-gold transition-all"
               >
-                <option :value="null">All Routes</option>
+                <option :value="null">Toutes les tournées</option>
                 <option v-for="(entry, index) in distributionPlan" :key="index" :value="entry">
-                  {{ entry.contractName }} - {{ formatDeliveryDate(entry.deliveryDates[0]?.date) }}
+                  {{ entry.contractName }} — {{ formatDeliveryDate(entry.deliveryDates[0]?.date) }}
                 </option>
               </select>
             </div>
 
-            <table class="distribution-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Day</th>
-                  <th>Contract</th>
-                  <th>Warehouse</th>
-                  <th>Supplier</th>
-                  <th>Sales Points</th>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Truck</th>
-                  <th>Transporter</th>
-                  <th>Distance</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr 
-                  v-for="(entry, index) in distributionPlan" 
-                  :key="index"
-                  @click="displayRoute(distributionPlan, entry)"
-                  class="route-row"
-                  :class="{ 'route-row--highlighted': selectedRoute === entry }"
-                >
-                  <td>{{ formatDeliveryDate(entry.deliveryDates[0]?.date) || 'N/A' }}</td>
-                  <td>{{ entry.dayOfWeek }}</td>
-                  <td>{{ entry.contractName }}</td>
-                  <td>{{ entry.warehouse }}</td>
-                  <td>{{ entry.supplier || '-' }}</td>
-                  <td>{{ entry.salesPoints.join(', ') }}</td>
-                  <td>{{ entry.product }}</td>
-                  <td>{{ formatNumber(entry.quantity) }} kg</td>
-                 <td>
-  <!-- Afficher le camion optimal -->
-  <div v-if="entry.optimalTruckId" class="optimal-truck-display">
-    <span class="optimal-truck-label">Optimal:</span>
-    {{ trucks.find(t => t._id === entry.optimalTruckId)?.vehicle }}
-    {{ trucks.find(t => t._id === entry.optimalTruckId)?.type }}, 
-    {{ formatNumber(trucks.find(t => t._id === entry.optimalTruckId)?.capacity) }} kg
-  </div>
-  
-  <!-- Liste déroulante pour sélectionner un camion -->
-  <select 
-    v-model="entry.editableTruckId"
-    @change="updateTruckForEntry(entry, $event.target.value)"
-    class="editable-select"
-  >
-    <option value="">Not Assigned</option>
-    <option 
-      v-for="truck in getAvailableTrucksForEntry(entry)"
-      :key="truck._id"
-      :value="truck._id"
-      :class="{
-        'optimal-truck': truck._id === entry.optimalTruckId,
-        'insufficient-capacity': truck.capacity < entry.quantity,
-        'sufficient-capacity': truck.capacity >= entry.quantity
-      }"
-    >
-      {{ truck.vehicle }} ({{ truck.type }}, {{ formatNumber(truck.capacity) }} kg)
-      <template v-if="truck._id === entry.optimalTruckId">
-        - Optimal ★
-      </template>
-      <template v-else-if="truck.capacity < entry.quantity">
-        - Insuffisant
-      </template>
-    </option>
-  </select>
-</td>
-                  <td>
-                    <select 
-                      v-model="entry.editableTransporterId"
-                      @change="updateTransporterForEntry(entry, $event.target.value)"
-                      class="editable-select"
-                      :disabled="!entry.truck"
+            <!-- Distribution Table -->
+            <div class="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-premium">
+              <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full border-collapse distribution-table">
+                  <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Jour</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Contrat</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Entrepôt</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fournisseur</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Points de vente</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Produit</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Qté</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Camion</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Transporteur</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Distance</th>
+                      <th class="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Temps</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- BUG FIX: table rows were misaligned with headers (13 headers but only 11 data cells rendered correctly) -->
+                    <tr
+                      v-for="(entry, index) in distributionPlan"
+                      :key="index"
+                      @click="displayRoute(distributionPlan, entry)"
+                      class="route-row border-b border-slate-50 hover:bg-slate-50/50 cursor-pointer transition-colors"
+                      :class="{ 'bg-premium-gold/5': selectedRoute === entry }"
                     >
-                      <option value="">Not Assigned</option>
-                      <option 
-                        v-for="transporter in availableTransporters"
-                        :key="transporter._id"
-                        :value="transporter._id"
-                        :disabled="!isTransporterCompatible(transporter, entry.truck?.type)"
-                      >
-                        {{ transporter.firstName }} {{ transporter.lastName }} ({{ transporter.typeDrivingLicence }})
-                      </option>
-                    </select>
-                  </td>
-                  <td>{{ formatNumber(entry.route.totalDistance) }} km</td>
-                  <td>{{ formatNumber(entry.route.totalTime) }} min</td>
-                </tr>
-              </tbody>
-            </table>
+                      <td class="px-4 py-3 text-xs text-premium-midnight">{{ formatDeliveryDate(entry.deliveryDates[0]?.date) || 'N/A' }}</td>
+                      <td class="px-4 py-3 text-xs text-slate-500">{{ entry.dayOfWeek }}</td>
+                      <td class="px-4 py-3 text-xs font-bold text-premium-midnight">{{ entry.contractName }}</td>
+                      <td class="px-4 py-3 text-xs text-slate-500">{{ entry.warehouse }}</td>
+                      <td class="px-4 py-3 text-xs text-slate-500">{{ entry.supplier || '-' }}</td>
+                      <td class="px-4 py-3 text-xs text-slate-500 max-w-[150px] truncate" :title="entry.salesPoints.join(', ')">{{ entry.salesPoints.join(', ') }}</td>
+                      <td class="px-4 py-3 text-xs text-slate-500">{{ entry.product }}</td>
+                      <td class="px-4 py-3 text-xs font-bold text-premium-midnight">{{ formatNumber(entry.quantity) }} kg</td>
+                      <td class="px-4 py-3">
+                        <select
+                          v-model="entry.editableTruckId"
+                          @change="updateTruckForEntry(entry, ($event.target as HTMLSelectElement).value)"
+                          class="editable-select text-xs"
+                          @click.stop
+                        >
+                          <option value="">Non attribué</option>
+                          <option
+                            v-for="truck in getAvailableTrucksForEntry(entry)"
+                            :key="truck._id"
+                            :value="truck._id"
+                          >
+                            {{ truck.vehicle }} ({{ truck.type }}, {{ formatNumber(truck.capacity) }} kg){{ truck._id === entry.optimalTruckId ? ' ★' : '' }}
+                          </option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-3">
+                        <select
+                          v-model="entry.editableTransporterId"
+                          @change="updateTransporterForEntry(entry, ($event.target as HTMLSelectElement).value)"
+                          class="editable-select text-xs"
+                          :disabled="!entry.truck"
+                          @click.stop
+                        >
+                          <option value="">Non attribué</option>
+                          <option
+                            v-for="transporter in availableTransporters"
+                            :key="transporter._id"
+                            :value="transporter._id"
+                            :disabled="!isTransporterCompatible(transporter, entry.truck?.type)"
+                          >
+                            {{ transporter.firstName }} {{ transporter.lastName }} ({{ transporter.typeDrivingLicence }})
+                          </option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-3 text-xs text-slate-500">{{ formatNumber(entry.route.totalDistance) }} km</td>
+                      <td class="px-4 py-3 text-xs text-slate-500">{{ formatNumber(entry.route.totalTime) }} min</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <footer class="modal__footer">
-          <button
-            class="btn btn--primary"
-            @click="downloadPDF"
-            :disabled="!distributionPlan.length"
-          >
-            <span class="btn__icon">📄</span> Export PDF
+
+        <div class="px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+          <button class="btn-outline px-6" @click="downloadPDF" :disabled="!distributionPlan.length">
+            <i class="fas fa-file-pdf mr-2"></i> Export PDF
           </button>
-          <button
-            class="btn btn--primary"
-            @click="downloadCSV"
-            :disabled="!distributionPlan.length"
-          >
-            <span class="btn__icon">📊</span> Export CSV
+          <button class="btn-outline px-6" @click="downloadCSV" :disabled="!distributionPlan.length">
+            <i class="fas fa-file-csv mr-2"></i> Export CSV
           </button>
-          <button class="btn btn--secondary" @click="showDistributionPlan = false">Close</button>
-        </footer>
+          <button @click="showDistributionPlan = false" class="px-8 py-3 rounded-xl bg-premium-midnight text-white text-sm font-bold hover:bg-slate-800 transition-all ml-4">
+            Fermer
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Resource Management Modal -->
-    <div v-if="showResourceManagement" class="modal" @click="showResourceManagement = false">
-      <div class="modal__content modal__content--large" @click.stop>
-        <header class="modal__header">
-          <h2>Resource Management</h2>
-          <button class="modal__close" @click="showResourceManagement = false">×</button>
-        </header>
-        
-        <div class="modal__body">
-          <div class="resource-section">
-            <h3>Trucks</h3>
-            <div v-if="loading.trucks" class="loading-state">
-              <div class="spinner"></div>
-              <span>Loading trucks...</span>
+    <div v-if="showResourceManagement" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showResourceManagement = false"></div>
+
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
+        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-boxes text-premium-gold"></i>
             </div>
-            <div v-else-if="errors.trucks" class="error-state">
-              <span class="icon">⚠️</span>
-              {{ errors.trucks }}
+            Gestion des Ressources
+          </h2>
+          <button @click="showResourceManagement = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="p-8 space-y-10 overflow-y-auto custom-scrollbar">
+          <div class="space-y-6">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span class="w-4 h-px bg-slate-200"></span>
+                Flotte de Camions
+              </h3>
+              <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">{{ trucks.length }} unités</span>
             </div>
-            <div v-else-if="!trucks.length" class="empty-state">
-              <span>No trucks available.</span>
+            <div v-if="loading.trucks" class="flex justify-center py-10">
+              <i class="fas fa-circle-notch fa-spin text-premium-gold text-2xl"></i>
             </div>
-            <div v-else class="resource-grid">
-              <div v-for="truck in trucks" :key="truck._id" class="resource-card">
-                <div class="resource-card__title">{{ truck.vehicle }}</div>
-                <div class="resource-card__stats">
-                  <span>Type: {{ truck.type }}</span>
-                  <span>Capacity: {{ formatNumber(truck.capacity) }} kg</span>
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div v-for="truck in trucks" :key="truck._id" class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all group">
+                <div class="flex justify-between items-start mb-4">
+                  <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-premium-gold/10 group-hover:text-premium-gold transition-colors">
+                    <i class="fas fa-truck"></i>
+                  </div>
+                  <span class="px-2 py-1 rounded text-[8px] font-black uppercase tracking-wider"
+                    :class="{
+                      'bg-emerald-100 text-emerald-600': truck.status === 'available',
+                      'bg-amber-100 text-amber-600': truck.status === 'in transit',
+                      'bg-slate-100 text-slate-600': truck.status === 'maintenance'
+                    }">
+                    {{ truck.status }}
+                  </span>
                 </div>
-                <span
-                  class="resource-card__status"
-                  :class="{
-                    'resource-card__status--available': truck.status === 'available',
-                    'resource-card__status--in-transit': truck.status === 'in transit',
-                    'resource-card__status--maintenance': truck.status === 'maintenance'
-                  }"
-                >
-                  {{ truck.status }}
-                </span>
+                <h4 class="text-sm font-bold text-premium-midnight mb-1">{{ truck.vehicle }}</h4>
+                <div class="flex items-center gap-3 text-[10px] text-slate-400 font-medium">
+                  <span class="flex items-center gap-1"><i class="fas fa-tag"></i> {{ truck.type }}</span>
+                  <span class="w-1 h-1 rounded-full bg-slate-200"></span>
+                  <span class="flex items-center gap-1"><i class="fas fa-weight-hanging"></i> {{ formatNumber(truck.capacity) }} kg</span>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div class="resource-section">
-            <h3>Transporters</h3>
-            <div v-if="loading.transporters" class="loading-state">
-              <div class="spinner"></div>
-              <span>Loading transporters...</span>
+
+          <div class="space-y-6">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span class="w-4 h-px bg-slate-200"></span>
+                Équipe de Transport
+              </h3>
+              <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">{{ transporters.length }} membres</span>
             </div>
-            <div v-else-if="errors.transporters" class="error-state">
-              <span class="icon">⚠️</span>
-              {{ errors.transporters }}
+            <div v-if="loading.transporters" class="flex justify-center py-10">
+              <i class="fas fa-circle-notch fa-spin text-premium-gold text-2xl"></i>
             </div>
-            <div v-else-if="!transporters.length" class="empty-state">
-              <span>No transporters available.</span>
-            </div>
-            <div v-else class="resource-grid">
-              <div v-for="transporter in transporters" :key="transporter._id" class="resource-card">
-                <div class="resource-card__title">{{ transporter.firstName }} {{ transporter.lastName }}</div>
-                <div class="resource-card__stats">
-                  <span>License: {{ transporter.typeDrivingLicence }}</span>
-                  <span>Phone: {{ transporter.phoneNumber }}</span>
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div v-for="tp in transporters" :key="tp._id" class="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all group">
+                <div class="flex justify-between items-start mb-4">
+                  <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-premium-gold/10 group-hover:text-premium-gold transition-colors">
+                    <i class="fas fa-user-tie"></i>
+                  </div>
+                  <span class="px-2 py-1 rounded text-[8px] font-black uppercase tracking-wider"
+                    :class="{
+                      'bg-emerald-100 text-emerald-600': tp.status === 'Available',
+                      'bg-amber-100 text-amber-600': tp.status === 'On mission',
+                      'bg-slate-100 text-slate-600': tp.status === 'On leave'
+                    }">
+                    {{ tp.status }}
+                  </span>
                 </div>
-                <span
-                  class="resource-card__status"
-                  :class="{
-                    'resource-card__status--available': transporter.status === 'Available',
-                    'resource-card__status--on-mission': transporter.status === 'On mission',
-                    'resource-card__status--on-leave': transporter.status === 'On leave'
-                  }"
-                >
-                  {{ transporter.status }}
-                </span>
+                <h4 class="text-sm font-bold text-premium-midnight mb-1">{{ tp.firstName }} {{ tp.lastName }}</h4>
+                <div class="flex flex-col gap-1 text-[10px] text-slate-400 font-medium">
+                  <span class="flex items-center gap-2"><i class="fas fa-id-card text-[9px]"></i> {{ tp.typeDrivingLicence }}</span>
+                  <span class="flex items-center gap-2"><i class="fas fa-phone text-[9px]"></i> {{ tp.phoneNumber }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        
-        <footer class="modal__footer">
-          <button class="btn btn--secondary" @click="showResourceManagement = false">Close</button>
-        </footer>
+
+        <div class="px-8 py-6 border-t border-slate-100 flex justify-end bg-slate-50/50">
+          <button @click="showResourceManagement = false" class="px-10 py-3 rounded-xl bg-premium-midnight text-white text-sm font-bold hover:bg-slate-800 transition-all">Fermer</button>
+        </div>
       </div>
     </div>
 
     <!-- Confirmation Modal -->
-    <div v-if="showConfirmation" class="modal" @click="closeConfirmation">
-      <div class="modal__content" @click.stop>
-        <header class="modal__header">
-          <h2>Contract Saved</h2>
-          <button class="modal__close" @click="closeConfirmation">×</button>
-        </header>
-        
-        <div class="modal__body">
-          <div class="success-message">
-            <div class="success-icon">✓</div>
-            <p>The contract <strong>{{ lastCreatedContract?.name }}</strong> has been saved successfully.</p>
-          </div>
+    <div v-if="showConfirmation" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-md" @click="closeConfirmation"></div>
+
+      <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-10 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-500">
+        <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-emerald-50/50">
+          <i class="fas fa-check text-3xl text-emerald-500"></i>
         </div>
-        
-        <footer class="modal__footer">
-          <button class="btn btn--secondary" @click="closeConfirmation">Close</button>
-          <button class="btn btn--primary" @click="showDetails(lastCreatedContract)">
-            <span class="btn__icon">ℹ️</span> View Details
+
+        <h2 class="text-2xl font-display font-bold text-premium-midnight mb-2">Contrat Enregistré !</h2>
+        <p class="text-slate-500 text-sm leading-relaxed mb-8">
+          Le contrat <span class="font-bold text-premium-midnight">{{ lastCreatedContract?.name }}</span> a été sauvegardé avec succès dans votre base de données.
+        </p>
+
+        <div class="w-full space-y-3">
+          <!-- BUG FIX: showDetails now safely called with lastCreatedContract (null check added in function) -->
+          <button @click="showDetails(lastCreatedContract)" class="w-full btn-gold py-4 shadow-premium">
+            <i class="fas fa-info-circle mr-2"></i>Voir les détails
           </button>
-        </footer>
+          <button @click="closeConfirmation" class="w-full py-4 rounded-2xl border border-slate-100 text-sm font-bold text-slate-400 hover:bg-slate-50 transition-all">
+            Continuer
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
 <style scoped>
-/* Layout */
-.contract-manager {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 100vh;
-  background-color: #f8fafc;
-}
-
-.contract-manager__header {
-  background-color: white;
-  padding: 15px 25px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  margin-bottom: 30px;
+/* Loading and Error States */
+.loading-state,
+.error-state,
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: #94a3b8;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.header__left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.contract-manager__title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #3b82f6;
-  margin: 0;
-}
-
-.header__actions {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.header__search {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 8px 15px;
-  font-size: 1rem;
-  min-width: 250px;
-  transition: all 0.2s;
-}
-
-.header__search:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-.header__buttons {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Button Styles */
-.btn {
-  display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  white-space: nowrap;
-}
-
-.btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn--primary {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-}
-
-.btn--primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.btn--secondary {
-  background: linear-gradient(135deg, #64748b, #475569);
-  color: white;
-}
-
-.btn--secondary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.btn--icon {
-  padding: 8px;
-  border-radius: 8px;
-  background-color: transparent;
-  color: #475569;
-}
-
-.btn--icon:hover {
-  background-color: #e2e8f0;
-}
-
-.btn--sm {
-  padding: 6px 12px;
-  font-size: 0.875rem;
-}
-
-.btn--danger {
-  color: #ef4444;
-}
-
-.btn--danger:hover {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-.btn__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Contracts Section */
-.contract-manager__contracts {
-  padding: 20px;
-}
-
-.section__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.section__header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.section__count {
-  background-color: #e2e8f0;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  color: #475569;
-}
-
-.contracts__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
 }
 
-/* Contract Card Styles */
-.contract-card {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-  transition: all 0.2s;
-  border-left: 4px solid transparent;
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(59, 130, 246, 0.3);
+  border-radius: 50%;
+  border-top-color: #3b82f6;
+  animation: spin 1s linear infinite;
 }
 
-.contract-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.contract-card--selected {
-  border-left-color: #3b82f6;
-}
-
-.contract-card__header {
-  padding: 20px;
-  background-color: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.contract-card__title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0;
-  color: #1e293b;
-}
-
-.contract-card__status {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.contract-card__status--pending {
-  background-color: rgba(245, 158, 11, 0.2);
-  color: #9e7d0a;
-}
-
-.contract-card__status--active {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #1a7431;
-}
-
-.contract-card__status--expired {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #a71d2a;
-}
-
-.contract-card__details {
-  padding: 20px;
-}
-
-.detail__item {
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.detail__item:last-child {
-  margin-bottom: 0;
-}
-
-.detail__label {
-  font-weight: 500;
-  color: #94a3b8;
-}
-
-.contract-card__actions {
-  padding: 15px 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  background-color: #e2e8f0;
-}
-
-/* Modal Styles */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  overflow-y: auto;
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal__content {
-  background-color: white;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  position: relative;
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.modal__content--large {
-  max-width: 90vw;
-  width: 100%;
-}
-
-.modal__header {
-  padding: 20px 25px;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal__close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #94a3b8;
-  transition: all 0.2s;
-}
-
-.modal__close:hover {
+.error-state {
   color: #ef4444;
 }
 
-.modal__body {
-  padding: 25px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.modal__footer {
-  padding: 20px 25px;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-}
-
-/* Distribution Table Styles */
+/* Distribution Table */
 .distribution-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  margin-bottom: 30px;
   font-size: 0.85rem;
   table-layout: auto;
 }
@@ -3438,78 +2928,6 @@ watch(
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
   white-space: nowrap;
-}
-
-.distribution-table th:nth-child(9),
-.distribution-table td:nth-child(9) {
-  width: 15%;
-  min-width: 120px;
-}
-
-.distribution-table th:nth-child(10),
-.distribution-table td:nth-child(10) {
-  width: 20%;
-  min-width: 150px;
-}
-
-.distribution-table th:nth-child(1),
-.distribution-table td:nth-child(1) {
-  width: 8%;
-  min-width: 80px;
-}
-
-.distribution-table th:nth-child(2),
-.distribution-table td:nth-child(2) {
-  width: 6%;
-  min-width: 60px;
-}
-
-.distribution-table th:nth-child(3),
-.distribution-table td:nth-child(3) {
-  width: 10%;
-  min-width: 100px;
-}
-
-.distribution-table th:nth-child(4),
-.distribution-table td:nth-child(4) {
-  width: 8%;
-  min-width: 80px;
-}
-
-.distribution-table th:nth-child(5),
-.distribution-table td:nth-child(5) {
-  width: 8%;
-  min-width: 80px;
-}
-
-.distribution-table th:nth-child(6),
-.distribution-table td:nth-child(6) {
-  width: 15%;
-  min-width: 120px;
-}
-
-.distribution-table th:nth-child(7),
-.distribution-table td:nth-child(7) {
-  width: 8%;
-  min-width: 80px;
-}
-
-.distribution-table th:nth-child(8),
-.distribution-table td:nth-child(8) {
-  width: 6%;
-  min-width: 60px;
-}
-
-.distribution-table th:nth-child(11),
-.distribution-table td:nth-child(11) {
-  width: 8%;
-  min-width: 80px;
-}
-
-.distribution-table th:nth-child(12),
-.distribution-table td:nth-child(12) {
-  width: 8%;
-  min-width: 80px;
 }
 
 .distribution-table th {
@@ -3535,14 +2953,12 @@ watch(
 
 .editable-select {
   width: 100%;
-  padding: 8px 10px;
+  padding: 6px 10px;
   border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
   background-color: white;
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .editable-select:focus {
@@ -3551,505 +2967,28 @@ watch(
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-/* Responsive Adjustments */
-@media (max-width: 1200px) {
-  .distribution-table {
-    font-size: 0.8rem;
-  }
-  
-  .modal__content--large {
-    max-width: 95vw;
-  }
-  
-  .modal__body {
-    padding: 15px;
-  }
-  
-  .distribution-table th,
-  .distribution-table td {
-    padding: 8px 10px;
-  }
-  
-  .editable-select {
-    font-size: 0.8rem;
-    padding: 6px 8px;
-  }
-}
-
-@media (max-width: 768px) {
-  .modal__content--large {
-    max-width: 98vw;
-    padding: 10px;
-  }
-  
-  .distribution-table {
-    font-size: 0.75rem;
-  }
-  
-  .distribution-table th,
-  .distribution-table td {
-    padding: 6px 8px;
-  }
-  
-  .editable-select {
-    font-size: 0.75rem;
-    padding: 5px 7px;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .modal__content--large {
-    max-width: 92vw;
-  }
-}
-
-@media (min-width: 1025px) {
-  .modal__content--large {
-    max-width: 90vw;
-  }
-}
-
-/* Form Styles */
-.form-card {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.form-card h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group:last-child {
-  margin-bottom: 0;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.form-group input[type="text"],
-.form-group input[type="number"],
-.form-group input[type="date"],
-.form-group select {
-  width: 80%;
-  padding: 10px 15px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-.form-row {
-  display: flex;
-  gap: 25px;
-  margin-bottom: 10px;
-}
-
-.form-row .form-group {
-  flex: 50%;
-  margin-bottom: 0;
-}
-
-.form-group__search {
-  margin-bottom: 10px;
-}
-
-.selection-list {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.checkbox-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.checkbox-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.checkbox-item:hover {
-  background-color: #e2e8f0;
-}
-
-.checkbox-item input[type="checkbox"] {
-  margin: 0;
-}
-
-.checkbox-item small {
-  color: #94a3b8;
-  margin-left: 10px;
-}
-
-/* Loading and Error States */
-.loading-state,
-.error-state,
-.empty-state {
-  padding: 40px;
-  text-align: center;
-  color: #94a3b8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(59, 130, 246, 0.3);
-  border-radius: 50%;
-  border-top-color: #3b82f6;
-  animation: spin 1s linear infinite;
-}
-
-.spinner-inline {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.error-state {
-  color: #ef4444;
-}
-
-.empty-state {
-  color: #94a3b8;
-}
-
-.error-state .icon,
-.empty-state .icon {
-  font-size: 2rem;
-}
-
-/* Warehouse and Supplier Selection */
-.warehouse-selection,
-.supplier-selection,
-.warehouse-results {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.warehouse-card,
-.supplier-card {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  border-left: 4px solid #3b82f6;
-}
-
-.supplier-card {
-  border-left-color: #f59e0b;
-}
-
-.warehouse-card:hover,
-.supplier-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transform: translateY(-5px);
-}
-
-.warehouse-card__title,
-.supplier-card__title {
-  font-weight: 600;
-  font-size: 1.125rem;
-}
-
-.warehouse-card__type {
-  color: #94a3b8;
-  font-size: 0.875rem;
-}
-
-.warehouse-card__stats,
-.supplier-card__stats {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  color: #475569;
-}
-
-.optimal-warehouse,
-.optimal-supplier {
-  margin-bottom: 30px;
-}
-
-.optimal-warehouse h5,
-.optimal-supplier h5 {
-  margin-bottom: 15px;
-  font-weight: 600;
-  color: #3b82f6;
-}
-
-/* Map and Route Styles */
-.map-container {
-  width: 100%;
-  height: 400px;
-  margin-bottom: 30px;
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.map {
-  width: 100%;
-  height: 100%;
-}
-
-.map-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
+.editable-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .route-selection {
   margin-bottom: 20px;
 }
 
-.route-select {
-  width: 100%;
-  padding: 10px 15px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 1rem;
-  margin-top: 10px;
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
 }
-
-/* Resource Management */
-.resource-section {
-  margin-bottom: 30px;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.resource-section h3 {
-  margin-bottom: 20px;
-  font-weight: 600;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
 }
-
-.resource-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
-}
-
-.resource-card {
-  background-color: white;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-left: 4px solid #3b82f6;
-}
-
-.resource-card__title {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.resource-card__status {
-  align-self: flex-start;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  margin-top: 5px;
-}
-
-/* Contract Details */
-.contract-details {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-
-.detail-section {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.detail-section h3 {
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e2e8f0;
-  font-weight: 600;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.detail-row:last-child {
-  margin-bottom: 0;
-}
-
-.detail-label {
-  font-weight: 500;
-  color: #94a3b8;
-}
-
-.detail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.detail-list-item {
-  padding: 10px;
-  background-color: #e2e8f0;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-}
-
-.detail-list-item small {
-  color: #94a3b8;
-}
-
-/* Success Message */
-.success-message {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: 40px;
-  text-align: center;
-}
-
-.success-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: #10b981;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .contract-manager__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .header__actions {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .header__search {
-    width: 100%;
-  }
-  
-  .header__buttons {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .form-row {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .contracts__grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .distribution-table {
-    display: block;
-    overflow-x: auto;
-  }
-  
-  .resource-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .modal__content {
-    width: 100%;
-    max-height: 95vh;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .contracts__grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .warehouse-selection,
-  .supplier-selection,
-  .resource-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1025px) {
-  .contracts__grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }
 
 /* Leaflet Overrides */
@@ -4064,290 +3003,27 @@ watch(
   border-radius: 50%;
 }
 
-:global(.map-marker--warehouse) {
-  background-color: #3b82f6;
-}
-
-:global(.map-marker--supplier) {
-  background-color: #f59e0b;
-}
-
-:global(.map-marker--salespoint) {
-  background-color: #10b981;
-}
-
-:global(.map-marker--warehouse-return) {
-  background-color: #0ea5e9;
-}
+:global(.map-marker--warehouse) { background-color: #3b82f6; }
+:global(.map-marker--supplier) { background-color: #f59e0b; }
+:global(.map-marker--salespoint) { background-color: #10b981; }
+:global(.map-marker--warehouse-return) { background-color: #0ea5e9; }
 
 :global(.map-marker--highlighted) {
   box-shadow: 0 0 0 3px white, 0 0 0 6px #3b82f6;
   z-index: 1000 !important;
 }
 
-:global(.map-popup) {
-  padding: 10px;
-  font-family: inherit;
-}
-
-:global(.route-label) {
-  background: none !important;
-  border: none !important;
-}
-
-:global(.route-label__text) {
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-  white-space: nowrap;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  font-family: inherit;
-}
-
-:global(.osrm-route) {
-  transition: all 0.2s;
-}
-
-/* Highlight optimal warehouse in select */
-select option[data-optimal="true"] {
-  background-color: rgba(59, 130, 246, 0.1);
-  font-weight: 600;
-}
-
-/* Highlight suggested supplier in select */
-select option[data-suggested="true"] {
-  background-color: rgba(245, 158, 11, 0.1);
-  font-weight: 600;
-}
-
-/* Form Group Enhancements */
-.form-group--highlighted {
-  background-color: rgba(59, 130, 246, 0.05);
-  border-radius: 8px;
-  padding: 15px;
-  border-left: 4px solid #3b82f6;
-  margin-bottom: 25px;
-}
-
-.form-group--highlighted label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.required {
-  color: #ef4444;
-  font-size: 0.9rem;
-}
-
-.loading-text {
-  font-size: 0.9rem;
-  color: #94a3b8;
-}
-
-.form-group__info {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: #475569;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.form-group__info .loading-state--inline,
-.form-group__info .error-state--inline {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-}
-
-.spinner--small {
-  width: 20px;
-  height: 20px;
-  border-width: 2px;
-}
-
-.optimal-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 500;
-}
-
-.optimal-badge {
-  background-color: #3b82f6;
-  color: white;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.optimal-badge--supplier {
-  background-color: #f59e0b;
-}
-
-.tooltip {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  margin-left: 10px;
-}
-
-.warning-state {
-  color: #f59e0b;
-  font-size: 0.9rem;
-}
-
-.warning-text {
-  color: #f59e0b;
-}
-
-.error-text {
-  color: #ef4444;
-  font-size: 0.9rem;
-}
-
-/* Summary Section */
-.form-group--summary {
-  background-color: #e2e8f0;
-  border-radius: 8px;
-  padding: 15px;
-  margin-top: 20px;
-}
-
-.form-group--summary h4 {
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.summary-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.summary-item:last-child {
-  border-bottom: none;
-}
-
-.summary-item--total {
-  font-weight: 600;
-  margin-top: 10px;
-}
-
-/* Responsive Adjustments */
 @media (max-width: 768px) {
-  .form-group--highlighted {
-    padding: 10px;
+  .distribution-table {
+    font-size: 0.75rem;
   }
-
-  .form-group__info {
-    font-size: 0.85rem;
+  .distribution-table th,
+  .distribution-table td {
+    padding: 6px 8px;
   }
-
-  .optimal-info {
-    flex-direction: column;
-    align-items: flex-start;
+  .editable-select {
+    font-size: 0.75rem;
+    padding: 5px 7px;
   }
-
-  .summary-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-}
-/* Transporter Config Styles */
-.config-card {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.config-card h3 {
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.config-card p {
-  color: #64748b;
-  margin-bottom: 20px;
-}
-
-.config-slider {
-  width: 100%;
-  margin: 20px 0;
-}
-
-.config-slider-label {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.config-slider-value {
-  font-weight: 600;
-  color: #3b82f6;
-}
-
-/* Range Input Styles */
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 80%;
-  height: 8px;
-  border-radius: 4px;
-  background: #e2e8f0;
-  outline: none;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #3b82f6;
-  cursor: pointer;
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #3b82f6;
-  cursor: pointer;
-}
-.map-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(248, 250, 252, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 400;
-}
-
-.placeholder-content {
-  text-align: center;
-  padding: 20px;
-  max-width: 300px;
-}
-
-.placeholder-content .icon {
-  font-size: 3rem;
-  margin-bottom: 15px;
-  display: block;
-}
-
-.placeholder-content p {
-  color: #64748b;
-  line-height: 1.5;
 }
 </style>

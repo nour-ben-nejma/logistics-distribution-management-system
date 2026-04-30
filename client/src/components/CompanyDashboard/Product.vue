@@ -321,14 +321,14 @@ onMounted(() => {
 .zoom-in-95 { animation-name: zoom-in-95; }
 
 /* Category Colors */
-.bg-category-electronics { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.bg-category-clothing { background: linear-gradient(135deg, #ec4899, #db2777); }
-.bg-category-food { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.bg-category-furniture { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-.bg-category-health { background: linear-gradient(135deg, #ef4444, #dc2626); }
-.bg-category-beauty { background: linear-gradient(135deg, #10b981, #059669); }
-.bg-category-sports { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-.bg-category-automotive { background: linear-gradient(135deg, #64748b, #475569); }
-.bg-category-home { background: linear-gradient(135deg, #f97316, #ea580c); }
-.bg-category-books { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.bg-category-electronics { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-clothing { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-food { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-furniture { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-health { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-beauty { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-sports { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-automotive { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-home { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
+.bg-category-books { background: #1a1f2c; border-bottom: 2px solid #c4a484; }
 </style>

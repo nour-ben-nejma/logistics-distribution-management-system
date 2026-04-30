@@ -20,7 +20,7 @@
     <!-- KPI Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
-        <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-premium-midnight transition-colors duration-500">
+        <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 group-hover:bg-premium-gold/10 transition-colors duration-500">
           <Users class="w-6 h-6 text-slate-400 group-hover:text-premium-gold transition-colors" />
         </div>
         <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">{{ transporters.length }}</p>
@@ -102,7 +102,7 @@
                   class="w-full h-full object-cover" 
                   :alt="transporter.firstName"
                 />
-                <div v-else class="w-full h-full flex items-center justify-center bg-premium-midnight text-premium-gold font-display font-black text-2xl">
+                <div v-else class="w-full h-full flex items-center justify-center bg-slate-50 border border-slate-100 text-premium-midnight font-display font-black text-2xl group-hover:text-premium-gold transition-colors">
                   {{ getInitials(transporter) }}
                 </div>
               </div>
@@ -144,12 +144,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-slate-50/50 p-4 rounded-2xl">
               <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Permis</p>
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-lg bg-premium-midnight flex items-center justify-center text-[10px] font-black text-premium-gold">
-                  {{ transporter.typeDrivingLicence }}
-                </div>
-                <p class="text-sm font-bold text-premium-midnight">Catégorie {{ transporter.typeDrivingLicence }}</p>
-              </div>
+              <p class="text-sm font-bold text-premium-midnight">Catégorie {{ transporter.typeDrivingLicence }}</p>
             </div>
             <div class="bg-slate-50/50 p-4 rounded-2xl">
               <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut</p>
