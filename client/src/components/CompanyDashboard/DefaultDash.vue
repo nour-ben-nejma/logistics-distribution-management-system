@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, shallowRef, onMounted, onBeforeUnmount } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
@@ -134,8 +134,8 @@ const api = axios.create({
   baseURL: 'http://localhost:3000/api',
 });
 
-const map = ref<L.Map | null>(null);
-const markers = ref<L.Marker[]>([]);
+const map = shallowRef<any>(null);
+const markers = shallowRef<L.Marker[]>([]);
 const showSalePoints = ref(true);
 const showWarehouses = ref(true);
 const loading = ref(false);
@@ -188,7 +188,7 @@ const initMap = () => {
     attribution: '© CartoDB',
     maxZoom: 18,
     minZoom: 6,
-  }).addTo(map.value!);
+  }).addTo(map.value as any);
 };
 
 const loadData = async () => {
@@ -259,10 +259,10 @@ const updateMap = () => {
 
   locationsToShow.forEach(loc => {
     const icon = loc.type === 'salePoint' ? salePointIcon : warehouseIcon;
-    const [lng, lat] = loc.position.coordinates;
+    const [lat, lng] = loc.position.coordinates;
     
     const marker = L.marker([lat, lng], { icon })
-      .addTo(map.value!)
+      .addTo(map.value as any)
       .bindPopup(`
         <div class="map-popup-premium">
           <div class="flex items-center gap-3 mb-4">

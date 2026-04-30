@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, shallowRef, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
@@ -256,7 +256,7 @@ const selectedWarehouse = ref<Warehouse | null>(null);
 const suggestedSupplier = ref<Supplier | null>(null);
 const requiresSupplier = ref(false);
 const detailedContract = ref<Contract | null>(null);
-const mapInstance = ref<L.Map | null>(null);
+const mapInstance = shallowRef<L.Map | null>(null);
 const selectedRoute = ref<DistributionPlanEntry | null>(null);
 const mapLoading = ref(false);
 const lastCreatedContract = ref<Contract | null>(null);
@@ -1351,7 +1351,7 @@ const displayRoute = async (routes: DistributionPlanEntry[], highlightRoute: Dis
       color: '#3b82f6',
       weight: 6,
       opacity: 1,
-    }).addTo(mapInstance.value!);
+    }).addTo(mapInstance.value as any);
 
     waypoints.forEach(wp => {
       const icon = L.divIcon({
@@ -1380,7 +1380,7 @@ const displayRoute = async (routes: DistributionPlanEntry[], highlightRoute: Dis
             ${wp.distanceFromPrevious ? `<br><small>Distance: ${wp.distanceFromPrevious.toFixed(2)} km</small>` : ''}
           </div>
         `)
-        .addTo(mapInstance.value!);
+        .addTo(mapInstance.value as any);
     });
 
     mapInstance.value!.fitBounds(latlngs, {
@@ -1816,7 +1816,7 @@ const downloadPDF = async () => {
       currentY += 10;
     }
 
-    const pageCount = doc.internal.getNumberOfPages();
+    const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
