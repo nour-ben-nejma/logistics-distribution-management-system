@@ -1,186 +1,191 @@
 <template>
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <h2>LogistiCo</h2>
+  <aside 
+    class="fixed left-0 top-0 bottom-0 z-50 transition-all duration-500 ease-in-out bg-premium-midnight/95 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-hidden"
+    :class="[isCollapsed ? 'w-20' : 'w-72']"
+  >
+    <!-- Logo Section -->
+    <div class="h-20 flex items-center px-5 border-b border-white/5">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 bg-premium-gold rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-premium-gold/20">
+          <Box class="w-5 h-5 text-white" />
+        </div>
+        <Transition name="fade">
+          <span v-if="!isCollapsed" class="text-xl font-display font-black text-white tracking-tighter whitespace-nowrap">
+            Logisti<span class="text-premium-gold">Co</span>
+          </span>
+        </Transition>
+      </div>
     </div>
-    <nav class="sidebar-nav">
-      <ul>
+
+    <!-- Navigation -->
+    <nav class="flex-grow px-4 overflow-y-auto custom-scrollbar py-4">
+      <ul class="space-y-1">
         <li v-for="item in menuItems" :key="item.name">
           <router-link 
             :to="item.route" 
-            class="nav-link" 
-            :class="{ active: isActive(item.route) }"
+            class="group relative flex items-center h-11 px-4 rounded-xl transition-all duration-300"
+            :class="[isActive(item.route) ? 'bg-premium-gold/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5']"
           >
-            <i :class="item.icon"></i>
-            <span>{{ item.name }}</span>
+            <!-- Active Indicator -->
+            <div 
+              v-if="isActive(item.route)" 
+              class="absolute left-0 top-2 bottom-2 w-1 bg-premium-gold rounded-r-full shadow-[0_0_10px_rgba(212,175,55,0.5)]"
+            ></div>
+            
+            <component 
+              :is="item.icon" 
+              class="w-5 h-5 shrink-0 transition-colors"
+              :class="[isActive(item.route) ? 'text-premium-gold' : 'group-hover:text-premium-gold']"
+            />
+            
+            <Transition name="fade">
+              <span v-if="!isCollapsed" class="ml-4 text-sm font-medium tracking-wide whitespace-nowrap">
+                {{ item.name }}
+              </span>
+            </Transition>
+
+            <!-- Tooltip for collapsed state -->
+            <div v-if="isCollapsed" class="fixed left-24 px-3 py-2 bg-premium-midnight text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-[100]">
+              {{ item.name }}
+            </div>
           </router-link>
         </li>
       </ul>
-      <div class="sidebar-footer">
-        <button class="logout-btn" @click="logout">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>Log Out</span>
-        </button>
-        <div class="app-version">v1.0</div>
-      </div>
     </nav>
+
+    <!-- Profile & Footer -->
+    <div class="p-4 mt-auto border-t border-white/5 space-y-4">
+      <!-- User Preview -->
+      <div 
+        class="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
+        :class="{'justify-center': isCollapsed}"
+      >
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-premium-gold to-premium-gold-light flex items-center justify-center shrink-0 shadow-lg">
+          <span class="text-white font-bold">{{ userInitials }}</span>
+        </div>
+        <Transition name="fade">
+          <div v-if="!isCollapsed" class="flex flex-col min-w-0">
+            <span class="text-sm font-bold text-white truncate">{{ userName }}</span>
+            <span class="text-[10px] text-slate-500 font-medium truncate uppercase tracking-widest">Compte Entreprise</span>
+          </div>
+        </Transition>
+      </div>
+
+      <!-- Logout -->
+      <button 
+        @click="logout"
+        class="w-full flex items-center h-11 px-4 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group"
+        :class="{'justify-center': isCollapsed}"
+      >
+        <LogOut class="w-5 h-5 shrink-0 group-hover:rotate-12 transition-transform" />
+        <Transition name="fade">
+          <span v-if="!isCollapsed" class="ml-4 text-sm font-medium">Déconnexion</span>
+        </Transition>
+      </button>
+    </div>
   </aside>
-  <div class="content">
-    <!-- Contenu principal ici -->
-  </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import { useRoute } from 'vue-router';
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
+import { 
+  Box, 
+  LayoutDashboard, 
+  User, 
+  Truck, 
+  Warehouse, 
+  MapPin, 
+  Handshake, 
+  Package, 
+  Route, 
+  Ship, 
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings
+} from 'lucide-vue-next';
 
-export default defineComponent({
-  name: 'SideBar',
-  setup() {
-    const route = useRoute();
-    
-    const isActive = (path: string) => {
-      return route.path === path;
-    };
+const props = defineProps<{
+  isCollapsed: boolean
+}>();
 
-    return {
-      isActive
-    };
-  },
-  data() {
-    return {
-      menuItems: [
-      { name: 'Dashboard',        route: '/dashCompany', icon: 'fas fa-home' },
-      { name: 'Profile', route: '/profile', icon: 'fas fa-user' },
-        { name: 'Trucks', route: '/DashCompany/trucks', icon: 'fas fa-truck' },
-        { name: 'Warehouses', route: '/DashCompany/WareHouse', icon: 'fas fa-building' },
-        { name: 'Transporters', route: '/DashCompany/TransEntrep', icon: 'fas fa-user-tie' },
-        { name: 'Sales Points', route: '/DashCompany/SalePoint', icon: 'fas fa-store' },
-        { name: 'Suppliers', route: '/DashCompany/Fourniss', icon: 'fas fa-store' },
-        { name: 'Products', route: '/DashCompany/products', icon: 'fas fa-tags' },
-        { name: 'Distribution Plan', route: '/DashCompany/distributionPlan', icon: 'fas fa-calendar-alt' },
-      ]
-    };
-  },
-  methods: {
-    async logout() {
-      try {
-        await axios.post('/api/auth/logout', {}, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
-        });
-        
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/';
-      } catch (error) {
-        console.error('Error during logout:', error);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/';
-      }
-    }
+const emit = defineEmits(['toggle']);
+
+const route = useRoute();
+const router = useRouter();
+const userName = ref('Entreprise User');
+
+onMounted(() => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user && user.nom) {
+    userName.value = user.nom;
   }
 });
+
+const userInitials = computed(() => {
+  return userName.value.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+});
+
+const isActive = (path: string) => {
+  return route.path === path;
+};
+
+const menuItems = [
+  { name: 'Dashboard', route: '/dashCompany', icon: LayoutDashboard },
+  { name: 'Mon Profil', route: '/profile', icon: User },
+  { name: 'Véhicules', route: '/dashCompany/trucks', icon: Truck },
+  { name: 'Entrepôts', route: '/dashCompany/WareHouse', icon: Warehouse },
+  { name: 'Transporteurs', route: '/dashCompany/TransEntrep', icon: Ship },
+  { name: 'Plan de Distrib.', route: '/dashCompany/distributionPlan', icon: Route },
+  { name: 'Points de Vente', route: '/dashCompany/Salepoint', icon: MapPin },
+  { name: 'Fournisseurs', route: '/dashCompany/Fourniss', icon: Handshake },
+  { name: 'Produits', route: '/dashCompany/products', icon: Package },
+];
+
+const logout = async () => {
+  try {
+    await axios.post('http://localhost:3000/api/auth/logout', {}, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+      }
+    });
+  } catch (error) {
+    console.error('Error during logout:', error);
+  } finally {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+    router.push('/');
+  }
+};
 </script>
+
 <style scoped>
-/* Sidebar fixe */
-.sidebar {
-  width: 250px; /* Largeur fixe */
-  height: 100vh; /* Hauteur totale moins la hauteur de la NavBar */
-  position: fixed; /* Fixe le sidebar sur le côté gauche */
-  /* top: 50px; Démarre en dessous de la NavBar */
-  left: 0;
-  background-color: white; /* Couleur du fond */
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Ombre légère */
-  overflow-y: auto; /* Ajoute un scroll si nécessaire */
-  padding: 20px;
-  z-index: 99; /* La Sidebar doit être en dessous de la NavBar */
-
+.custom-scrollbar::-webkit-scrollbar {
+  width: 0px;
 }
-.logout-btn {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(237, 143, 154, 0.05);
-  color: var(--danger);
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  margin-top: 100px;
+.custom-scrollbar:hover::-webkit-scrollbar {
+  width: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
 }
 
-.logout-btn i {
-  margin-right: 0.75rem;
-  font-size: 1rem;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.logout-btn:hover {
-  background: rgba(136, 129, 130, 0.1);
-}
-/* Header du sidebar */
-.sidebar-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.sidebar-header h2 {
-  font-size: 2rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: transparent;
-  background: linear-gradient(90deg, #e7a534, #ff6b6b);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-/* Navigation */
-.sidebar-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar-nav li {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-/* Style des liens */
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  color: #151a1b;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.nav-link i {
-  margin-right: 10px;
-}
-
-/* Hover et active */
-.nav-link:hover {
-  background: linear-gradient(90deg, #e7a534, #ff6b6b);
-  border-radius: 18px;
-}
-
-.active {
-  background-color: #ebf2f0;
-}
-
-/* Ajustement du contenu principal */
-.content {
-  margin-left: 250px; /* Décale le contenu principal */
-  padding: 20px;
-  width: calc(100% - 250px); /* Ajuste la largeur */
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
 }
 </style>

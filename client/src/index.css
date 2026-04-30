@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@theme {
+  --font-sans: "Outfit", "Inter", "sans-serif";
+  --font-display: "Outfit", "sans-serif";
+  
+  --color-premium-midnight: #0F172A;
+  --color-premium-gold: #D4AF37;
+  --color-premium-gold-light: #F5E6BE;
+  --color-premium-slate: #1E293B;
+  --color-premium-surface: #F8FAFC;
+  --color-premium-border: #E2E8F0;
+  
+  --shadow-premium: 0 10px 30px -10px rgba(15, 23, 42, 0.1), 0 4px 15px -5px rgba(15, 23, 42, 0.05);
+  --shadow-gold: 0 10px 30px -10px rgba(212, 175, 55, 0.2);
+  
+  --radius-premium: 1.25rem;
+}
+
+@layer base {
+  body {
+    @apply bg-premium-surface text-premium-slate font-sans antialiased;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold;
+  }
+}
+
+@utility glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/20;
+}
+
+@utility glass-dark {
+  @apply bg-premium-midnight/80 backdrop-blur-lg border border-white/10;
+}
+
+@utility btn-gold {
+  @apply px-6 py-3 rounded-premium font-semibold transition-all duration-300 active:scale-95 bg-premium-gold text-white shadow-gold hover:bg-premium-gold/90;
+}
+
+@utility btn-outline {
+  @apply px-6 py-3 rounded-premium font-semibold transition-all duration-300 active:scale-95 border-2 border-premium-gold text-premium-gold hover:bg-premium-gold hover:text-white;
+}
+
+@utility card-premium {
+  @apply bg-white rounded-premium p-6 shadow-premium border border-premium-border transition-all duration-300 hover:translate-y-[-4px];
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-premium-slate/10 rounded-full hover:bg-premium-slate/20;
+}

@@ -1,33 +1,37 @@
 <template>
-  <div>
+  <div class="home-entreprise overflow-x-hidden">
     <HeaderPage />
     <Banner />
-    <SectionOne />
-    <SectionTwo />
+    <FeatureSection />
+    <ServicesSection />
+    <ContactForm />
     <FooterPage />
-    <ContactSection />
   </div>
 </template>
 
 <script lang="ts">
 import Header from '../components/HomeEntreprise/Header.vue'
 import Banner from '../components/HomeEntreprise/Banner.vue'
-import SectionOne from '../components/HomeEntreprise/SectionOne.vue'
-import SectionTwo from '../components/HomeEntreprise/SectionTwo.vue'
-import Contact from '../components/HomeEntreprise/Contact.vue'
+import FeatureSection from '../components/HomeEntreprise/FeatureSection.vue'
+import ServicesSection from '../components/HomeEntreprise/ServicesSection.vue'
+import ContactForm from '../components/HomeEntreprise/ContactForm.vue'
+import Footer from '../components/HomeEntreprise/Footer.vue'
 
 export default {
+  name: 'HomeEntreprise',
   components: {
     HeaderPage: Header,
     Banner,
-    SectionOne,
-    SectionTwo,
-    ContactSection: Contact,
-   
+    FeatureSection,
+    ServicesSection,
+    ContactForm,
+    FooterPage: Footer,
   },
 }
 </script>
 
 <style scoped>
-/* Styles spécifiques pour HomeEntreprise */
+.home-entreprise {
+  background-color: var(--color-premium-surface);
+}
 </style>

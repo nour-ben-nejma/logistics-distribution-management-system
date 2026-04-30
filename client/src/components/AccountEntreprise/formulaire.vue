@@ -1,250 +1,306 @@
 <template>
-  <div class="registration-page">
-    <div class="content-wrapper">
-      <!-- Left Panel - Company Info -->
-      <div class="info-panel">
-        <div class="info-content">
-          <h1>Welcome to LogistiCO</h1>
-          <p>Your Premier Logistics Partner</p>
+  <div class="min-h-screen bg-premium-surface font-sans selection:bg-premium-gold/30">
+    <!-- Background Decor -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-premium-gold/5 blur-[120px] rounded-full"></div>
+      <div class="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-premium-midnight/5 blur-[120px] rounded-full"></div>
+    </div>
+
+    <div class="relative min-h-screen flex items-center justify-center p-6 md:p-12">
+      <div class="w-full max-w-6xl flex flex-col lg:flex-row glass rounded-[2.5rem] overflow-hidden shadow-2xl border-white/40">
+        
+        <!-- Left Panel: Brand & Info -->
+        <div class="lg:w-2/5 bg-premium-midnight p-8 md:p-12 flex flex-col justify-between text-white relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-48 h-48 bg-premium-gold/10 blur-[60px] -mr-24 -mt-24"></div>
           
-          <div class="features">
-            <div class="feature">
-              <Truck class="feature-icon" />
-              <span>Global Transport Solutions</span>
-            </div>
-            <div class="feature">
-              <Warehouse class="feature-icon" />
-              <span>Secure Storage Facilities</span>
-            </div>
-            <div class="feature">
-              <Route class="feature-icon" />
-              <span>Distribution Planning</span>
-            </div>
-            <div class="feature">
-              <Clock class="feature-icon" />
-              <span>24/7 Support</span>
-            </div>
-          </div>
-        </div>
-      </div>
+          <div class="relative z-10">
+            <router-link to="/" class="flex items-center gap-3 mb-12 group">
+              <div class="w-10 h-10 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center border border-white/10 group-hover:rotate-6 transition-all duration-500">
+                <img src="../../assets/Images/Logo.png" alt="Logo" class="w-6 h-6 object-contain brightness-0 invert" />
+              </div>
+              <div class="flex flex-col -space-y-1">
+                <span class="text-xl font-display font-black tracking-tighter">Logisti<span class="text-premium-gold">Co</span></span>
+                <span class="text-[7px] font-bold text-premium-gold uppercase tracking-[0.4em] ml-0.5">Excellence Hub</span>
+              </div>
+            </router-link>
 
-      <!-- Right Panel - Registration Form -->
-      <div class="form-panel">
-        <form @submit.prevent="handleSubmit" class="registration-form">
-          <!-- Logo Upload -->
-          <div class="logo-section">
-            <input
-              type="file"
-              ref="logoInput"
-              @change="handleFileUpload"
-              accept="image/*"
-              class="hidden"
-              id="logo-upload"
-            />
-            <label for="logo-upload" class="logo-upload">
-              <template v-if="logoPreview">
-                <img :src="logoPreview" alt="Preview" class="logo-preview" />
-              </template>
-              <template v-else>
-                <div class="upload-placeholder">
-                  <Upload class="upload-icon" />
-                  <span>Upload Logo</span>
+            <h1 class="text-3xl md:text-4xl font-display font-bold leading-[1.1] mb-5">
+              Rejoignez <br />
+              <span class="text-premium-gold italic">L'Élite Logistique.</span>
+            </h1>
+            <p class="text-slate-400 text-sm mb-10 font-medium max-w-xs leading-relaxed">
+              Optimisez votre chaîne d'approvisionnement avec une précision chirurgicale.
+            </p>
+
+            <div class="space-y-5">
+              <div v-for="(feat, i) in features" :key="i" class="flex items-center gap-4 group cursor-default">
+                <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-premium-gold/20 group-hover:border-premium-gold/30 transition-all duration-300">
+                  <component :is="feat.icon" class="w-4 h-4 text-premium-gold" />
                 </div>
-              </template>
-            </label>
-            <button
-              v-if="logoPreview"
-              type="button"
-              @click="removeImage"
-              class="remove-logo"
-            >
-              <X class="remove-icon" />
-            </button>
-          </div>
-
-          <!-- Form Fields -->
-          <div class="fields-grid">
-            <!-- Company Name -->
-            <div class="field-group">
-              <Building2 class="field-icon" />
-              <input
-                type="text"
-                v-model="formData.companyName"
-                placeholder="Company Name"
-                required
-                :class="{ 'error': formData.companyName.length === 0 && isSubmitting }"
-              />
-              <div v-if="formData.companyName.length === 0 && isSubmitting" class="field-error">
-                Company name is required
-              </div>
-            </div>
-
-            <!-- Phone Number -->
-            <div class="field-group">
-              <Phone class="field-icon" />
-              <input
-                type="tel"
-                v-model="formData.phoneNumber"
-                placeholder="Phone Number"
-                required
-                :class="{ 'error': showPhoneError }"
-              />
-              <div v-if="showPhoneError" class="field-error">
-                Please enter a valid phone number
-              </div>
-            </div>
-
-            <!-- Tax Registration Number -->
-            <div class="field-group">
-              <FileText class="field-icon" />
-              <input
-                type="text"
-                v-model="formData.taxRegistrationNumber"
-                placeholder="Tax Registration Number"
-                required
-                :class="{ 'error': showTaxNumberError }"
-              />
-              <div v-if="showTaxNumberError" class="field-error">
-                Only alphanumeric characters allowed
-              </div>
-            </div>
-
-            <!-- Legal Status -->
-            <div class="field-group">
-              <Gavel class="field-icon" />
-              <select
-                v-model="formData.legalStatus"
-                required
-                :class="{ 'error': formData.legalStatus.length === 0 && isSubmitting }"
-              >
-                <option value="" disabled>Select Legal Status</option>
-                <option value="SA">SA</option>
-                <option value="SARL">SARL</option>
-                <option value="SAS">SAS</option>
-                <option value="SNC">SNC</option>
-              </select>
-              <div v-if="formData.legalStatus.length === 0 && isSubmitting" class="field-error">
-                Please select a legal status
-              </div>
-            </div>
-
-            <!-- Registered Office Address -->
-            <div class="field-group full-width">
-              <MapPin class="field-icon" />
-              <input
-                type="text"
-                v-model="formData.registeredOfficeAddress"
-                placeholder="Registered Office Address"
-                required
-                :class="{ 'error': formData.registeredOfficeAddress.length === 0 && isSubmitting }"
-              />
-              <div v-if="formData.registeredOfficeAddress.length === 0 && isSubmitting" class="field-error">
-                Address is required
-              </div>
-            </div>
-
-            <!-- Email -->
-            <div class="field-group">
-              <Mail class="field-icon" />
-              <input
-                type="email"
-                v-model="formData.email"
-                placeholder="Email Address"
-                required
-                :class="{ 'error': showEmailError }"
-              />
-              <div v-if="showEmailError" class="field-error">
-                Please enter a valid email address
-              </div>
-            </div>
-
-            <!-- Password -->
-            <div class="field-group">
-              <Lock class="field-icon" />
-              <input
-                type="password"
-                v-model="formData.password"
-                placeholder="Password"
-                required
-                :class="{ 'error': showPasswordError }"
-              />
-              <div v-if="showPasswordError" class="field-error">
-                Password must be at least 8 characters
-              </div>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="field-group">
-              <Lock class="field-icon" />
-              <input
-                type="password"
-                v-model="formData.confirmPassword"
-                placeholder="Confirm Password"
-                required
-                :class="{ 'error': passwordMismatch }"
-              />
-              <div v-if="passwordMismatch" class="field-error">
-                Passwords don't match
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">{{ feat.text }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Terms and Conditions -->
-          <div class="terms-group">
-            <input
-              type="checkbox"
-              id="terms"
-              v-model="formData.acceptedTerms"
-              required
-              class="terms-checkbox"
-            />
-            <label for="terms" class="terms-label">
-              I agree to the <a href="#" class="terms-link">Terms and Conditions</a>
-            </label>
-            <div v-if="!formData.acceptedTerms && isSubmitting" class="field-error terms-error">
-              You must accept the terms and conditions
+          <div class="relative z-10 pt-12 mt-auto">
+            <div class="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+              <p class="text-xs text-slate-400 italic">"L'innovation est le moteur de notre excellence opérationnelle."</p>
+              <div class="mt-4 flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-premium-gold/20 border border-premium-gold/30"></div>
+                <div>
+                  <p class="text-[10px] font-bold text-white uppercase tracking-wider">Direction LogistiCo</p>
+                  <p class="text-[9px] text-premium-gold font-medium uppercase tracking-widest">Vision 2026</p>
+                </div>
+              </div>
             </div>
           </div>
-
-          <!-- Form Actions -->
-          <div class="form-actions">
-            <button
-              type="submit"
-              :disabled="isSubmitting"
-              class="submit-button"
-            >
-              <CheckCircle class="button-icon" />
-              {{ isSubmitting ? 'Processing...' : 'Complete Registration' }}
-            </button>
-            <button
-              type="button"
-              @click="resetForm"
-              class="reset-button"
-            >
-              <RotateCcw class="button-icon" />
-              Reset
-            </button>
-          </div>
-        </form>
-
-        <!-- Messages -->
-        <div v-if="errorMessage" class="message error">
-          {{ errorMessage }}
-          <button @click="errorMessage = ''" class="message-close">
-            <X />
-          </button>
         </div>
 
-        <div v-if="successMessage" class="message success">
-          {{ successMessage }}
-          <button @click="successMessage = ''" class="message-close">
-            <X />
-          </button>
+        <!-- Right Panel: Registration Form -->
+        <div class="lg:w-3/5 bg-white/80 backdrop-blur-md p-8 md:p-14 overflow-y-auto max-h-[90vh] lg:max-h-none relative">
+          <!-- Back Button -->
+          <router-link to="/" class="absolute top-6 left-6 md:left-10 flex items-center gap-2 text-slate-400 hover:text-premium-gold transition-colors group">
+            <div class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-premium-gold/10 transition-all">
+              <ChevronLeft class="w-3.5 h-3.5" />
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-widest">Retour</span>
+          </router-link>
+
+          <div class="max-w-2xl mx-auto">
+            <div class="mb-10">
+              <h2 class="text-2xl font-display font-bold text-premium-midnight mb-1">Inscription Entreprise</h2>
+              <p class="text-sm text-slate-500 font-medium">Veuillez remplir les informations de votre société.</p>
+            </div>
+
+            <form @submit.prevent="handleSubmit" class="space-y-6">
+              <!-- Logo Upload -->
+              <div class="flex flex-col items-center mb-10">
+                <div class="relative group">
+                  <input
+                    type="file"
+                    ref="logoInput"
+                    @change="handleFileUpload"
+                    accept="image/*"
+                    class="hidden"
+                    id="logo-upload"
+                  />
+                  <label for="logo-upload" class="cursor-pointer block">
+                    <div class="w-24 h-24 rounded-full border-2 border-dashed border-premium-gold/30 bg-premium-surface flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-premium-gold group-hover:bg-premium-gold/5 group-hover:scale-[1.02] shadow-inner">
+                      <template v-if="logoPreview">
+                        <img :src="logoPreview" alt="Preview" class="w-full h-full object-cover" />
+                      </template>
+                      <template v-else>
+                        <div class="flex flex-col items-center gap-1.5 text-premium-gold/60">
+                          <Upload class="w-6 h-6" />
+                          <span class="text-[9px] font-bold uppercase tracking-widest">Logo</span>
+                        </div>
+                      </template>
+                    </div>
+                  </label>
+                  <button
+                    v-if="logoPreview"
+                    type="button"
+                    @click="removeImage"
+                    class="absolute -top-1 -right-1 w-7 h-7 bg-white text-red-500 rounded-full shadow-lg border border-slate-100 flex items-center justify-center hover:bg-red-50 transition-colors"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Form Fields -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Company Name -->
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Nom de l'entreprise</label>
+                  <div class="relative group">
+                    <Building2 class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                    <input
+                      type="text"
+                      v-model="formData.companyName"
+                      placeholder="Ex: LogistiCo Corp"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight placeholder:text-slate-300 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Phone -->
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Téléphone</label>
+                  <div class="relative group">
+                    <Phone class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                    <input
+                      type="tel"
+                      v-model="formData.phoneNumber"
+                      placeholder="+33 X XX XX XX XX"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight placeholder:text-slate-300 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Tax Registration -->
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Numéro SIRET / Taxe</label>
+                  <div class="relative group">
+                    <FileText class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                    <input
+                      type="text"
+                      v-model="formData.taxRegistrationNumber"
+                      placeholder="123 456 789 00012"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight placeholder:text-slate-300 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Legal Status -->
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Statut Juridique</label>
+                  <div class="relative group">
+                    <Gavel class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors pointer-events-none" />
+                    <select
+                      v-model="formData.legalStatus"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight appearance-none cursor-pointer text-sm"
+                      required
+                    >
+                      <option value="" disabled>Sélectionner un statut</option>
+                      <option value="SA">Société Anonyme (SA)</option>
+                      <option value="SARL">SARL</option>
+                      <option value="SAS">SAS</option>
+                      <option value="SNC">SNC</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Address -->
+                <div class="space-y-2 md:col-span-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Siège Social</label>
+                  <div class="relative group">
+                    <MapPin class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                    <input
+                      type="text"
+                      v-model="formData.registeredOfficeAddress"
+                      placeholder="Adresse complète du siège"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight placeholder:text-slate-300 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-2 md:col-span-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Email Professionnel</label>
+                  <div class="relative group">
+                    <Mail class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                    <input
+                      type="email"
+                      v-model="formData.email"
+                      placeholder="contact@entreprise.com"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight placeholder:text-slate-300 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Password -->
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Mot de passe</label>
+                  <div class="relative group">
+                    <Lock class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                    <input
+                      type="password"
+                      v-model="formData.password"
+                      placeholder="********"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight placeholder:text-slate-300 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Confirmation</label>
+                  <div class="relative group">
+                    <Lock class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                    <input
+                      type="password"
+                      v-model="formData.confirmPassword"
+                      placeholder="********"
+                      class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-premium-gold focus:ring-4 focus:ring-premium-gold/5 transition-all font-medium text-premium-midnight placeholder:text-slate-300 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Terms -->
+              <div class="flex items-center gap-3 p-3 bg-premium-surface rounded-2xl border border-slate-100">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  v-model="formData.acceptedTerms"
+                  class="w-4 h-4 rounded border-slate-300 text-premium-gold focus:ring-premium-gold"
+                  required
+                />
+                <label for="terms" class="text-xs text-slate-500 font-medium">
+                  J'accepte les <a href="#" class="text-premium-midnight font-bold hover:text-premium-gold transition-colors underline underline-offset-4 decoration-premium-gold/30">Conditions d'Utilisation</a>
+                </label>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex flex-col sm:flex-row gap-4 pt-2">
+                <button
+                  type="submit"
+                  :disabled="isSubmitting"
+                  class="flex-1 btn-gold !py-4 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group shadow-lg shadow-premium-gold/20"
+                >
+                  <CheckCircle v-if="!isSubmitting" class="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <RotateCcw v-else class="w-4 h-4 animate-spin" />
+                  <span class="uppercase tracking-widest text-[10px] font-bold">{{ isSubmitting ? 'Finalisation...' : 'Valider l\'inscription' }}</span>
+                </button>
+                <button
+                  type="button"
+                  @click="resetForm"
+                  class="px-8 py-4 rounded-premium border-2 border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all text-[10px] font-bold uppercase tracking-widest"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </form>
+
+            <!-- Success/Error Messages -->
+            <Transition name="fade">
+              <div v-if="errorMessage" class="mt-8 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                <div class="flex items-center gap-3">
+                  <X class="w-5 h-5" />
+                  <p class="text-sm font-medium">{{ errorMessage }}</p>
+                </div>
+                <button @click="errorMessage = ''" class="hover:rotate-90 transition-transform">
+                  <X class="w-4 h-4" />
+                </button>
+              </div>
+            </Transition>
+
+            <Transition name="fade">
+              <div v-if="successMessage" class="mt-8 p-4 bg-green-50 border border-green-100 text-green-600 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                <div class="flex items-center gap-3">
+                  <CheckCircle class="w-5 h-5" />
+                  <p class="text-sm font-medium">{{ successMessage }}</p>
+                </div>
+                <button @click="successMessage = ''" class="hover:rotate-90 transition-transform">
+                  <X class="w-4 h-4" />
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import axios from 'axios';
@@ -263,12 +319,20 @@ import {
   Truck,
   Warehouse,
   Route,
-  Clock
+  Clock,
+  ChevronLeft
 } from 'lucide-vue-next';
-// Configuration de l'API
+
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api' // Remplacez par votre URL d'API
+  baseURL: 'http://localhost:3000/api'
 });
+
+const features = [
+  { icon: Truck, text: 'Logistique Globale' },
+  { icon: Warehouse, text: 'Entreposage Sécurisé' },
+  { icon: Route, text: 'Planification Intelligente' },
+  { icon: Clock, text: 'Support Élite 24/7' }
+];
 
 interface FormData {
   companyName: string;
@@ -280,6 +344,7 @@ interface FormData {
   password: string;
   confirmPassword: string;
   logo?: File;
+  acceptedTerms: boolean;
 }
 
 const formData = ref<FormData>({
@@ -291,6 +356,7 @@ const formData = ref<FormData>({
   email: '',
   password: '',
   confirmPassword: '',
+  acceptedTerms: false
 });
 
 const logoPreview = ref('');
@@ -304,40 +370,11 @@ const passwordMismatch = computed(() => {
          formData.value.confirmPassword.length > 0;
 });
 
-// Dans la partie script, ajoutez ces computed properties et méthodes
-const emailValid = computed(() => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email);
-});
+const emailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email));
+const phoneValid = computed(() => /^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$/.test(formData.value.phoneNumber));
+const taxNumberValid = computed(() => /^[a-zA-Z0-9\s]+$/.test(formData.value.taxRegistrationNumber));
+const passwordValid = computed(() => formData.value.password.length >= 8);
 
-const phoneValid = computed(() => {
-  return /^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$/.test(formData.value.phoneNumber);
-});
-
-const taxNumberValid = computed(() => {
-  return /^[a-zA-Z0-9]+$/.test(formData.value.taxRegistrationNumber);
-});
-
-const passwordValid = computed(() => {
-  return formData.value.password.length >= 8;
-});
-
-const showEmailError = computed(() => {
-  return formData.value.email.length > 0 && !emailValid.value;
-});
-
-const showPhoneError = computed(() => {
-  return formData.value.phoneNumber.length > 0 && !phoneValid.value;
-});
-
-const showTaxNumberError = computed(() => {
-  return formData.value.taxRegistrationNumber.length > 0 && !taxNumberValid.value;
-});
-
-const showPasswordError = computed(() => {
-  return formData.value.password.length > 0 && !passwordValid.value;
-});
-
-// Mettez à jour la computed property isFormValid
 const isFormValid = computed(() => {
   return (
     formData.value.companyName.trim() !== '' &&
@@ -347,7 +384,8 @@ const isFormValid = computed(() => {
     formData.value.registeredOfficeAddress.trim() !== '' &&
     emailValid.value &&
     passwordValid.value &&
-    !passwordMismatch.value
+    !passwordMismatch.value &&
+    formData.value.acceptedTerms
   );
 });
 
@@ -368,7 +406,7 @@ const removeImage = () => {
 
 const handleSubmit = async () => {
   if (!isFormValid.value) {
-    errorMessage.value = 'Please fill all required fields correctly';
+    errorMessage.value = 'Veuillez remplir correctement tous les champs obligatoires';
     return;
   }
 
@@ -377,7 +415,7 @@ const handleSubmit = async () => {
 
   try {
     const formPayload = new FormData();
-   formPayload.append('companyName', formData.value.companyName);
+    formPayload.append('companyName', formData.value.companyName);
     formPayload.append('phoneNumber', formData.value.phoneNumber);
     formPayload.append('taxRegistrationNumber', formData.value.taxRegistrationNumber);
     formPayload.append('legalStatus', formData.value.legalStatus);
@@ -386,30 +424,18 @@ const handleSubmit = async () => {
     formPayload.append('password', formData.value.password);
     
     if (formData.value.logo) {
-      formPayload.append('Logo', formData.value.logo); // Modifié 'logo' en 'Logo'
+      formPayload.append('Logo', formData.value.logo);
     }
     
     const response = await api.post('/users/company', formPayload, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+      headers: { 'Content-Type': 'multipart/form-data' }
     });
 
-    successMessage.value = response.data.message || 'Registration completed successfully!';
-    resetForm();
+    successMessage.value = response.data.message || 'Inscription réussie !';
+    setTimeout(() => resetForm(), 2000);
     
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      // Gestion des erreurs spécifiques du serveur
-      if (error.response?.status === 400) {
-        errorMessage.value = error.response.data.errors?.join(', ') || 'Validation error';
-      } else {
-        errorMessage.value = error.response?.data?.error || 'An error occurred during registration';
-      }
-    } else {
-      errorMessage.value = 'An unexpected error occurred';
-    }
-    console.error('Registration error:', error);
+  } catch (error: any) {
+    errorMessage.value = error.response?.data?.error || 'Une erreur est survenue lors de l\'inscription';
   } finally {
     isSubmitting.value = false;
   }
@@ -425,323 +451,37 @@ const resetForm = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    acceptedTerms: false
   };
   removeImage();
   errorMessage.value = '';
+  successMessage.value = '';
 };
 </script>
 
 <style scoped>
-.registration-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
-  font-family: system-ui, -apple-system, sans-serif;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-.content-wrapper {
-  display: grid;
-  grid-template-columns: 35% 65%;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 100vh;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
-/* Left Panel Styles */
-.info-panel {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  padding: 3rem;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+/* Custom Scrollbar for the form panel */
+.lg\:w-3\/5::-webkit-scrollbar {
+  width: 6px;
 }
-
-.info-content {
-  max-width: 400px;
-  margin: 0 auto;
+.lg\:w-3\/5::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.info-content h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+.lg\:w-3\/5::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 10px;
 }
-
-.info-content p {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  margin-bottom: 2rem;
-}
-
-.features {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.feature {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.feature-icon {
-  width: 24px;
-  height: 24px;
-  color: #60a5fa;
-}
-
-/* Right Panel Styles */
-.form-panel {
-  background: white;
-  padding: 3rem;
-  overflow-y: auto;
-}
-
-.registration-form {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-/* Logo Upload Styles */
-.logo-section {
-  width: 150px;
-  height: 150px;
-  margin: 0 auto 2rem;
-  position: relative;
-}
-
-.logo-upload {
-  width: 100%;
-  height: 100%;
-  border: 2px dashed #60a5fa;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  overflow: hidden;
-  background: white;
-  transition: all 0.3s ease;
-}
-
-.logo-upload:hover {
-  border-color: #2563eb;
-  background: #f0f9ff;
-}
-
-.upload-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  color: #60a5fa;
-}
-
-.upload-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.logo-preview {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.remove-logo {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0;
-}
-
-.remove-logo:hover {
-  background: #dc2626;
-}
-
-.remove-icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* Form Fields Styles */
-.fields-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.field-group {
-  position: relative;
-}
-
-.field-group.full-width {
-  grid-column: span 2;
-}
-
-.field-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  color: #64748b;
-}
-
-.field-group input,
-.field-group select {
-  width: 80%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  background: white;
-  transition: all 0.3s ease;
-}
-
-.field-group input:focus,
-.field-group select:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-  outline: none;
-}
-
-.field-group input.error {
-  border-color: #ef4444;
-}
-
-/* Form Actions */
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-}
-
-.submit-button,
-.reset-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.submit-button {
-  background: #2563eb;
-  color: white;
-  border: none;
-}
-
-.submit-button:hover:not(:disabled) {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-.submit-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.reset-button {
-  background: white;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-}
-
-.reset-button:hover {
-  background: #f8fafc;
-  border-color: #60a5fa;
-  color: #2563eb;
-}
-
-.button-icon {
-  width: 20px;
-  height: 20px;
-}
-
-/* Messages */
-.message {
-  margin-top: 1rem;
-  padding: 1rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.message.error {
-  background: #fef2f2;
-  color: #dc2626;
-  border-left: 4px solid #dc2626;
-}
-
-.message.success {
-  background: #f0fdf4;
-  color: #16a34a;
-  border-left: 4px solid #16a34a;
-}
-
-.message-close {
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-}
-
-.hidden {
-  display: none;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .content-wrapper {
-    grid-template-columns: 1fr;
-  }
-
-  .info-panel {
-    display: none;
-  }
-
-  .form-panel {
-    padding: 2rem;
-  }
-
-  .fields-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .field-group.full-width {
-    grid-column: auto;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .submit-button,
-  .reset-button {
-    width: 100%;
-    justify-content: center;
-  }
+.lg\:w-3\/5::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
 }
 </style>

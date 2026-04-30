@@ -1,71 +1,115 @@
 <template>
-  <div class="tunisia-map-container">
-    <div class="header-section">
-      <h1>Map of Rentals in Tunisia</h1>
-      <p class="subtitle">Visualize your points of sale and warehouses</p>
-    </div>
-
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-icon sale-points">
-          <i class="fas fa-store"></i>
+  <div class="space-y-8 animate-in fade-in duration-700">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+          <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Surveillance en Temps Réel</span>
         </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ salePoints.length }}</span>
-          <span class="stat-label">Sale Points</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon warehouses">
-          <i class="fas fa-warehouse"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ warehouses.length }}</span>
-          <span class="stat-label">Warehouses</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="control-panel">
-      <div class="map-controls">
-        <label class="control-toggle">
-          <input type="checkbox" v-model="showSalePoints" @change="updateMap" />
-          <span class="toggle-label">
-            <i class="fas fa-store"></i>
-            Sale Points
-          </span>
-        </label>
-        <label class="control-toggle">
-          <input type="checkbox" v-model="showWarehouses" @change="updateMap" />
-          <span class="toggle-label">
-            <i class="fas fa-warehouse"></i>
-            Warehouses
-          </span>
-        </label>
-      </div>
-
-      <div v-if="loading" class="status-message loading">
-        <i class="fas fa-spinner fa-spin"></i>
-        Loading data...
+        <h1 class="text-3xl font-display font-black text-premium-midnight tracking-tight">Réseau Logistique</h1>
+        <p class="text-slate-500 text-sm font-medium">Cartographie interactive de vos implantations stratégiques.</p>
       </div>
       
-      <div v-if="geocodingErrors.length > 0" class="status-message error">
-        <i class="fas fa-exclamation-triangle"></i>
-        Unlocalized addresses: {{ geocodingErrors.join(', ') }}
+      <div class="flex items-center gap-3 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+        <button 
+          v-for="view in ['Map', 'List', 'Analytics']" 
+          :key="view"
+          class="px-5 py-2 rounded-xl text-xs font-bold transition-all"
+          :class="activeView === view ? 'bg-premium-midnight text-white shadow-lg' : 'text-slate-400 hover:text-premium-midnight hover:bg-slate-50'"
+          @click="activeView = view"
+        >
+          {{ view }}
+        </button>
       </div>
     </div>
 
-    <div id="tunisia-map" class="map-view"></div>
+    <!-- Key Performance Indicators -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- KPI Card 1 -->
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl -mr-16 -mt-16"></div>
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-500/10">
+            <Store class="w-6 h-6" />
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-wider">+12%</span>
+        </div>
+        <p class="text-3xl font-display font-black text-premium-midnight mb-1">{{ salePoints.length }}</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Points de Vente</p>
+      </div>
 
-    <div class="map-legend">
-      <div class="legend-item">
-        <img :src="blueMarkerIcon" class="legend-icon" alt="Sale Point">
-        <span>Sale Points</span>
+      <!-- KPI Card 2 -->
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl -mr-16 -mt-16"></div>
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all duration-500 shadow-lg shadow-red-500/10">
+            <Warehouse class="w-6 h-6" />
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider">Stable</span>
+        </div>
+        <p class="text-3xl font-display font-black text-premium-midnight mb-1">{{ warehouses.length }}</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Dépôts Stratégiques</p>
       </div>
-      <div class="legend-item">
-        <img :src="redMarkerIcon" class="legend-icon" alt="Warehouse">
-        <span>Warehouses</span>
+
+      <!-- KPI Card 3 -->
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-premium-gold/5 blur-3xl -mr-16 -mt-16"></div>
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-premium-gold/10 flex items-center justify-center text-premium-gold group-hover:bg-premium-gold group-hover:text-white transition-all duration-500 shadow-lg shadow-premium-gold/10">
+            <Activity class="w-6 h-6" />
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-premium-gold/10 text-premium-gold text-[10px] font-bold uppercase tracking-wider">98%</span>
+        </div>
+        <p class="text-3xl font-display font-black text-premium-midnight mb-1">Optimum</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Efficacité Flux</p>
       </div>
+
+      <!-- Filters Panel -->
+      <div class="bg-premium-midnight p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-premium-gold/10 blur-3xl -mr-16 -mt-16"></div>
+        <h4 class="text-white text-xs font-bold uppercase tracking-widest mb-4">Contrôles</h4>
+        <div class="space-y-3">
+          <label class="flex items-center justify-between cursor-pointer group">
+            <span class="text-[11px] font-bold text-slate-400 group-hover:text-white transition-colors uppercase tracking-wider">Points de Vente</span>
+            <input type="checkbox" v-model="showSalePoints" @change="updateMap" class="w-4 h-4 rounded border-white/10 bg-white/5 text-premium-gold focus:ring-premium-gold/20" />
+          </label>
+          <label class="flex items-center justify-between cursor-pointer group">
+            <span class="text-[11px] font-bold text-slate-400 group-hover:text-white transition-colors uppercase tracking-wider">Entrepôts</span>
+            <input type="checkbox" v-model="showWarehouses" @change="updateMap" class="w-4 h-4 rounded border-white/10 bg-white/5 text-premium-gold focus:ring-premium-gold/20" />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Map View -->
+    <div class="relative">
+      <!-- Status Overlay -->
+      <Transition name="fade">
+        <div v-if="loading" class="absolute inset-0 z-20 bg-white/40 backdrop-blur-[2px] flex items-center justify-center rounded-[2.5rem]">
+          <div class="bg-white p-6 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-4">
+            <div class="w-10 h-10 border-4 border-premium-gold/20 border-t-premium-gold rounded-full animate-spin"></div>
+            <span class="text-sm font-bold text-premium-midnight">Synchronisation GPS en cours...</span>
+          </div>
+        </div>
+      </Transition>
+
+      <div class="bg-white p-3 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
+        <div id="tunisia-map" class="w-full h-[650px] rounded-[2rem] z-0 grayscale-[0.2] contrast-[1.1]"></div>
+      </div>
+
+      <!-- Errors List -->
+      <Transition name="slide-up">
+        <div v-if="geocodingErrors.length > 0" class="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-4">
+          <AlertCircle class="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+          <div>
+            <p class="text-xs font-bold text-red-600 uppercase tracking-widest mb-1">Anomalies de Géo-localisation</p>
+            <p class="text-xs text-red-500 font-medium leading-relaxed">
+              Les adresses suivantes n'ont pas pu être projetées avec précision : {{ geocodingErrors.join(', ') }}
+            </p>
+          </div>
+        </div>
+      </Transition>
     </div>
   </div>
 </template>
@@ -75,7 +119,17 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
+import { 
+  Store, 
+  Warehouse, 
+  Activity, 
+  Settings, 
+  AlertCircle,
+  MapPin,
+  ChevronRight
+} from 'lucide-vue-next';
 
+const activeView = ref('Map');
 const api = axios.create({
   baseURL: 'http://localhost:3000/api',
 });
@@ -99,28 +153,39 @@ const preciseLocations: Record<string, [number, number]> = {
   'Avenue Taïeb Mhiri, Sousse': [35.8250, 10.6347],
 };
 
-const createCustomIcon = (color: string) => L.icon({
-  iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// Create custom icons with more premium SVG style if possible, or just better markers
+const createCustomMarker = (type: 'sale' | 'warehouse') => {
+  const color = type === 'sale' ? '#3B82F6' : '#EF4444';
+  const svgIcon = `
+    <div class="relative flex items-center justify-center">
+      <div class="absolute inset-0 scale-150 blur-sm bg-white/20 rounded-full"></div>
+      <div class="w-8 h-8 rounded-full bg-white border-4 border-[${color}] shadow-xl flex items-center justify-center">
+        <div class="w-2 h-2 rounded-full bg-[${color}] animate-pulse"></div>
+      </div>
+      <div class="absolute -bottom-1 w-2 h-2 bg-[${color}] rotate-45 transform -translate-x-1/2 left-1/2"></div>
+    </div>
+  `;
 
-const blueMarkerIcon = `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png`;
-const redMarkerIcon = `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png`;
+  return L.divIcon({
+    html: svgIcon,
+    className: 'custom-div-icon',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+  });
+};
 
-const salePointIcon = createCustomIcon('blue');
-const warehouseIcon = createCustomIcon('red');
+const salePointIcon = createCustomMarker('sale');
+const warehouseIcon = createCustomMarker('warehouse');
 
 const initMap = () => {
   map.value = L.map('tunisia-map', {
-    zoomControl: true,
+    zoomControl: false,
     preferCanvas: true,
   }).setView([34.0, 9.0], 6);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© CartoDB',
     maxZoom: 18,
     minZoom: 6,
   }).addTo(map.value!);
@@ -132,7 +197,7 @@ const loadData = async () => {
 
   try {
     const token = localStorage.getItem('accessToken');
-    if (!token) throw new Error('Authentication required');
+    if (!token) return;
     
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
@@ -153,15 +218,15 @@ const loadData = async () => {
 };
 
 const processLocations = async (locations: any[], type: string) => {
+  if (!locations) return [];
   return Promise.all(locations.map(async loc => {
     if (!loc.position || !loc.position.coordinates || loc.position.coordinates.length !== 2) {
       try {
-        const coords = await getExactCoordinates(loc.address || loc.location, loc.name);
+        const coords = await getExactCoordinates(loc.address || loc.location || '', loc.name);
         loc.position = { type: 'Point', coordinates: coords };
       } catch (error) {
-        console.error(`Geocoding failed for ${loc.name}:`, error);
         geocodingErrors.value.push(loc.name);
-        return null; // Exclure les emplacements sans coordonnées valides
+        return null;
       }
     }
     return { ...loc, type };
@@ -171,37 +236,14 @@ const processLocations = async (locations: any[], type: string) => {
 const getExactCoordinates = async (address: string, name: string): Promise<[number, number]> => {
   const cleanAddress = address.trim().toLowerCase();
   for (const [key, coords] of Object.entries(preciseLocations)) {
-    if (cleanAddress.includes(key.toLowerCase())) {
-      return coords; // [latitude, longitude]
-    }
+    if (cleanAddress.includes(key.toLowerCase())) return coords;
   }
 
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=tn&limit=1&addressdetails=1&namedetails=1`
-  );
-
-  if (!response.ok) throw new Error('Network error');
-
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=tn&limit=1`);
   const data = await response.json();
-
-  if (!data || data.length === 0) throw new Error('Address not found');
-
+  if (!data || data.length === 0) throw new Error('Not found');
   const result = data[0];
-  const foundAddress = result.display_name.toLowerCase();
-  if (!foundAddress.includes(address.toLowerCase().split(',')[0])) {
-    throw new Error('Incorrect street in results');
-  }
-
-  return [parseFloat(result.lat), parseFloat(result.lon)]; // [latitude, longitude]
-};
-
-const isValidCoordinates = (coords: any): boolean => {
-  if (!Array.isArray(coords) || coords.length !== 2) return false;
-  const [val1, val2] = coords;
-  return (
-    typeof val1 === 'number' && !isNaN(val1) && val1 >= -180 && val1 <= 180 &&
-    typeof val2 === 'number' && !isNaN(val2) && val2 >= -90 && val2 <= 90
-  );
+  return [parseFloat(result.lat), parseFloat(result.lon)];
 };
 
 const updateMap = () => {
@@ -213,35 +255,37 @@ const updateMap = () => {
   const locationsToShow = [
     ...(showSalePoints.value ? salePoints.value : []),
     ...(showWarehouses.value ? warehouses.value : []),
-  ].filter(loc => loc.position && loc.position.coordinates && isValidCoordinates(loc.position.coordinates));
+  ];
 
   locationsToShow.forEach(loc => {
     const icon = loc.type === 'salePoint' ? salePointIcon : warehouseIcon;
-    const [lng, lat] = loc.position.coordinates; // [longitude, latitude] (GeoJSON)
-    console.log(`Ajout marqueur pour ${loc.name}: [lat: ${lat}, lng: ${lng}]`);
+    const [lng, lat] = loc.position.coordinates;
     
-    try {
-      const marker = L.marker([lat, lng], { icon }) // [latitude, longitude]
-        .addTo(map.value!)
-        .bindPopup(`
-          <div class="map-popup">
-            <h4>${loc.name}</h4>
-            <p>${loc.address || loc.location}</p>
-            <small>Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}</small>
+    const marker = L.marker([lat, lng], { icon })
+      .addTo(map.value!)
+      .bindPopup(`
+        <div class="map-popup-premium">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl ${loc.type === 'salePoint' ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-500'} flex items-center justify-center">
+              ${loc.type === 'salePoint' ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' : '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M3 7v1a3 3 0 0 0 6 0V7m6 1V7a3 3 0 0 0-6 0v1m12-1v1a3 3 0 0 1-6 0V7"/><path d="M4 21V10"/><path d="M20 21V10"/><path d="M9 21V10"/><path d="M15 21V10"/><path d="M3 7l9-4 9 4"/></svg>'}
+            </div>
+            <div>
+              <h4 class="font-display font-black text-premium-midnight leading-tight">${loc.name}</h4>
+              <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${loc.type === 'salePoint' ? 'Point de Vente' : 'Entrepôt Logistique'}</p>
+            </div>
           </div>
-        `);
-      markers.value.push(marker);
-    } catch (error) {
-      console.error(`Erreur lors de l'ajout du marqueur pour ${loc.name}:`, error);
-      geocodingErrors.value.push(loc.name);
-    }
+          <p class="text-[11px] text-slate-600 font-medium mb-4 leading-relaxed">${loc.address || loc.location}</p>
+          <button class="w-full py-2 bg-slate-50 hover:bg-premium-gold hover:text-white transition-all rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+            Voir les Détails <ChevronRight class="w-3 h-3" />
+          </button>
+        </div>
+      `);
+    markers.value.push(marker);
   });
 
-  if (locationsToShow.length > 0) {
+  if (markers.value.length > 0) {
     const group = new L.FeatureGroup(markers.value);
-    map.value.fitBounds(group.getBounds().pad(0.5), { maxZoom: 10 });
-  } else {
-    map.value.setView([34.0, 9.0], 6);
+    map.value.fitBounds(group.getBounds().pad(0.2), { maxZoom: 10 });
   }
 };
 
@@ -251,283 +295,53 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (map.value) {
-    map.value.remove();
-  }
+  if (map.value) map.value.remove();
 });
 </script>
 
-<style scoped>
-/* Votre CSS reste inchangé */
-.tunisia-map-container {
-  padding: 2rem;
-  min-height: 100vh;
-  background-color: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.header-section {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-h1 {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0;
-  margin-bottom: 0.5rem;
-}
-
-.subtitle {
-  color: #64748b;
-  font-size: 1.1rem;
-  margin: 0;
-}
-
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.stat-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-}
-
-.stat-icon.sale-points {
-  background-color: #e0f2fe;
-  color: #0284c7;
-}
-
-.stat-icon.warehouses {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1e293b;
-  line-height: 1;
-}
-
-.stat-label {
-  color: #64748b;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-.control-panel {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.map-controls {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
-.control-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  transition: background-color 0.2s;
-}
-
-.control-toggle:hover {
-  background-color: #f8fafc;
-}
-
-.control-toggle input[type="checkbox"] {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 0.25rem;
-  border: 2px solid #cbd5e1;
-  cursor: pointer;
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.975rem;
-  color: #1e293b;
-}
-
-.toggle-label i {
-  color: #64748b;
-}
-
-.status-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
-  margin-top: 1rem;
-}
-
-.status-message.loading {
-  background-color: #f0f9ff;
-  color: #0284c7;
-}
-
-.status-message.error {
-  background-color: #fef2f2;
-  color: #dc2626;
-}
-
-.status-message i {
-  font-size: 1rem;
-}
-
-.map-view {
-  flex-grow: 1;
-  min-height: 600px;
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: none;
-}
-
-@media (max-width: 768px) {
-  .tunisia-map-container {
-    padding: 1rem;
-  }
-
-  .stats-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .map-controls {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .control-toggle {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .map-view {
-    min-height: 400px;
-  }
-}
-</style>
-
 <style>
-.map-popup {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  min-width: 250px;
-  padding: 0.5rem;
-}
-
-.map-popup h4 {
-  margin: 0 0 0.5rem 0;
-  color: #1e293b;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.map-popup p {
-  margin: 0 0 0.5rem 0;
-  color: #4b5563;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.map-popup small {
-  display: block;
-  color: #6b7280;
-  font-size: 0.8rem;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #e5e7eb;
+/* Custom Div Icon Reset */
+.custom-div-icon {
+  background: transparent !important;
+  border: none !important;
 }
 
 .leaflet-popup-content-wrapper {
-  border-radius: 0.75rem !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  padding: 0.5rem !important;
+  border-radius: 1.5rem !important;
+  padding: 0 !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+  border: 1px solid rgba(15, 23, 42, 0.05) !important;
 }
 
 .leaflet-popup-content {
   margin: 0 !important;
-}
-
-.leaflet-container {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
-}
-
-.leaflet-popup-tip-container {
-  margin-top: -1px !important;
+  padding: 1.5rem !important;
+  width: 260px !important;
 }
 
 .leaflet-popup-tip {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  background: white !important;
 }
 
-.map-legend {
-  display: flex;
-  gap: 1.5rem;
-  justify-content: center;
-  padding: 1rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.map-popup-premium {
+  font-family: 'Inter', sans-serif;
 }
+</style>
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #1e293b;
+<style scoped>
+.animate-in {
+  animation-fill-mode: forwards;
 }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation-name: fade-in; }
 
-.legend-icon {
-  width: 20px;
-  height: 20px;
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.4s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 </style>

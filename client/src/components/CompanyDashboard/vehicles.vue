@@ -1,162 +1,175 @@
 <template>
-  <div class="vehicles-container">
-    <!-- Header Section -->
-    <header class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <h1>Vehicles Management</h1>
-          <p>Track and manage your fleet efficiently</p>
+  <div class="space-y-8">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-2 h-2 rounded-full bg-premium-gold"></span>
+          <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion de Flotte</span>
         </div>
-        <button class="btn-add" @click="handleAddTruck">
-          <i class="fas fa-plus"></i>
-          Add Vehicle
-        </button>
+        <h1 class="text-3xl font-display font-black text-premium-midnight tracking-tight">Véhicules</h1>
+        <p class="text-slate-500 text-sm font-medium mt-1">Suivi et gestion de votre parc automobile.</p>
       </div>
-    </header>
+      <button @click="handleAddTruck" class="btn-gold !px-6 !py-3 !text-xs flex items-center gap-2 shrink-0">
+        <Plus class="w-4 h-4" />
+        Ajouter un Véhicule
+      </button>
+    </div>
 
-    <!-- Search Bar -->
-    <div class="search-bar">
-      <div class="search-input-wrapper">
-        <i class="fas fa-search"></i>
-        <input 
-          v-model="searchTerm" 
-          type="text" 
-          placeholder="Search vehicles..." 
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-premium-midnight transition-colors duration-500">
+            <Truck class="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" />
+          </div>
+        </div>
+        <p class="text-3xl font-display font-black text-premium-midnight">{{ totalTrucks }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Flotte Totale</p>
+      </div>
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center">
+            <CheckCircle class="w-5 h-5 text-green-500" />
+          </div>
+          <span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">Actif</span>
+        </div>
+        <p class="text-3xl font-display font-black text-premium-midnight">{{ availableTrucks }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Disponibles</p>
+      </div>
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
+            <Wrench class="w-5 h-5 text-amber-500" />
+          </div>
+        </div>
+        <p class="text-3xl font-display font-black text-premium-midnight">{{ maintenanceTrucks }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">En Maintenance</p>
+      </div>
+      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center">
+            <ArrowRightLeft class="w-5 h-5 text-purple-500" />
+          </div>
+        </div>
+        <p class="text-3xl font-display font-black text-premium-midnight">{{ inTransitTrucks }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">En Transit</p>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col sm:flex-row gap-3">
+      <div class="relative flex-grow">
+        <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          v-model="searchTerm"
+          type="text"
+          placeholder="Rechercher un véhicule..."
+          class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all font-medium placeholder:text-slate-300"
         />
       </div>
-      <div class="filter-controls">
-        <select v-model="selectedType" class="select-filter">
-          <option value="">All Types</option>
-          <option v-for="type in truckTypes" :key="type" :value="type">
-            {{ type }}
-          </option>
-        </select>
-        <select v-model="selectedStatus" class="select-filter">
-          <option value="">All Status</option>
-          <option v-for="status in statusOptions" :key="status" :value="status">
-            {{ status }}
-          </option>
-        </select>
-        <button class="btn-reset" @click="resetFilters">
-          <i class="fas fa-redo-alt"></i>
-          Reset
-        </button>
-      </div>
+      <select v-model="selectedType" class="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+        <option value="">Tous les types</option>
+        <option v-for="type in truckTypes" :key="type" :value="type">{{ type }}</option>
+      </select>
+      <select v-model="selectedStatus" class="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+        <option value="">Tous les statuts</option>
+        <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+      </select>
+      <button @click="resetFilters" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 shrink-0">
+        <RotateCcw class="w-3.5 h-3.5" />
+        Reset
+      </button>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon total">
-          <i class="fas fa-truck"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ totalTrucks }}</span>
-          <span class="stat-label">Total Fleet</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon available">
-          <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ availableTrucks }}</span>
-          <span class="stat-label">Available</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon maintenance">
-          <i class="fas fa-tools"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ maintenanceTrucks }}</span>
-          <span class="stat-label">In Maintenance</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon transit">
-          <i class="fas fa-shipping-fast"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ inTransitTrucks }}</span>
-          <span class="stat-label">In Transit</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Vehicles Table -->
-    <div class="table-container">
-      <table>
+    <!-- Table -->
+    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/30 overflow-hidden">
+      <table class="w-full">
         <thead>
-          <tr>
-            <th>VEHICLE</th>
-            <th>TYPE</th>
-            <th>CAPACITY</th>
-            <th>STATUS</th>
-            <th class="text-right">ACTIONS</th>
+          <tr class="border-b border-slate-100">
+            <th class="text-left px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Véhicule</th>
+            <th class="text-left px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Type</th>
+            <th class="text-left px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Capacité</th>
+            <th class="text-left px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Statut</th>
+            <th class="text-right px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actions</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="truck in paginatedTrucks" :key="truck._id">
-            <td>
-              <div class="vehicle-info">
-                <div class="vehicle-icon">
-                  <i class="fas fa-truck"></i>
+        <tbody class="divide-y divide-slate-50">
+          <tr v-if="paginatedTrucks.length === 0">
+            <td colspan="5" class="px-8 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center">
+                  <Truck class="w-7 h-7 text-slate-300" />
                 </div>
-                <span class="vehicle-name">{{ truck.vehicle }}</span>
+                <p class="text-sm font-bold text-slate-400">Aucun véhicule trouvé</p>
               </div>
             </td>
-            <td>
-              <span class="type-badge">{{ truck.type }}</span>
+          </tr>
+          <tr v-for="truck in paginatedTrucks" :key="truck._id" class="hover:bg-slate-50/50 transition-colors group">
+            <td class="px-8 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-premium-midnight flex items-center justify-center shrink-0 shadow-sm">
+                  <Truck class="w-5 h-5 text-premium-gold" />
+                </div>
+                <span class="text-sm font-bold text-premium-midnight">{{ truck.vehicle }}</span>
+              </div>
             </td>
-            <td>
-            <span class="capacity-badge">{{ formatCapacity(truck.capacity) }}</span>
-          </td>
-            <td>
-              <span :class="['status-badge', getStatusClass(truck.status)]">
-                <i class="fas fa-circle"></i>
+            <td class="px-6 py-4">
+              <span class="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold">{{ truck.type }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <span class="px-3 py-1 rounded-lg bg-premium-gold/10 text-premium-gold text-xs font-bold">{{ formatCapacity(truck.capacity) }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <span :class="[
+                'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider',
+                truck.status === 'available' ? 'bg-green-50 text-green-600' :
+                truck.status === 'in transit' ? 'bg-purple-50 text-purple-600' :
+                'bg-amber-50 text-amber-600'
+              ]">
+                <span class="w-1.5 h-1.5 rounded-full" :class="[
+                  truck.status === 'available' ? 'bg-green-500' :
+                  truck.status === 'in transit' ? 'bg-purple-500' : 'bg-amber-500'
+                ]"></span>
                 {{ truck.status }}
               </span>
             </td>
-            <td>
-              <div class="actions">
-                <button class="btn-action btn-edit" @click="handleEditTruck(truck)">
-                  <i class="fas fa-edit"></i>
-                  <span>Edit</span>
+            <td class="px-8 py-4">
+              <div class="flex items-center justify-end gap-2">
+                <button @click="handleEditTruck(truck)" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-premium-gold/10 hover:text-premium-gold transition-all">
+                  <Pencil class="w-4 h-4" />
                 </button>
-                <button class="btn-action btn-delete" @click="deleteTruck(truck._id)">
-                  <i class="fas fa-trash-alt"></i>
-                  <span>Delete</span>
+                <button @click="deleteTruck(truck._id)" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                  <Trash2 class="w-4 h-4" />
                 </button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
-    </div>
 
-    <!-- Pagination -->
-    <div class="pagination">
-      <span class="pagination-info">
-        Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredTrucks.length) }} of {{ filteredTrucks.length }} entries
-      </span>
-      <div class="pagination-controls">
-        <button 
-          class="btn-page" 
-          :disabled="currentPage === 1"
-          @click="currentPage--"
-        >
-          <i class="fas fa-chevron-left"></i>
-          Previous
-        </button>
-        <button 
-          class="btn-page" 
-          :disabled="currentPage >= totalPages"
-          @click="currentPage++"
-        >
-          Next
-          <i class="fas fa-chevron-right"></i>
-        </button>
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-8 py-5 border-t border-slate-50">
+        <span class="text-xs font-medium text-slate-400">
+          {{ (currentPage - 1) * itemsPerPage + 1 }}–{{ Math.min(currentPage * itemsPerPage, filteredTrucks.length) }} sur {{ filteredTrucks.length }} véhicules
+        </span>
+        <div class="flex items-center gap-2">
+          <button
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+            class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft class="w-4 h-4" />
+          </button>
+          <span class="text-xs font-bold text-premium-midnight px-3">{{ currentPage }} / {{ totalPages }}</span>
+          <button
+            :disabled="currentPage >= totalPages"
+            @click="currentPage++"
+            class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronRight class="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -166,6 +179,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
+import { 
+  Truck, Plus, Search, RotateCcw, CheckCircle, Wrench, 
+  ArrowRightLeft, Pencil, Trash2, ChevronLeft, ChevronRight 
+} from 'lucide-vue-next'
 
 interface Truck {
   _id: string
@@ -601,572 +618,24 @@ watch(itemsPerPage, () => {
 onMounted(loadData)
 </script>
 
-<style scoped>
-.vehicles-container {
-  min-height: 100vh;
-  background-color: #f8fafc;
-  padding: 2rem;
-}
-
-/* Header Styles */
-/* Header Styles */
-.header {
-  background: #ffffff;
-  margin: -2rem -2rem 2rem -2rem;
-  padding: 1.5rem 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.header-content {
-  max-width: 1440px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.header-left h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0;
-  color: #1e293b;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
-}
-
-.header-left p {
-  margin: 0.5rem 0 0 0;
-  color: #64748b;
-  font-size: 0.9375rem;
-  font-weight: 400;
-}
-
-/* Bouton amélioré */
-.btn-add {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  font-size: 0.9375rem;
-}
-
-.btn-add:hover {
-  background-color: #1d4ed8;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.btn-add i {
-  font-size: 0.9em;
-}
-
-/* Search Bar */
-.search-bar {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-  gap: 1rem;
-}
-
-.search-input-wrapper {
-  position: relative;
-  flex: 1;
-}
-
-.search-input-wrapper i {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #64748b;
-}
-
-.search-input-wrapper input {
-  width: 80%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.filter-controls {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.select-filter {
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background-color: white;
-  min-width: 150px;
-}
-
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-}
-
-.stat-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-}
-
-.stat-icon.total { background-color: #e0f2fe; color: #0284c7; }
-.stat-icon.available { background-color: #dcfce7; color: #16a34a; }
-.stat-icon.maintenance { background-color: #fef3c7; color: #d97706; }
-.stat-icon.transit { background-color: #f3e8ff; color: #7e22ce; }
-
-/* Table Styles */
-.table-container {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-}
-
-/* Table Styles - Version corrigée */
-.table-container {
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e2e8f0;
-}
-.capacity-badge {
-  background-color: #f0fdf4;
-  color: #166534;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: inline-block;
-  min-width: 80px;
-  text-align: center;
-}
-
-/* Ajustez les largeurs de colonne */
-th:nth-child(4), td:nth-child(4) { /* CAPACITY */
-  width: 15%;
-  text-align: center;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed; /* Ajouté pour une largeur de colonne cohérente */
-}
-
-th, td {
-  padding: 1rem 1.25rem;
-  text-align: left;
-  vertical-align: middle; /* Alignement vertical au centre */
-}
-
-th {
-  background-color: #f8fafc;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-td {
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.875rem;
-  color: #334155;
-}
-
-/* Colonne ACTIONS spécifique */
-th.text-right {
-  text-align: center;
-  padding-right: 8.5rem; 
-}
-
-/* Conteneur des boutons d'action */
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-  padding-right: 0.5rem; /* Ajustement supplémentaire */
-}
-
-/* Boutons d'action */
-.btn-action {
-  padding: 0.5rem 0.75rem; /* Ajustement du padding */
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.8125rem;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap; /* Empêche le texte de se casser */
-}
-
-/* Largeurs de colonnes spécifiques */
-th:nth-child(1), td:nth-child(1) { /* ID */
-  width: 8%;
-}
-
-th:nth-child(2), td:nth-child(2) { /* VEHICLE */
-  width: 22%;
-}
-
-th:nth-child(3), td:nth-child(3) { /* TYPE */
-  width: 15%;
-}
-
-th:nth-child(4), td:nth-child(4) { /* STATUS */
-  width: 15%;
-  text-align: center;
-
-}
-
-th:nth-child(5), td:nth-child(5) { /* ACTIONS */
-  width: 15%;
-  
-}
-th:nth-child(6), td:nth-child(6) { /* ACTIONS */
-  width: 25%;
-  text-align: right;
-}
-
-.id-badge {
-  background-color: #f1f5f9;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-family: monospace;
-  color: #64748b;
-}
-
-.vehicle-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.vehicle-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  background-color: #eff6ff;
-  color: #2563eb;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.type-badge {
-  background-color: #f1f5f9;
-  color: #475569;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-badge i {
-  font-size: 0.625rem;
-}
-.capacity-badge {
-  background-color: #f0fdf4;
-  color: #166534;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: inline-block;
-}
-
-.status-available {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.status-maintenance {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.status-transit {
-  background-color: #e0f2fe;
-  color: #0284c7;
-}
-
-/* Action Buttons */
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.btn-action {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-view {
-  background-color: #eff6ff;
-  color: #2563eb;
-}
-
-.btn-edit {
-  background-color: #f0fdf4;
-  color: #16a34a;
-}
-
-.btn-delete {
-  background-color: #fef2f2;
-  color: #dc2626;
-}
-
-.btn-action:hover {
-  filter: brightness(0.95);
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.btn-page {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background-color: white;
-  color: #475569;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-page:hover:not(:disabled) {
-  background-color: #f8fafc;
-  color: #1e293b;
-}
-
-.btn-page:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .search-bar {
-    flex-direction: column;
-  }
-  
-  .filter-controls {
-    width: 100%;
-    justify-content: space-between;
-  }
-}
-
-@media (max-width: 768px) {
-  .vehicles-container {
-    padding: 1rem;
-  }
-
-  .header {
-    margin: -1rem -1rem 1rem -1rem;
-    padding: 1.5rem;
-  }
-
-  .header-content {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .table-container {
-    overflow-x: auto;
-  }
-
-  .actions {
-    flex-direction: column;
-  }
-
-  .btn-action {
-    width: 100%;
-    justify-content: center;
-  }
-}
-</style>
-
 <style>
 /* SweetAlert Custom Styles */
-.custom-modal {
-  font-family: 'Inter', sans-serif;
-}
-
-.custom-modal-popup {
-  border-radius: 1rem;
-  padding: 2rem;
-}
-
-.custom-modal-header {
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.custom-modal-title {
-  color: #1e293b;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.custom-form {
-  margin-bottom: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #475569;
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
-.custom-input,
-.swal2-input,
-.swal2-select {
+.swal2-input, .swal2-select {
   width: 100% !important;
   padding: 0.75rem !important;
   border: 1px solid #e2e8f0 !important;
-  border-radius: 0.5rem !important;
+  border-radius: 0.75rem !important;
   font-size: 0.875rem !important;
   margin: 0.5rem 0 !important;
   box-shadow: none !important;
 }
-
-.custom-input:focus,
-.swal2-input:focus,
-.swal2-select:focus {
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+.swal2-input:focus, .swal2-select:focus {
+  border-color: #D4AF37 !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
 }
-
-.custom-modal-actions {
-  margin-top: 2rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-.custom-confirm-button,
-.custom-cancel-button {
-  padding: 0.75rem 1.5rem !important;
-  border-radius: 0.5rem !important;
-  font-weight: 500 !important;
-  font-size: 0.875rem !important;
-}
-
-.custom-confirm-button {
-  background-color: #2563eb !important;
-  color: white !important;
-}
-
 .custom-confirm-button-delete {
   background-color: #dc2626 !important;
   color: white !important;
-}
-
-.custom-cancel-button {
-  background-color: white !important;
-  color: #64748b !important;
-  border: 1px solid #e2e8f0 !important;
-}
-
-.vehicle-details {
-  text-align: left;
-  padding: 1rem;
-}
-
-.vehicle-details p {
-  margin: 0.5rem 0;
-  color: #475569;
-}
-
-.vehicle-details strong {
-  color: #1e293b;
   font-weight: 500;
 }
 </style>

@@ -1,86 +1,125 @@
 <template>
-  <div class="vue-app">
-    <div class="container">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="page-title">Sales Points</h1>
-          <p class="page-subtitle">Manage retail and distribution locations</p>
+  <div class="p-6 md:p-8 animate-in fade-in duration-500">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h1 class="text-3xl font-display font-bold text-premium-midnight tracking-tight">Points de Vente</h1>
+        <p class="text-slate-500 mt-1">Gérez vos magasins, relais et centres de distribution</p>
+      </div>
+      <button @click="handleAddSalePoint" class="btn-gold group">
+        <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>
+        Nouveau Point
+      </button>
+    </div>
+
+    <!-- Toolbar: Search & Filter -->
+    <div class="flex flex-col md:flex-row gap-4 mb-8">
+      <div class="relative flex-1 max-w-md">
+        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input 
+          type="text" 
+          v-model="searchTerm" 
+          @input="applyFilters"
+          placeholder="Rechercher par nom, adresse ou type..." 
+          class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-premium-gold focus:ring-1 focus:ring-premium-gold transition-colors shadow-sm"
+        />
+      </div>
+    </div>
+
+    <!-- Error/Loading -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-premium-gold animate-pulse">
+      <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+      <p class="font-medium">Chargement des points de vente...</p>
+    </div>
+
+    <div v-else-if="filteredSalePoints.length === 0" class="card-premium flex flex-col items-center justify-center py-20 text-center">
+      <div class="w-24 h-24 rounded-full bg-slate-50 flex items-center justify-center mb-6">
+        <i class="fas fa-store-slash text-4xl text-slate-300"></i>
+      </div>
+      <h3 class="text-xl font-bold text-premium-midnight mb-2">Aucun point de vente trouvé</h3>
+      <p class="text-slate-500 max-w-md mb-8">Commencez par ajouter votre premier point de vente ou modifiez vos critères de recherche.</p>
+      <button @click="handleAddSalePoint" class="btn-outline">
+        <i class="fas fa-plus mr-2"></i> Ajouter un point
+      </button>
+    </div>
+
+    <!-- Grid -->
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div v-for="point in paginatedSalePoints" :key="point._id" class="card-premium flex flex-col group transition-all duration-300 hover:-translate-y-1">
+        <div class="flex justify-between items-start mb-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-premium-midnight to-slate-800 flex items-center justify-center text-premium-gold shadow-md shrink-0">
+              <i v-if="point.type === 'Store'" class="fas fa-store text-xl"></i>
+              <i v-else-if="point.type === 'Pickup Point'" class="fas fa-box text-xl"></i>
+              <i v-else class="fas fa-building text-xl"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-premium-midnight line-clamp-1" :title="point.name">{{ point.name }}</h3>
+              <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold mt-1" 
+                :class="{
+                  'bg-blue-50 text-blue-600 border border-blue-100': point.type === 'Store',
+                  'bg-emerald-50 text-emerald-600 border border-emerald-100': point.type === 'Pickup Point',
+                  'bg-orange-50 text-orange-600 border border-orange-100': point.type === 'Distribution Center',
+                  'bg-slate-50 text-slate-600 border border-slate-100': !['Store', 'Pickup Point', 'Distribution Center'].includes(point.type)
+                }">
+                {{ point.type }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Actions -->
+          <div class="flex gap-1">
+            <button @click="toggleMap(point)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors" title="Voir sur la carte">
+              <i class="fas" :class="activeMapId === point._id ? 'fa-map-marked-alt' : 'fa-map-marker-alt'"></i>
+            </button>
+            <button @click="handleEditSalePoint(point)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors" title="Modifier">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button @click="deleteSalePoint(point._id)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Supprimer">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
         </div>
-        <button class="button-primary button-add" @click="handleAddSalePoint">
-          <span class="plus-icon">+</span>
-          Add Sales Point
+
+        <div class="text-sm text-slate-500 flex items-start gap-2 mb-4 bg-slate-50 rounded-xl p-3 border border-slate-100">
+          <i class="fas fa-map-pin mt-1 text-slate-400"></i>
+          <span class="line-clamp-2 leading-relaxed">{{ point.address }}</span>
+        </div>
+
+        <!-- Map Container -->
+        <div v-show="activeMapId === point._id" class="mt-auto pt-4 border-t border-slate-100">
+          <div :id="'map-container-'+point._id" class="w-full h-48 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative z-0">
+            <div v-if="isLoadingMap && activeMapId === point._id" class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10">
+              <i class="fas fa-circle-notch fa-spin text-premium-gold text-2xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="filteredSalePoints.length > 0" class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <div class="text-sm text-slate-500 font-medium">
+        Affichage de {{ (currentPage - 1) * itemsPerPage + 1 }} à {{ Math.min(currentPage * itemsPerPage, filteredSalePoints.length) }} sur {{ filteredSalePoints.length }}
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          @click="currentPage--" 
+          :disabled="currentPage === 1"
+          class="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <i class="fas fa-chevron-left"></i>
         </button>
-      </div>
-      <div class="filter-container">
-        <div class="search-wrapper">
-          <input
-            type="text"
-            class="search-input"
-            placeholder="Search locations..."
-            v-model="searchTerm"
-            @input="applyFilters"
-          />
-        </div>
-      </div>
-      <div class="table-container">
-        <table class="suppliers-table">
-          <thead>
-            <tr>
-              <th>NAME</th>
-              <th>TYPE</th>
-              <th>ADDRESS</th>
-              <th>ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="point in filteredSalePoints" :key="point._id">
-              <td>
-                <div class="flex items-center">
-                  <div class="store-icon">🏪</div>
-                  <div>
-                    <div class="point-name">{{ point.name }}</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <span class="category-tag" :class="point.type.toLowerCase().replace(' ', '-')">
-                  {{ point.type }}
-                </span>
-              </td>
-              <td>
-                <div class="location-info">
-                  <i class="fas fa-map-marker-alt"></i>
-                  <span>{{ point.address }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button class="action-button view-button" @click="toggleMap(point)" title="View/Hide">
-                    <i class="fas" :class="activeMapId === point._id ? 'fa-eye-slash' : 'fa-eye'"></i>
-                  </button>
-                  <button class="action-button edit-button" @click="handleEditSalePoint(point)" title="Edit">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="action-button delete-button" @click="deleteSalePoint(point._id)" title="Delete">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
-                <div 
-                  v-if="activeMapId === point._id" 
-                  :id="'map-container-'+point._id"
-                  class="map-view"
-                ></div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="pagination">
-        <p class="results-info">Showing 1 to {{ filteredSalePoints.length }} of {{ filteredSalePoints.length }} results</p>
-        <div class="pagination-buttons">
-          <button class="pagination-button" disabled>Previous</button>
-          <button class="pagination-button" disabled>Next</button>
-        </div>
+        <span class="text-sm font-bold text-premium-midnight px-4">
+          Page {{ currentPage }} sur {{ totalPages }}
+        </span>
+        <button 
+          @click="currentPage++" 
+          :disabled="currentPage === totalPages"
+          class="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -532,396 +571,41 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* Styles CSS pour la liste déroulante */
-.status-select {
-  padding: 0.625rem 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background-color: white;
-  font-size: 0.875rem;
-  cursor: pointer;
-  outline: none;
+.animate-in {
+  animation-fill-mode: forwards;
 }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation-name: fade-in; }
 
-.status-select:hover {
-  background-color: #f9fafb;
-}
-
-.vue-app {
-  font-family: "Inter", sans-serif;
-  color: #333;
-  background-color: white;
-  min-height: 100vh;
-  padding: 2rem 0;
-  display: flex;
-  justify-content: center;
-}
-
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0;
-  color: #111827;
-}
-
-.page-subtitle {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-
-.button-primary {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.625rem 1rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.button-primary:hover {
-  background-color: #1d4ed8;
-}
-
-.button-add {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.plus-icon {
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-.location-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #64748b;
-  font-size: 0.875rem;
-}
-
-.filter-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 1.5rem 0;
-}
-
-.search-wrapper {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-.search-input {
-  width: 18rem;
-  padding: 0.625rem 1rem 0.625rem 2.25rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  outline: none;
-}
-
-.search-input:focus {
-  border-color: #2563eb;
-}
-
-.search-wrapper::before {
-  content: '🔍';
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #64748b;
-}
-
-.button-filter {
-  padding: 0.625rem 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background-color: white;
-  font-size: 0.875rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.button-filter:hover {
-  background-color: #f9fafb;
-}
-
-.delete-button {
-  color: #ef4444;
-}
-
-.delete-button:hover {
-  background-color: #fee2e2;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.gap-2 {
-  gap: 0.5rem;
-}
-
-.table-container {
-  background-color: white;
+/* Map Utilities */
+:deep(.leaflet-container) {
   border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  z-index: 10;
 }
-
-.suppliers-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+:deep(.leaflet-popup-content-wrapper) {
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
-
-.suppliers-table th {
-  background-color: #f8fafc;
-  padding: 1rem 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.suppliers-table td {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  color: #1e293b;
-}
-
-.suppliers-table tr:hover {
-  background-color: #f9fafb;
-}
-
-.store-icon {
-  height: 2rem;
-  width: 2rem;
-  border-radius: 9999px;
-  background-color: #ecfdf5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  margin-right: 0.75rem;
-}
-
-.point-name {
-  font-weight: 500;
-}
-
-.category-tag {
-  padding: 0.375rem 0.75rem;
-  border-radius: 2rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  display: inline-block;
-  text-transform: capitalize;
-}
-
-.category-tag.store {
-  background-color: #e0e7ff;
-  color: #16a34a;
-  border: 1px solid #c7d2fe;
-}
-
-.category-tag.pickup-point {
-  background-color: #dcfce7;
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
-}
-
-.category-tag.distribution-center {
-  background-color: #fef3c7;
-  color: #d97706;
-  border: 1px solid #fde68a;
-}
-
-.category-tag {
-  background-color: #f1f5f9;
-  color: #596d88;
-  border: 1px solid #e2e8f0;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-button {
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  transition: all 0.2s ease;
-}
-
-.view-button {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.view-button:hover {
-  background-color: #bbdefb;
-}
-
-.edit-button {
-  background-color: #e8f5e9;
-  color: #388e3c;
-}
-
-.edit-button:hover {
-  background-color: #c8e6c9;
-}
-
-.delete-button {
-  background-color: #ffebee;
-  color: #d32f2f;
-}
-
-.delete-button:hover {
-  background-color: #ffcdd2;
-}
-
-.action-button i {
-  font-size: 14px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1.5rem;
-}
-
-.results-info {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.pagination-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.pagination-button {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background-color: white;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.pagination-button:hover:not(:disabled) {
-  background-color: #f9fafb;
-}
-
-.pagination-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.leaflet-container {
-  height: 100%;
-  width: 100%;
-  border-radius: 8px;
-}
-
-.map-view {
-  height: 300px;
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  z-index: 1000;
-}
-
-.leaflet-marker-icon {
-  background-image: none !important;
-}
-
-.leaflet-popup-content {
+:deep(.leaflet-popup-content) {
   font-family: 'Inter', sans-serif;
-  min-width: 200px;
+  margin: 1rem;
 }
 
-.leaflet-popup-content b {
-  color: #2563eb;
+/* SweetAlert2 Inputs override */
+:deep(.swal2-input), :deep(.swal2-select) {
+  width: 100% !important;
+  margin: 10px 0 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-family: 'Inter', sans-serif !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s !important;
 }
-
-.swal2-input, .swal2-select {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #333;
-  background-color: #fff;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  box-sizing: border-box;
-  font-family: 'Arial', sans-serif;
-  height: 48px;
-}
-
-.swal2-input:focus, .swal2-select:focus {
-  border-color: #007bff;
-  outline: none;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
-}
-
-.swal2-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 14px;
-  cursor: pointer;
-}
-
-.swal2-select option {
-  padding: 10px;
-  font-size: 16px;
-  background-color: #fff;
-  color: #333;
-}
-
-/* Removed unused styles */
-.data-table, .point-id, .status-badge, .status-open, .status-closed, .status-limited, .map-button, .map-icon, .supplier-info, .supplier-avatar, .supplier-avatar img, .supplier-details, .supplier-name, .supplier-company, .search-icon {
-  display: none;
+:deep(.swal2-input:focus), :deep(.swal2-select:focus) {
+  border-color: #d4af37 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) !important;
 }
 </style>

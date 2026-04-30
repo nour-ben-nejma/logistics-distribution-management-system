@@ -2,11 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeEntreprise from '../views/HomeEntreprise.vue';
 import FormPage from '../components/AccountEntreprise/formulaire.vue';
 import DashEntreprise from '../views/DashEntrepise.vue';
-import Login from '../components/HomeEntreprise/Footer.vue';
+import Login from '../components/HomeEntreprise/LoginSection.vue';
 import DefaultDash from '../components/CompanyDashboard/DefaultDash.vue';
-import about from '../components/HomeEntreprise/SectionOne.vue';
-import contact from '../components/HomeEntreprise/Contact.vue';
-import services from '../components/HomeEntreprise/SectionTwo.vue';
+import about from '../components/HomeEntreprise/FeatureSection.vue';
+import Footer from '../components/HomeEntreprise/Footer.vue';
+import services from '../components/HomeEntreprise/ServicesSection.vue';
 import profile from '../components/CompanyDashboard/profile.vue';
 import Salepoint from '../components/CompanyDashboard/SalePoint.vue';
 import TransEntrep from '../components/CompanyDashboard/TransEntrep.vue';
@@ -41,7 +41,7 @@ const routes = [
   },
   {
     path: '/contact', 
-    component: contact,
+    component: Footer,
     name: 'contact',
   },
   {

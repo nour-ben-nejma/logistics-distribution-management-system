@@ -1,73 +1,59 @@
 <template>
-  <div class="app-container">
-    <!-- Sidebar à gauche -->
-    <Sidebar />
+  <div class="min-h-screen bg-premium-surface overflow-x-hidden">
+    <!-- Sidebar -->
+    <Sidebar :isCollapsed="isCollapsed" @toggle="isCollapsed = !isCollapsed" />
 
-    <!-- Contenu principal -->
-    <div class="main-content">
-      <!-- NavBar en haut -->
-      <NavBar />
+    <!-- Main Content Area -->
+    <div 
+      class="main-content flex flex-col min-h-screen transition-all duration-500 ease-in-out"
+      :class="[isCollapsed ? 'pl-20' : 'pl-72']"
+    >
+      <!-- NavBar -->
+      <NavBar :isSidebarCollapsed="isCollapsed" @toggleSidebar="isCollapsed = !isCollapsed" />
 
-      <!-- Contenu dynamique -->
-      <div class="content-wrapper">
-        <router-view></router-view>
-      </div>
+      <!-- Content Wrapper -->
+      <main class="flex-grow p-6 pt-24 md:p-8 md:pt-28">
+        <router-view v-slot="{ Component }">
+          <transition name="page" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+
+      <!-- Footer -->
+      <footer class="py-8 px-8 flex justify-between items-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] border-t border-slate-100 mt-auto">
+        <span>&copy; 2026 LogistiCo Platinum Edition</span>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-premium-gold transition-colors">Privacy</a>
+          <a href="#" class="hover:text-premium-gold transition-colors">Terms</a>
+          <a href="#" class="hover:text-premium-gold transition-colors">Support</a>
+        </div>
+      </footer>
     </div>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref } from 'vue';
 import Sidebar from '../components/CompanyDashboard/SideBar.vue';
 import NavBar from '../components/CompanyDashboard/NavBar.vue';
 
-export default {
-  name: 'DefaultDashboard',
-  components: {
-    Sidebar,
-    NavBar,
-  },
-};
+const isCollapsed = ref(false);
 </script>
 
-<style>
-/* Styles globaux */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
+<style scoped>
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-
-Copy
-.app-container {
-  border-bottom: 1px solid #e2e8f0;
-
-  display: flex !important;
-  min-height: 100vh !important;
-  /* background-color:  !important; */
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 2px solid blue; /* Bordures temporaires pour déboguer */
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(15px) scale(0.98);
 }
 
-/* .main-content {
-  flex-grow: 1 !important;
-  width: 100% !important;
-  min-height: 100vh !important;
-  position: relative !important;
-  display: flex !important;
-  flex-direction: column !important;
-  padding: 0 !important;
-   /* Bordures temporaires pour déboguer */
-
-
-.content-wrapper {
-  flex: 1; /* Prend tout l'espace disponible */
-  width: calc(100% - 230px); /* Largeur totale moins la largeur de la Sidebar */
-  margin-left: 250px; /* Décale le contenu pour laisser la place à la Sidebar */
-  padding: 50px 45px  10px; /* Ajustez le padding si nécessaire */
-  box-sizing: border-box; /* Inclut le padding dans la largeur totale */
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-15px) scale(1.02);
 }
-</style>
+</style>

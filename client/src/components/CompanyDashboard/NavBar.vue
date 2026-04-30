@@ -1,7 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { 
+  Search, 
+  Bell, 
+  Settings, 
+  User, 
+  Sliders, 
+  LogOut,
+  ChevronDown,
+  Sparkles,
+  PanelLeftClose,
+  PanelLeftOpen
+} from 'lucide-vue-next'
+
+const props = defineProps<{
+  isSidebarCollapsed: boolean
+}>()
+
+const emit = defineEmits(['toggleSidebar'])
+
+
 
 interface CompanyInfo {
   companyName: string
@@ -36,18 +56,9 @@ const fetchCompanyInfo = async () => {
   }
 }
 
-const toggleProfileDropdown = () => {
+const toggleProfileDropdown = (e: Event) => {
+  e.stopPropagation()
   isProfileDropdownOpen.value = !isProfileDropdownOpen.value
-}
-
-const goToProfile = () => {
-  router.push('/profile')
-  isProfileDropdownOpen.value = false
-}
-
-const goToEdit = () => {
-  router.push('/edit')
-  isProfileDropdownOpen.value = false
 }
 
 const logout = async () => {
@@ -57,23 +68,19 @@ const logout = async () => {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
       }
     })
-    
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    router.push('/')
-    isProfileDropdownOpen.value = false
-    
   } catch (error) {
     console.error('Error during logout:', error)
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
+  } finally {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     router.push('/')
   }
 }
 
 const handleClickOutside = (event: MouseEvent) => {
-  const profileMenu = document.querySelector('.profile-menu')
-  if (profileMenu && !profileMenu.contains(event.target as Node)) {
+  const dropdown = document.querySelector('.profile-dropdown')
+  if (dropdown && !dropdown.contains(event.target as Node)) {
     isProfileDropdownOpen.value = false
   }
 }
@@ -89,227 +96,127 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <nav class="navbar">
-    <div class="navbar-left">
-      <div class="search-box">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" placeholder="Search..." />
+  <nav 
+    class="fixed top-0 right-0 z-40 transition-all duration-500 ease-in-out h-20 px-8 flex items-center justify-between"
+    :class="[isSidebarCollapsed ? 'left-20' : 'left-72']"
+  >
+    <!-- Background Glass -->
+    <div class="absolute inset-0 bg-white/60 backdrop-blur-md border-b border-slate-100"></div>
+
+    <!-- Left: Toggle + Search -->
+    <div class="relative z-10 flex items-center gap-4">
+      <!-- Sidebar Toggle Button -->
+      <button
+        @click="emit('toggleSidebar')"
+        class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-all"
+        title="Toggle Sidebar"
+      >
+        <PanelLeftClose v-if="!isSidebarCollapsed" class="w-5 h-5" />
+        <PanelLeftOpen v-else class="w-5 h-5" />
+      </button>
+
+      <div class="search-box relative w-64 group">
+        <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+        <input 
+          type="text" 
+          placeholder="Rechercher..." 
+          class="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all placeholder:text-slate-400 font-medium"
+        />
+      </div>
+      
+      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-premium-gold/10 border border-premium-gold/20">
+        <Sparkles class="w-3 h-3 text-premium-gold" />
+        <span class="text-[9px] font-bold text-premium-gold uppercase tracking-widest">Premium Active</span>
       </div>
     </div>
     
-    <div class="navbar-right">
-      <button class="icon-button">
-        <i class="fas fa-bell"></i>
-        <span class="notification-badge">{{ notifications }}</span>
+    <!-- Right: Actions -->
+    <div class="relative z-10 flex items-center gap-3">
+      <!-- Notifications -->
+      <button class="relative w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all group">
+        <Bell class="w-5 h-5 text-slate-500 group-hover:text-premium-gold transition-colors" />
+        <span class="absolute top-2 right-2 w-2 h-2 bg-premium-gold rounded-full border-2 border-white"></span>
       </button>
       
-      <button class="icon-button">
-        <i class="fas fa-cog"></i>
+      <!-- Settings -->
+      <button class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all group">
+        <Settings class="w-5 h-5 text-slate-500 group-hover:text-premium-gold transition-colors" />
       </button>
+
+      <div class="h-6 w-[1px] bg-slate-200 mx-3"></div>
       
-      <div class="profile-menu" @click="toggleProfileDropdown">
-        <img 
-          v-if="companyInfo.Logo" 
-          :src="companyInfo.Logo" 
-          :alt="companyInfo.companyName" 
-          class="company-logo" 
-        />
-        <span v-else class="profile-avatar">
-          {{ companyInfo.companyName?.[0] || 'U' }}
-        </span>
+      <!-- Profile -->
+      <div class="relative profile-dropdown">
+        <button 
+          @click="toggleProfileDropdown"
+          class="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-all group"
+        >
+          <div class="flex flex-col items-end mr-1 hidden sm:flex">
+            <span class="text-sm font-bold text-premium-midnight truncate max-w-[120px]">{{ companyInfo.companyName || 'Compte' }}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Entreprise</span>
+          </div>
+
+          <div class="relative">
+            <div class="w-10 h-10 rounded-xl bg-premium-midnight overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-300">
+              <img 
+                v-if="companyInfo.Logo" 
+                :src="companyInfo.Logo" 
+                class="w-full h-full object-cover" 
+              />
+              <div v-else class="w-full h-full flex items-center justify-center text-premium-gold font-bold text-lg">
+                {{ companyInfo.companyName?.[0] || 'L' }}
+              </div>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+          </div>
+          
+          <ChevronDown class="w-3.5 h-3.5 text-slate-400 group-hover:text-premium-gold transition-colors" />
+        </button>
         
-        <span class="profile-name">{{ companyInfo.companyName }}</span>
-        <i class="fas fa-chevron-down"></i>
-        
-        <div v-if="isProfileDropdownOpen" class="profile-dropdown">
-          <div class="dropdown-item" @click="goToProfile">
-            <i class="fas fa-user dropdown-icon"></i>
-            <span>View Profile</span>
+        <!-- Dropdown -->
+        <Transition name="dropdown">
+          <div v-if="isProfileDropdownOpen" class="absolute top-full right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-50">
+            <div class="px-5 py-3 border-b border-slate-50 mb-2">
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Session active</p>
+              <p class="text-sm font-black text-premium-midnight truncate">{{ companyInfo.companyName }}</p>
+            </div>
+            
+            <div class="px-2 space-y-1">
+              <button @click="router.push('/profile')" class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-600 hover:bg-premium-gold/5 hover:text-premium-gold rounded-xl transition-all">
+                <User class="w-4 h-4" />
+                <span class="font-medium">Profil Directeur</span>
+              </button>
+              
+              <button @click="router.push('/edit')" class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-600 hover:bg-premium-gold/5 hover:text-premium-gold rounded-xl transition-all">
+                <Settings class="w-4 h-4" />
+                <span class="font-medium">Paramètres Système</span>
+              </button>
+            </div>
+            
+            <div class="h-[1px] bg-slate-50 my-2 mx-4"></div>
+            
+            <div class="px-2">
+              <button @click="logout" class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                <LogOut class="w-4 h-4" />
+                <span class="font-medium">Déconnexion sécurisée</span>
+              </button>
+            </div>
           </div>
-          <div class="dropdown-item" @click="goToEdit">
-            <i class="fas fa-edit dropdown-icon"></i>
-            <span>Edit Profile</span>
-          </div>
-          <div class="dropdown-item" @click="logout">
-            <i class="fas fa-sign-out-alt dropdown-icon"></i>
-            <span>Logout</span>
-          </div>
-        </div>
+        </Transition>
       </div>
     </div>
   </nav>
 </template>
 
 <style scoped>
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 290px;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 1.5rem;
-  height: 80px;
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
-  z-index: 1000;
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.search-box {
-  position: relative;
-  width: 300px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  background-color: rgba(248, 250, 252, 0.8);
-  transition: all 0.3s ease;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.navbar-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.icon-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background-color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.icon-button:hover {
-  background-color: #f8fafc;
-  border-color: #3b82f6;
-  transform: translateY(-1px);
-}
-
-.notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background-color: #ef4444;
-  color: white;
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  border: 2px solid white;
-}
-
-.profile-menu {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-  position: relative;
-  background-color: white;
-}
-
-.profile-menu:hover {
-  background-color: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-.company-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #e2e8f0;
-  transition: all 0.3s ease;
-}
-
-.profile-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 1rem;
-}
-
-.profile-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.profile-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  background-color: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  min-width: 200px;
-  padding: 0.5rem 0;
-  z-index: 1001;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  color: #1e293b;
-  transition: all 0.2s ease;
-}
-
-.dropdown-item:hover {
-  background-color: #f8fafc;
-  color: #3b82f6;
-}
-
-.dropdown-icon {
-  width: 16px;
-  color: #64748b;
-}
-
-.dropdown-item:hover .dropdown-icon {
-  color: #3b82f6;
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
 }
 </style>

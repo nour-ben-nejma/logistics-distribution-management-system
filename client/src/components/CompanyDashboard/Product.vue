@@ -1,3 +1,161 @@
+
+
+<template>
+  <div class="p-6 md:p-8 animate-in fade-in duration-500">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h1 class="text-3xl font-display font-bold text-premium-midnight tracking-tight">Gestion des Produits</h1>
+        <p class="text-slate-500 mt-1">Gérez votre catalogue de produits et leurs exigences de stockage</p>
+      </div>
+      <button @click="openCreateModal" class="btn-gold group">
+        <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>
+        Nouveau Produit
+      </button>
+    </div>
+
+    <!-- Error Alert -->
+    <div v-if="error" class="bg-red-500/10 border border-red-500/20 text-red-600 px-6 py-4 rounded-xl flex items-center justify-between mb-8 animate-in fade-in slide-in-from-top-2">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-exclamation-circle"></i>
+        <span class="font-medium">{{ error }}</span>
+      </div>
+      <button @click="error = null" class="text-red-600/50 hover:text-red-600 transition-colors">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-premium-gold animate-pulse">
+      <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+      <p class="font-medium">Chargement du catalogue...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="products.length === 0" class="card-premium flex flex-col items-center justify-center py-20 text-center">
+      <div class="w-24 h-24 rounded-full bg-slate-50 flex items-center justify-center mb-6">
+        <i class="fas fa-box-open text-4xl text-slate-300"></i>
+      </div>
+      <h3 class="text-xl font-bold text-premium-midnight mb-2">Aucun produit trouvé</h3>
+      <p class="text-slate-500 max-w-md mb-8">Votre catalogue est vide. Commencez par ajouter votre premier produit pour gérer son stockage.</p>
+      <button @click="openCreateModal" class="btn-outline">
+        <i class="fas fa-plus mr-2"></i> Ajouter le premier produit
+      </button>
+    </div>
+
+    <!-- Products Grid -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div v-for="product in products" :key="product._id" class="card-premium group !p-0 overflow-hidden flex flex-col">
+        <!-- Card Header (Color coded by category) -->
+        <div class="h-24 relative overflow-hidden flex items-center justify-center" :class="'bg-category-' + product.category">
+          <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+          <i :class="['fas', categoryIcons[product.category as keyof typeof categoryIcons] || 'fa-box']" class="text-white text-4xl relative z-10 drop-shadow-md transform group-hover:scale-110 transition-transform duration-500"></i>
+        </div>
+        
+        <!-- Card Body -->
+        <div class="p-5 flex-grow flex flex-col">
+          <h3 class="text-lg font-bold text-premium-midnight mb-4 line-clamp-1" :title="product.name">{{ product.name }}</h3>
+          
+          <div class="space-y-3 mt-auto">
+            <div class="flex items-center gap-3 text-sm">
+              <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0">
+                <i class="fas fa-tag text-slate-400"></i>
+              </div>
+              <span class="text-slate-600 font-medium capitalize">{{ product.category }}</span>
+            </div>
+            
+            <div class="flex items-center gap-3 text-sm">
+              <div class="w-8 h-8 rounded-lg bg-premium-gold/10 flex items-center justify-center shrink-0">
+                <i :class="['fas', storageTypes.find(t => t.value === product.storage_type)?.icon || 'fa-warehouse']" class="text-premium-gold"></i>
+              </div>
+              <span class="text-slate-600 font-medium">{{ storageTypes.find(t => t.value === product.storage_type)?.label || product.storage_type }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="px-5 py-4 border-t border-slate-100 flex gap-3 bg-slate-50/50 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button @click="openEditModal(product)" class="flex-1 py-2 rounded-xl text-sm font-bold text-premium-midnight bg-white border border-slate-200 hover:border-premium-gold hover:text-premium-gold transition-colors shadow-sm">
+            <i class="fas fa-edit mr-1"></i> Modifier
+          </button>
+          <button @click="deleteProduct(product._id)" class="px-4 py-2 rounded-xl text-sm font-bold text-red-500 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 transition-colors shadow-sm">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Form Modal -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm" @click="showModal = false"></div>
+      
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+        <!-- Modal Header -->
+        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i :class="['fas', editingProduct ? 'fa-edit' : 'fa-plus']" class="text-premium-gold"></i>
+            </div>
+            {{ editingProduct ? 'Modifier le Produit' : 'Nouveau Produit' }}
+          </h2>
+          <button @click="showModal = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-8">
+          <form @submit.prevent="saveProduct" class="space-y-6">
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom du Produit *</label>
+              <div class="relative group">
+                <i class="fas fa-box absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <input v-model="productForm.name" type="text" required placeholder="Ex: Ordinateur Portable" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Catégorie *</label>
+              <div class="relative group">
+                <i class="fas fa-tags absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <select v-model="productForm.category" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option value="" disabled>Sélectionner une catégorie</option>
+                  <option v-for="cat in categories" :key="cat" :value="cat">
+                    {{ cat.charAt(0).toUpperCase() + cat.slice(1) }}
+                  </option>
+                </select>
+                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Type de Stockage *</label>
+              <div class="relative group">
+                <i class="fas fa-warehouse absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <select v-model="productForm.storage_type" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option v-for="type in storageTypes" :key="type.value" :value="type.value">
+                    {{ type.label }}
+                  </option>
+                </select>
+                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+              </div>
+            </div>
+            
+            <div class="pt-4 flex gap-4">
+              <button type="button" @click="showModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                Annuler
+              </button>
+              <button type="submit" class="flex-1 btn-gold">
+                {{ editingProduct ? 'Mettre à jour' : 'Créer le produit' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
@@ -38,10 +196,10 @@ const categories = [
 ];
 
 const storageTypes = [
-  { value: 'ambient', label: 'Ambient Temperature', icon: 'fa-temperature-low' },
-  { value: 'refrigerated', label: 'Refrigerated (4°C)', icon: 'fa-snowflake' },
-  { value: 'frozen', label: 'Frozen (-18°C)', icon: 'fa-ice-cream' },
-  { value: 'controlled', label: 'Controlled Environment', icon: 'fa-sliders-h' }
+  { value: 'ambient', label: 'Température Ambiante', icon: 'fa-temperature-low' },
+  { value: 'refrigerated', label: 'Réfrigéré (4°C)', icon: 'fa-snowflake' },
+  { value: 'frozen', label: 'Congelé (-18°C)', icon: 'fa-ice-cream' },
+  { value: 'controlled', label: 'Environnement Contrôlé', icon: 'fa-sliders-h' }
 ];
 
 // Category icons mapping
@@ -75,14 +233,14 @@ const fetchProducts = async () => {
 const handleApiError = (error: any, context: string): string => {
   if (error.response) {
     switch (error.response.status) {
-      case 401: return 'Authentication required';
-      case 403: return 'You are not authorized';
-      case 404: return `${context} not found`;
-      case 422: return error.response.data.message || 'Validation error';
-      default: return `Error ${error.response.status}: ${error.response.data.message || 'Unknown error'}`;
+      case 401: return 'Authentification requise';
+      case 403: return 'Vous n\'êtes pas autorisé';
+      case 404: return `Produits introuvables`;
+      case 422: return error.response.data.message || 'Erreur de validation';
+      default: return `Erreur ${error.response.status}: ${error.response.data.message || 'Erreur inconnue'}`;
     }
   }
-  return `Network error: ${context} failed`;
+  return `Erreur réseau : échec de l'opération`;
 };
 
 const openCreateModal = () => {
@@ -106,7 +264,7 @@ const saveProduct = async () => {
   try {
     // Validate all required fields
     if (!productForm.value.name || !productForm.value.category || !productForm.value.storage_type) {
-      error.value = 'All fields are required';
+      error.value = 'Tous les champs sont requis';
       return;
     }
 
@@ -135,7 +293,7 @@ const saveProduct = async () => {
 };
 
 const deleteProduct = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.')) return;
   
   try {
     await api.delete(`/products/${id}`);
@@ -151,443 +309,26 @@ onMounted(() => {
 });
 </script>
 
-<template>
-  <div class="products-management">
-    <div class="header">
-      <h1>Product Management</h1>
-      <button @click="openCreateModal" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Add Product
-      </button>
-    </div>
-
-    <div v-if="error" class="alert error">
-      <i class="fas fa-exclamation-circle"></i> {{ error }}
-      <button @click="error = null" class="close-btn">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-
-    <div v-if="loading" class="loading-state">
-      <i class="fas fa-spinner fa-spin"></i> Loading products...
-    </div>
-
-    <div v-else-if="products.length === 0" class="empty-state">
-      <i class="fas fa-box-open"></i>
-      <p>No products found</p>
-      <button @click="openCreateModal" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Create First Product
-      </button>
-    </div>
-
-    <div v-else class="products-grid">
-      <div v-for="product in products" :key="product._id" class="product-card">
-        <div class="product-icon" :class="'category-' + product.category">
-          <i :class="['fas', categoryIcons[product.category as keyof typeof categoryIcons] || 'fa-box']"></i>
-        </div>
-        <div class="product-info">
-          <h3>{{ product.name }}</h3>
-          <div class="meta">
-            <span class="category">
-              <i class="fas fa-tag"></i> {{ product.category }}
-            </span>
-            <span class="storage-type">
-              <i :class="['fas', storageTypes.find(t => t.value === product.storage_type)?.icon || 'fa-warehouse']"></i>
-              {{ storageTypes.find(t => t.value === product.storage_type)?.label || product.storage_type }}
-            </span>
-          </div>
-        </div>
-        <div class="product-actions">
-          <button @click="openEditModal(product)" class="btn btn-sm btn-edit">
-            <i class="fas fa-edit"></i> Edit
-          </button>
-          <button @click="deleteProduct(product._id)" class="btn btn-sm btn-danger">
-            <i class="fas fa-trash-alt"></i> Delete
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Product Form Modal -->
-    <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>
-            <i :class="['fas', editingProduct ? 'fa-edit' : 'fa-plus-circle']"></i>
-            {{ editingProduct ? 'Edit Product' : 'Create Product' }}
-          </h2>
-          <button @click="showModal = false" class="modal-close">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <div class="modal-body">
-          <form @submit.prevent="saveProduct">
-            <div class="form-group">
-              <label><i class="fas fa-tag"></i> Product Name *</label>
-              <input v-model="productForm.name" type="text" required placeholder="Enter product name">
-            </div>
-            
-            <div class="form-group">
-              <label><i class="fas fa-list-alt"></i> Category *</label>
-              <select v-model="productForm.category" required>
-                <option value="">Select a category</option>
-                <option v-for="cat in categories" :key="cat" :value="cat">
-                  {{ cat.charAt(0).toUpperCase() + cat.slice(1) }}
-                </option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label><i class="fas fa-warehouse"></i> Storage Type *</label>
-              <select v-model="productForm.storage_type" required>
-                <option v-for="type in storageTypes" 
-                        :key="type.value" 
-                        :value="type.value">
-                  {{ type.label }}
-                </option>
-              </select>
-            </div>
-            
-            <div class="form-actions">
-              <button type="button" @click="showModal = false" class="btn btn-secondary">
-                Cancel
-              </button>
-              <button type="submit" class="btn btn-primary">
-                {{ editingProduct ? 'Update Product' : 'Create Product' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <style scoped>
-.products-management {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+.animate-in {
+  animation-fill-mode: forwards;
 }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-in-from-top-2 { from { transform: translateY(-0.5rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes zoom-in-95 { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.fade-in { animation-name: fade-in; }
+.slide-in-from-top-2 { animation-name: slide-in-from-top-2; }
+.zoom-in-95 { animation-name: zoom-in-95; }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.header h1 {
-  font-size: 1.8rem;
-  color: #2c3e50;
-  margin: 0;
-  font-weight: 600;
-}
-
-.alert {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.alert.error {
-  background-color: #fee2e2;
-  color: #b91c1c;
-}
-
-.close-btn {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #64748b;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.loading-state i {
-  font-size: 2rem;
-  color: #3b82f6;
-}
-
-.empty-state i {
-  font-size: 3rem;
-  color: #cbd5e1;
-}
-
-.empty-state p {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.product-card {
-  background: white;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.product-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.product-icon {
-  padding: 1.5rem;
-  text-align: center;
-  font-size: 2.5rem;
-  color: white;
-}
-
-.product-info {
-  padding: 1.25rem;
-  flex: 1;
-}
-
-.product-info h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.2rem;
-  color: #1e293b;
-}
-
-.meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-.meta span {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.product-actions {
-  padding: 1rem;
-  border-top: 1px solid #f1f5f9;
-  display: flex;
-  gap: 0.75rem;
-}
-
-/* Category-specific colors */
-.product-icon.category-electronics { background-color: #3b82f6; }
-.product-icon.category-clothing { background-color: #ec4899; }
-.product-icon.category-food { background-color: #f59e0b; }
-.product-icon.category-furniture { background-color: #8b5cf6; }
-.product-icon.category-health { background-color: #ef4444; }
-.product-icon.category-beauty { background-color: #10b981; }
-.product-icon.category-sports { background-color: #6366f1; }
-.product-icon.category-automotive { background-color: #64748b; }
-.product-icon.category-home { background-color: #f97316; }
-.product-icon.category-books { background-color: #14b8a6; }
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.4rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  color: #6b7280;
-  padding: 0.25rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-group select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1em;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 2rem;
-}
-
-/* Button Styles */
-.btn {
-  padding: 0.65rem 1.25rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-  font-size: 0.95rem;
-  border: 1px solid transparent;
-}
-
-.btn-primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #2563eb;
-}
-
-.btn-secondary {
-  background-color: white;
-  color: #374151;
-  border-color: #d1d5db;
-}
-
-.btn-secondary:hover {
-  background-color: #f9fafb;
-}
-
-.btn-edit {
-  background-color: white;
-  color: #3b82f6;
-  border-color: #dbeafe;
-}
-
-.btn-edit:hover {
-  background-color: #eff6ff;
-}
-
-.btn-danger {
-  background-color: white;
-  color: #ef4444;
-  border-color: #fee2e2;
-}
-
-.btn-danger:hover {
-  background-color: #fef2f2;
-}
-
-.btn-sm {
-  padding: 0.5rem 0.9rem;
-  font-size: 0.85rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  }
-  
-  .product-actions {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 480px) {
-  .products-management {
-    padding: 1rem;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-</style>
+/* Category Colors */
+.bg-category-electronics { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.bg-category-clothing { background: linear-gradient(135deg, #ec4899, #db2777); }
+.bg-category-food { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.bg-category-furniture { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.bg-category-health { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.bg-category-beauty { background: linear-gradient(135deg, #10b981, #059669); }
+.bg-category-sports { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.bg-category-automotive { background: linear-gradient(135deg, #64748b, #475569); }
+.bg-category-home { background: linear-gradient(135deg, #f97316, #ea580c); }
+.bg-category-books { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+</style>

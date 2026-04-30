@@ -1,102 +1,141 @@
 <template>
-  <div class="company-profile">
-    <!-- Loading and Error States -->
-    <div v-if="loading" class="status-message loading">
-      <div class="spinner"></div>
-      <p>Loading company profile...</p>
-    </div>
-    
-    <div v-else-if="error" class="status-message error">
-      <span class="icon">⚠️</span>
-      <p>{{ error }}</p>
+  <div class="space-y-8 animate-fade-in">
+    <!-- Loading State -->
+    <div v-if="loading" class="flex items-center justify-center py-32">
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-12 h-12 border-4 border-premium-gold/20 border-t-premium-gold rounded-full animate-spin"></div>
+        <span class="text-sm font-medium text-slate-400 uppercase tracking-widest">Chargement du profil...</span>
+      </div>
     </div>
 
-    <!-- Company Profile Content -->
-    <div v-else-if="company.companyName" class="profile-content">
-      <!-- Header Section -->
-      <header class="profile-header">
-        <div class="profile-header-content">
-          <div class="company-logo">
-            <img 
-              v-if="company.Logo" 
-              :src="company.Logo" 
-              :alt="`${company.Logo} Logo`" 
-            />
-            <div v-else class="company-logo-placeholder">
-              {{ company.companyName?.[0]?.toUpperCase() || 'C' }}
+    <!-- Error State -->
+    <div v-else-if="error" class="flex items-center gap-4 p-6 bg-red-50 border border-red-100 rounded-2xl">
+      <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+        <AlertCircle class="w-5 h-5 text-red-500" />
+      </div>
+      <div>
+        <p class="text-sm font-bold text-red-600">Erreur de chargement</p>
+        <p class="text-xs text-red-400 mt-0.5">{{ error }}</p>
+      </div>
+    </div>
+
+    <template v-else-if="company.companyName">
+      <!-- Page Header -->
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Compte Entreprise</span>
+          </div>
+          <h1 class="text-3xl font-display font-black text-premium-midnight tracking-tight">Profil Entreprise</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Informations légales et coordonnées de votre société.</p>
+        </div>
+        <button @click="goToEdit" class="btn-gold !px-6 !py-3 !text-xs flex items-center gap-2">
+          <Pencil class="w-4 h-4" />
+          Modifier le Profil
+        </button>
+      </div>
+
+      <!-- Hero Card -->
+      <div class="relative bg-premium-midnight rounded-[2rem] overflow-hidden shadow-2xl">
+        <div class="absolute top-0 right-0 w-80 h-80 bg-premium-gold/10 blur-[80px] -mr-20 -mt-20"></div>
+        <div class="absolute bottom-0 left-0 w-60 h-60 bg-blue-500/5 blur-[60px] -ml-10 -mb-10"></div>
+
+        <div class="relative z-10 p-10 flex flex-col sm:flex-row items-center sm:items-start gap-8">
+          <!-- Logo -->
+          <div class="relative shrink-0">
+            <div class="w-28 h-28 rounded-2xl overflow-hidden bg-white/10 border-2 border-white/10 shadow-xl">
+              <img v-if="company.Logo" :src="company.Logo" :alt="company.companyName" class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full flex items-center justify-center text-4xl font-black text-premium-gold">
+                {{ company.companyName?.[0]?.toUpperCase() || 'C' }}
+              </div>
+            </div>
+            <div class="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-premium-gold flex items-center justify-center shadow-lg">
+              <Building2 class="w-4 h-4 text-white" />
             </div>
           </div>
-          <div class="company-title">
-            <h1>{{ company.companyName }}</h1>
-            <p class="company-status">{{ company.legalStatus }}</p>
+
+          <!-- Identity -->
+          <div class="text-center sm:text-left">
+            <h2 class="text-3xl font-display font-black text-white tracking-tight mb-1">{{ company.companyName }}</h2>
+            <div class="flex flex-wrap items-center gap-3 justify-center sm:justify-start mt-3">
+              <span class="px-3 py-1 rounded-full bg-premium-gold/20 border border-premium-gold/30 text-premium-gold text-[10px] font-bold uppercase tracking-widest">
+                {{ company.legalStatus }}
+              </span>
+              <span class="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                Compte Actif
+              </span>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      <!-- Main Content -->
-      <main class="profile-sections">
-        <section class="profile-section contact-info">
-          <h2>Contact Information</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="icon">✉️</span>
-              <div class="info-content">
-                <label>Email Address</label>
-                <p>{{ company.email }}</p>
+      <!-- Info Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Contact Card -->
+        <div class="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8 space-y-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+              <Phone class="w-5 h-5 text-blue-500" />
+            </div>
+            <h3 class="text-sm font-black text-premium-midnight uppercase tracking-wider">Coordonnées</h3>
+          </div>
+
+          <div class="space-y-5">
+            <div class="flex items-start gap-4">
+              <div class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
+                <Mail class="w-4 h-4 text-slate-400" />
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email</p>
+                <p class="text-sm font-semibold text-premium-midnight">{{ company.email }}</p>
               </div>
             </div>
-            <div class="info-item">
-              <span class="icon">📞</span>
-              <div class="info-content">
-                <label>Phone Number</label>
-                <p>{{ company.phoneNumber }}</p>
+            <div class="flex items-start gap-4">
+              <div class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
+                <Phone class="w-4 h-4 text-slate-400" />
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Téléphone</p>
+                <p class="text-sm font-semibold text-premium-midnight">{{ company.phoneNumber }}</p>
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
-        <section class="profile-section company-details">
-          <h2>Company Details</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="icon">🏢</span>
-              <div class="info-content">
-                <label>Registered Name</label>
-                <p>{{ company.companyName }}</p>
+        <!-- Legal Card -->
+        <div class="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8 space-y-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <FileText class="w-5 h-5 text-premium-gold" />
+            </div>
+            <h3 class="text-sm font-black text-premium-midnight uppercase tracking-wider">Données Légales</h3>
+          </div>
+
+          <div class="space-y-5">
+            <div class="flex items-start gap-4">
+              <div class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
+                <Hash class="w-4 h-4 text-slate-400" />
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">N° Registre Fiscal</p>
+                <p class="text-sm font-semibold text-premium-midnight font-mono">{{ company.taxRegistrationNumber }}</p>
               </div>
             </div>
-            <div class="info-item">
-              <span class="icon">⚖️</span>
-              <div class="info-content">
-                <label>Legal Structure</label>
-                <p>{{ company.legalStatus }}</p>
+            <div class="flex items-start gap-4">
+              <div class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
+                <MapPin class="w-4 h-4 text-slate-400" />
               </div>
-            </div>
-            <div class="info-item">
-              <span class="icon">🆔</span>
-              <div class="info-content">
-                <label>Tax Registration</label>
-                <p>{{ company.taxRegistrationNumber }}</p>
-              </div>
-            </div>
-            <div class="info-item">
-              <span class="icon">📍</span>
-              <div class="info-content">
-                <label>Office Address</label>
-                <p>{{ company.registeredOfficeAddress }}</p>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Siège Social</p>
+                <p class="text-sm font-semibold text-premium-midnight">{{ company.registeredOfficeAddress }}</p>
               </div>
             </div>
           </div>
-        </section>
-      </main>
-
-      <!-- Actions -->
-      <footer class="profile-actions">
-        <button @click="goToEdit" class="edit-button">
-          Edit Profile
-        </button>
-      </footer>
-    </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -104,6 +143,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { AlertCircle, Building2, Phone, Mail, FileText, MapPin, Hash, Pencil } from 'lucide-vue-next'
 
 const router = useRouter()
 
@@ -130,7 +170,6 @@ api.interceptors.response.use(
   response => response,
   async error => {
     const originalRequest = error.config
-    
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
       try {
@@ -151,20 +190,13 @@ const fetchCompanyProfile = async () => {
   try {
     loading.value = true
     error.value = null
-
     const token = localStorage.getItem('accessToken')
     if (!token) throw new Error('Authentication required')
-
     api.defaults.headers.common.Authorization = `Bearer ${token}`
-
     const userResponse = await api.get('/users/me')
-    if (!userResponse.data.company?._id) {
-      throw new Error('Company data not found')
-    }
-
+    if (!userResponse.data.company?._id) throw new Error('Company data not found')
     const profileResponse = await api.get(`/users/profile/${userResponse.data.company._id}`)
     company.value = profileResponse.data.company
-
   } catch (err) {
     handleError(err)
   } finally {
@@ -175,229 +207,15 @@ const fetchCompanyProfile = async () => {
 const handleError = (err: unknown) => {
   if (axios.isAxiosError(err)) {
     error.value = err.response?.data?.error || err.message
-    if (err.response?.status === 401) {
-      router.push('/login')
-    }
+    if (err.response?.status === 401) router.push('/login')
   } else if (err instanceof Error) {
     error.value = err.message
   } else {
     error.value = 'An unknown error occurred'
   }
-  console.error('Error:', err)
 }
 
-const goToEdit = () => {
-  router.push('/edit')
-}
+const goToEdit = () => router.push('/edit')
 
 onMounted(fetchCompanyProfile)
 </script>
-
-<style scoped>
-.company-profile {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
-
-/* Status Messages */
-.status-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 2rem;
-  text-align: center;
-  border-radius: 0.5rem;
-  background: var(--surface-color, #ffffff);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.status-message.loading {
-  color: var(--primary-color, #2563eb);
-}
-
-.status-message.error {
-  color: var(--error-color, #dc2626);
-}
-
-.spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid var(--primary-color, #2563eb);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Profile Content */
-.profile-content {
-  background: var(--surface-color, #ffffff);
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-}
-
-/* Header Section */
-.profile-header {
-  background: linear-gradient(135deg, #1f2937, #111827);
-  padding: 3rem 2rem;
-  color: white;
-}
-
-.profile-header-content {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.company-logo {
-  width: 120px;
-  height: 120px;
-  border-radius: 1rem;
-  overflow: hidden;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.company-logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.company-logo-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e5e7eb;
-  color: #6b7280;
-  font-size: 3rem;
-  font-weight: bold;
-}
-
-.company-title h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.company-status {
-  font-size: 1.25rem;
-  opacity: 0.9;
-  margin: 0.5rem 0 0;
-}
-
-/* Main Content */
-.profile-sections {
-  padding: 2rem;
-  display: grid;
-  gap: 2rem;
-}
-
-.profile-section {
-  background: #f8fafc;
-  border-radius: 0.75rem;
-  padding: 2rem;
-}
-
-.profile-section h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 1.5rem;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-}
-
-.info-item {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.info-item .icon {
-  font-size: 1.5rem;
-}
-
-.info-content {
-  flex: 1;
-}
-
-.info-content label {
-  display: block;
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-bottom: 0.25rem;
-}
-
-.info-content p {
-  font-size: 1rem;
-  color: #0f172a;
-  margin: 0;
-  font-weight: 500;
-}
-
-/* Actions */
-.profile-actions {
-  padding: 2rem;
-  border-top: 1px solid #9e91f0c6;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.edit-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #142854;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.edit-button:hover {
-  background: #1d4ed8;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .profile-header-content {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .company-logo {
-    margin: 0 auto;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-actions {
-    justify-content: center;
-  }
-}
-</style>

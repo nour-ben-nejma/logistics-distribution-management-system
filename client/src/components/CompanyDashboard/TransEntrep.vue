@@ -1,1421 +1,641 @@
-```vue
 <template>
-  <div class="transporter-container">
-    <!-- Statistics Header -->
-    <div class="stats-header">
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-truck"></i>
+  <div class="space-y-8 animate-fade-in pb-12">
+    <!-- Page Header -->
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+          <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion du Personnel</span>
         </div>
-        <div class="stat-content">
-          <h3>Transporters</h3>
-          <div class="stat-value">{{ filteredTransporters.length }}</div>
-        </div>
+        <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Transporteurs</h1>
+        <p class="text-slate-500 text-sm font-medium mt-1">Gérez votre équipe de chauffeurs et leurs disponibilités.</p>
       </div>
       
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-check-circle"></i>
+      <button @click="openAddModal" class="btn-gold !px-8 !py-3.5 !text-xs flex items-center gap-2 shrink-0">
+        <Plus class="w-4 h-4" />
+        Nouveau Transporteur
+      </button>
+    </div>
+
+    <!-- KPI Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-premium-midnight transition-colors duration-500">
+          <Users class="w-6 h-6 text-slate-400 group-hover:text-premium-gold transition-colors" />
         </div>
-        <div class="stat-content">
-          <h3>Available</h3>
-          <div class="stat-value">{{ availableTransportersCount }}</div>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">{{ transporters.length }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Total Équipe</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center mb-6">
+          <CheckCircle2 class="w-6 h-6 text-green-500" />
         </div>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">{{ availableTransportersCount }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Disponibles</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">
+          <Truck class="w-6 h-6 text-blue-500" />
+        </div>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">
+          {{ transporters.filter(t => t.status === 'On mission').length }}
+        </p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">En Mission</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mb-6">
+          <Calendar class="w-6 h-6 text-amber-500" />
+        </div>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">
+          {{ transporters.filter(t => t.status === 'On leave').length }}
+        </p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">En Congé</p>
       </div>
     </div>
 
-    <!-- Search and Actions -->
-    <div class="actions-section">
-      <div class="search-bar">
-        <i class="fas fa-search search-icon"></i>
+    <!-- Filters & Search -->
+    <div class="bg-white rounded-3xl border border-slate-100 p-6 flex flex-col md:flex-row gap-4 shadow-sm">
+      <div class="relative flex-grow">
+        <Search class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
         <input
-          type="text"
-          class="search-input"
-          placeholder="Search By Name..."
           v-model="searchTerm"
+          type="text"
+          placeholder="Rechercher par nom, téléphone ou CIN..."
+          class="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all placeholder:text-slate-300"
           @input="resetFilters"
         />
       </div>
-      <button class="add-transporter-btn" @click="openAddModal">
-        <i class="fas fa-plus"></i>
-        Add Transporter
-      </button>
-    </div>
-    
-    <!-- Filters -->
-    <div class="status-filter">
-      <label>Filter by status:</label>
-      <select v-model="statusFilter" class="filter-select" @change="resetSearch">
-        <option value="">All</option>
-        <option value="Available">Available</option>
-        <option value="On mission">On mission</option>
-        <option value="On leave">On leave</option>
-      </select>
       
-      <label class="type-filter">Filter by licence:</label>
-      <select v-model="licenceFilter" class="filter-select" @change="resetSearch">
-        <option value="">All</option>
-        <option value="A1">A1</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="B+E">B+E</option>
-        <option value="C">C</option>
-        <option value="C+E">C+E</option>
-        <option value="D">D</option>
-        <option value="D1">D1</option>
-        <option value="D+E">D+E</option>
-        <option value="H">H</option>
-      </select>
+      <div class="flex gap-3">
+        <select v-model="statusFilter" class="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-premium-gold/5 transition-all" @change="resetSearch">
+          <option value="">Tous les statuts</option>
+          <option value="Available">Disponible</option>
+          <option value="On mission">En mission</option>
+          <option value="On leave">En congé</option>
+        </select>
+        
+        <select v-model="licenceFilter" class="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-premium-gold/5 transition-all" @change="resetSearch">
+          <option value="">Tous les permis</option>
+          <option v-for="type in ['A1', 'A', 'B', 'B+E', 'C', 'C+E', 'D', 'D1', 'D+E', 'H']" :key="type" :value="type">{{ type }}</option>
+        </select>
+      </div>
     </div>
 
     <!-- Transporters Grid -->
-    <div class="transporter-grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
       <div 
         v-for="transporter in filteredTransporters" 
-        :key="transporter._id" 
-        class="transporter-card"
-        :class="transporter.status.toLowerCase().replace(' ', '-')"
+        :key="transporter._id"
+        class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/30 overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-premium-midnight/5 transition-all duration-500"
       >
-        <div class="card-header">
-          <div class="transporter-icon">
-            <img 
-              v-if="transporter.profilePicture" 
-              :src="transporter.profilePicture" 
-              class="profile-pic" 
-              :alt="`${transporter.firstName} ${transporter.lastName}`"
-            />
-            <div v-else class="initials">
-              {{ getInitials(transporter) }}
+        <!-- Card Header -->
+        <div class="p-8 pb-4 flex items-start justify-between">
+          <div class="flex items-center gap-5">
+            <div class="relative">
+              <div class="w-20 h-20 rounded-[2rem] overflow-hidden bg-slate-50 border-4 border-white shadow-xl group-hover:scale-105 transition-transform duration-500">
+                <img 
+                  v-if="transporter.profilePicture" 
+                  :src="transporter.profilePicture" 
+                  class="w-full h-full object-cover" 
+                  :alt="transporter.firstName"
+                />
+                <div v-else class="w-full h-full flex items-center justify-center bg-premium-midnight text-premium-gold font-display font-black text-2xl">
+                  {{ getInitials(transporter) }}
+                </div>
+              </div>
+              <div 
+                class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4 border-white shadow-sm"
+                :class="[
+                  transporter.status === 'Available' ? 'bg-green-500' :
+                  transporter.status === 'On mission' ? 'bg-blue-500' : 'bg-amber-500'
+                ]"
+              ></div>
+            </div>
+            <div>
+              <h3 class="text-xl font-display font-black text-premium-midnight leading-tight">{{ transporter.firstName }} {{ transporter.lastName }}</h3>
+              <div class="flex flex-col gap-1 mt-2">
+                <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                  <Phone class="w-3 h-3" />
+                  {{ transporter.phoneNumber }}
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                  <IdCard class="w-3 h-3" />
+                  {{ transporter.CIN }}
+                </div>
+              </div>
             </div>
           </div>
-          <div class="transporter-info">
-            <h3>{{ (transporter.firstName + ' ' + transporter.lastName).trim() || 'No Name' }}</h3>
-            <div class="transporter-meta">
-              <span class="phone">
-                <i class="fas fa-phone"></i>
-                {{ transporter.phoneNumber || 'No phone' }}
-              </span>
-              <span class="cin">
-                <i class="fas fa-id-card"></i>
-                {{ transporter.CIN || 'No CIN' }}
-              </span>
-            </div>
-          </div>
-          <div class="transporter-actions">
-            <button class="action-btn edit" @click="editTransporter(transporter)">
-              <i class="fas fa-edit"></i>
+          
+          <div class="flex items-center gap-1">
+            <button @click="editTransporter(transporter)" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 hover:bg-slate-50 hover:text-premium-midnight transition-all">
+              <Pencil class="w-4 h-4" />
             </button>
-            <button class="action-btn delete" @click="openDeleteModal(transporter)">
-              <i class="fas fa-trash-alt"></i>
+            <button @click="openDeleteModal(transporter)" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all">
+              <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div class="card-content">
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Licence Type</span>
-              <span class="info-value">
-                <i class="fas fa-car"></i>
-                {{ transporter.typeDrivingLicence || 'Not specified' }}
+        <!-- Card Body -->
+        <div class="p-8 pt-4 space-y-6 flex-grow">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-slate-50/50 p-4 rounded-2xl">
+              <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Permis</p>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-lg bg-premium-midnight flex items-center justify-center text-[10px] font-black text-premium-gold">
+                  {{ transporter.typeDrivingLicence }}
+                </div>
+                <p class="text-sm font-bold text-premium-midnight">Catégorie {{ transporter.typeDrivingLicence }}</p>
+              </div>
+            </div>
+            <div class="bg-slate-50/50 p-4 rounded-2xl">
+              <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut</p>
+              <span :class="[
+                'inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest',
+                transporter.status === 'Available' ? 'bg-green-50 text-green-600' :
+                transporter.status === 'On mission' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
+              ]">
+                {{ transporter.status === 'Available' ? 'Disponible' : transporter.status === 'On mission' ? 'En Mission' : 'En Congé' }}
               </span>
             </div>
-            <div class="info-item">
-              <span class="info-label">Status</span>
-              <span class="status-badge" :class="transporter.status.toLowerCase().replace(' ', '-')">
-                {{ transporter.status || 'Unknown' }}
-              </span>
+          </div>
+
+          <div class="flex items-center justify-between pt-4 border-t border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">
+            <div class="flex items-center gap-2">
+              <Calendar class="w-3.5 h-3.5" />
+              Rejoint le {{ formatDate(transporter.createdAt) }}
             </div>
-            <div class="info-item">
-              <span class="info-label">Added On</span>
-              <span class="info-value">
-                <i class="fas fa-calendar-alt"></i>
-                {{ formatDate(transporter.createdAt) }}
-              </span>
+            <div class="flex items-center gap-1.5 text-premium-gold">
+              <ShieldCheck class="w-3.5 h-3.5" />
+              Vérifié
             </div>
           </div>
         </div>
       </div>
 
-      <div v-if="!filteredTransporters.length && !loading" class="empty-state">
-        <i class="fas fa-truck"></i>
-        <p>No transporters found</p>
-        <button class="add-transporter-btn" @click="openAddModal">
-          <i class="fas fa-plus"></i>
-          Add a Transporter
-        </button>
+      <!-- Empty State -->
+      <div v-if="!filteredTransporters.length && !loading" class="col-span-full py-32 flex flex-col items-center justify-center gap-6">
+        <div class="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center">
+          <Users class="w-12 h-12 text-slate-200" />
+        </div>
+        <div class="text-center">
+          <p class="text-xl font-display font-black text-premium-midnight">Aucun transporteur trouvé</p>
+          <p class="text-slate-400 text-sm mt-1">Élargissez vos critères de recherche ou ajoutez un nouveau membre.</p>
+        </div>
+        <button @click="openAddModal" class="btn-gold !px-10">Ajouter un transporteur</button>
       </div>
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showTransporterModal" class="modal-overlay" @click.self="closeModals">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>{{ isEditing ? 'Edit' : 'Add' }} Transporter</h2>
-          <button class="close-btn" @click="closeModals">×</button>
+    <div v-if="showTransporterModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+      <div class="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-modal-in">
+        <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 class="text-2xl font-display font-black text-premium-midnight">{{ isEditing ? 'Modifier' : 'Ajouter' }} un Transporteur</h2>
+            <p class="text-slate-500 text-xs font-medium mt-1">Remplissez les informations professionnelles du chauffeur.</p>
+          </div>
+          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center text-slate-400 transition-all shadow-sm">
+            <X class="w-5 h-5" />
+          </button>
         </div>
+        
+        <div class="flex-grow overflow-y-auto p-8">
+          <form @submit.prevent="handleSubmit" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Profile Photo Upload -->
+            <div class="md:col-span-2 flex flex-col items-center py-6 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
+              <div v-if="previewImage" class="relative group">
+                <img :src="previewImage" class="w-32 h-32 rounded-[2.5rem] object-cover border-4 border-white shadow-xl" />
+                <button @click="removeImage" class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-all">
+                  <X class="w-4 h-4" />
+                </button>
+              </div>
+              <div v-else class="w-32 h-32 rounded-[2.5rem] bg-white flex flex-col items-center justify-center text-slate-300 border border-slate-100">
+                <User class="w-10 h-10 mb-2" />
+                <span class="text-[8px] font-black uppercase tracking-widest">Photo</span>
+              </div>
+              
+              <label class="mt-4 px-6 py-2 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-premium-midnight cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+                Choisir une image
+                <input type="file" @change="handleFileUpload" class="hidden" accept="image/*" />
+              </label>
+              <p class="text-[9px] text-slate-400 mt-2 font-medium">JPG, PNG ou WEBP (Max. 5MB)</p>
+            </div>
 
-        <form @submit.prevent="handleSubmit" class="modal-form">
-          <div class="form-group">
-            <label for="profilePicture">Profile Picture</label>
-            <input
-              type="file"
-              id="profilePicture"
-              accept="image/*"
-              @change="handleFileUpload"
-              class="form-input"
-            />
-            <div v-if="previewImage" class="preview-container">
-              <img :src="previewImage" alt="Preview" class="image-preview" />
-              <button type="button" @click="removeImage" class="remove-image-btn">
-                <i class="fas fa-times"></i>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Prénom</label>
+              <input v-model="transporterForm.firstName" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.firstName">{{ formErrors.firstName }}</span>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Nom</label>
+              <input v-model="transporterForm.lastName" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.lastName">{{ formErrors.lastName }}</span>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Email</label>
+              <input v-model="transporterForm.email" type="email" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.email">{{ formErrors.email }}</span>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{{ isEditing ? 'Nouveau Mot de passe (optionnel)' : 'Mot de passe' }}</label>
+              <input v-model="transporterForm.password" type="password" :required="!isEditing" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.password">{{ formErrors.password }}</span>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Téléphone</label>
+              <input v-model="transporterForm.phoneNumber" type="tel" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.phoneNumber">{{ formErrors.phoneNumber }}</span>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">CIN</label>
+              <input v-model="transporterForm.CIN" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.CIN">{{ formErrors.CIN }}</span>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Type de Permis</label>
+              <select v-model="transporterForm.typeDrivingLicence" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+                <option value="" disabled>Sélectionnez un permis...</option>
+                <option v-for="type in ['A1', 'A', 'B', 'B+E', 'C', 'C+E', 'D', 'D1', 'D+E', 'H']" :key="type" :value="type">{{ type }}</option>
+              </select>
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.typeDrivingLicence">{{ formErrors.typeDrivingLicence }}</span>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Statut</label>
+              <select v-model="transporterForm.status" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+                <option value="Available">Disponible</option>
+                <option value="On mission">En mission</option>
+                <option value="On leave">En congé</option>
+              </select>
+              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.status">{{ formErrors.status }}</span>
+            </div>
+
+            <div class="md:col-span-2 flex gap-4 pt-6 border-t border-slate-100">
+              <button type="button" @click="closeModals" class="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Annuler</button>
+              <button type="submit" :disabled="isSubmitting" class="btn-gold flex-[2] py-4 !text-xs font-black uppercase tracking-widest shadow-xl shadow-premium-gold/20">
+                {{ isSubmitting ? 'Traitement...' : (isEditing ? 'Mettre à jour' : 'Ajouter le chauffeur') }}
               </button>
             </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="firstName">First Name</label>
-            <input
-              type="text"
-              id="firstName"
-              v-model="transporterForm.firstName"
-              pattern="[A-Za-z\u00C0-\u017F\s'-]+"
-              title="Only letters, spaces, hyphens, and apostrophes are allowed"
-              required
-              class="form-input"
-            />
-            <span class="error-message" v-if="formErrors.firstName">{{ formErrors.firstName }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="lastName">Last Name</label>
-            <input
-              type="text"
-              id="lastName"
-              v-model="transporterForm.lastName"
-              pattern="[A-Za-z\u00C0-\u017F\s'-]+"
-              title="Only letters, spaces, hyphens, and apostrophes are allowed"
-              required
-              class="form-input"
-            />
-            <span class="error-message" v-if="formErrors.lastName">{{ formErrors.lastName }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              v-model="transporterForm.email"
-              pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$"
-              title="Please enter a valid email address"
-              required
-              class="form-input"
-            />
-            <span class="error-message" v-if="formErrors.email">{{ formErrors.email }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="password">{{ isEditing ? 'New Password (optional)' : 'Password' }}</label>
-            <input
-              type="password"
-              id="password"
-              v-model="transporterForm.password"
-              :required="!isEditing"
-              class="form-input"
-            />
-            <span class="error-message" v-if="formErrors.password">{{ formErrors.password }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="phoneNumber">Phone Number</label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              v-model="transporterForm.phoneNumber"
-              pattern="[0-9]{8}"
-              title="Phone number must be 8 digits"
-              required
-              class="form-input"
-            />
-            <span class="error-message" v-if="formErrors.phoneNumber">{{ formErrors.phoneNumber }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="CIN">CIN</label>
-            <input
-              type="text"
-              id="CIN"
-              v-model="transporterForm.CIN"
-              pattern="[0-9]{8}"
-              title="CIN must be 8 digits"
-              required
-              class="form-input"
-            />
-            <span class="error-message" v-if="formErrors.CIN">{{ formErrors.CIN }}</span>
-          </div>
-          
-          <div class="form-group">
-            <label for="typeDrivingLicence">Licence Type</label>
-            <select
-              id="typeDrivingLicence"
-              v-model="transporterForm.typeDrivingLicence"
-              required
-              class="form-select"
-            >
-              <option value="">Sélectionnez un type de permis</option>
-              <option value="A1">A1</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="B+E">B+E</option>
-              <option value="C">C</option>
-              <option value="C+E">C+E</option>
-              <option value="D">D</option>
-              <option value="D1">D1</option>
-              <option value="D+E">D+E</option>
-              <option value="H">H</option>
-            </select>
-            <span class="error-message" v-if="formErrors.typeDrivingLicence">{{ formErrors.typeDrivingLicence }}</span>
-          </div>
-          
-          <div class="form-group">
-            <label for="status">Status</label>
-            <select
-              id="status"
-              v-model="transporterForm.status"
-              required
-              class="form-select"
-            >
-              <option value="Available">Available</option>
-              <option value="On mission">On mission</option>
-              <option value="On leave">On leave</option>
-            </select>
-            <span class="error-message" v-if="formErrors.status">{{ formErrors.status }}</span>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="cancel-btn" @click="closeModals">
-              Cancel
-            </button>
-            <button type="submit" class="submit-btn" :disabled="isSubmitting">
-              <span v-if="isSubmitting">
-                <i class="fas fa-spinner fa-spin"></i> Processing...
-              </span>
-              <span v-else>
-                {{ isEditing ? 'Update' : 'Add' }}
-              </span>
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import Swal from 'sweetalert2';
+import { Plus, Users, CheckCircle2, Truck, Calendar, Search, Phone, IdCard, Pencil, Trash2, ShieldCheck, User, X } from 'lucide-vue-next';
 
-export default {
-  name: 'TransporterManagement',
-  setup() {
-    // State
-    const transporters = ref([]);
-    const loading = ref(true);
-    const searchTerm = ref('');
-    const statusFilter = ref('');
-    const licenceFilter = ref('');
-    const showTransporterModal = ref(false);
-    const isSubmitting = ref(false);
-    const isEditing = ref(false);
-    const currentTransporterId = ref(null);
-    const previewImage = ref(null);
-    const selectedFile = ref(null);
-    const formErrors = ref({});
+// State
+const transporters = ref<any[]>([]);
+const loading = ref(true);
+const searchTerm = ref('');
+const statusFilter = ref('');
+const licenceFilter = ref('');
+const showTransporterModal = ref(false);
+const isSubmitting = ref(false);
+const isEditing = ref(false);
+const currentTransporterId = ref<string | null>(null);
+const previewImage = ref<string | null>(null);
+const selectedFile = ref<File | null>(null);
+const formErrors = ref<Record<string, string>>({});
 
-    const transporterForm = ref({
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      CIN: '',
-      phoneNumber: '',
-      typeDrivingLicence: '',
-      profilePicture: null,
-      status: 'Available'
+const transporterForm = ref({
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  CIN: '',
+  phoneNumber: '',
+  typeDrivingLicence: '',
+  profilePicture: null,
+  status: 'Available'
+});
+
+// API Configuration
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api/users',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Computed
+const filteredTransporters = computed(() => {
+  let filtered = transporters.value;
+  const term = searchTerm.value.toLowerCase();
+  
+  if (term) {
+    filtered = filtered.filter(t => {
+      const fullName = `${t.firstName || ''} ${t.lastName || ''}`.toLowerCase();
+      return (
+        fullName.includes(term) ||
+        t.phoneNumber?.toLowerCase().includes(term) ||
+        t.CIN?.toLowerCase().includes(term)
+      );
     });
+  }
+  
+  if (statusFilter.value) {
+    filtered = filtered.filter(t => t.status === statusFilter.value);
+  }
+  
+  if (licenceFilter.value) {
+    filtered = filtered.filter(t => t.typeDrivingLicence === licenceFilter.value);
+  }
+  
+  return filtered;
+});
 
-    // API Configuration
-    const api = axios.create({
-      baseURL: 'http://localhost:3000/api/users',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+const availableTransportersCount = computed(() => {
+  return transporters.value.filter(t => t.status === 'Available').length;
+});
+
+// Methods
+const formatDate = (dateString: string) => {
+  return dayjs(dateString).format('DD/MM/YYYY');
+};
+
+const getInitials = (transporter: any) => {
+  const firstName = transporter.firstName || '';
+  const lastName = transporter.lastName || '';
+  let initials = firstName.charAt(0).toUpperCase();
+  if (lastName) {
+    initials += lastName.charAt(0).toUpperCase();
+  }
+  return initials || '?';
+};
+
+const resetSearch = () => {
+  searchTerm.value = '';
+};
+
+const resetFilters = () => {
+  statusFilter.value = '';
+  licenceFilter.value = '';
+};
+
+const fetchTransporters = async () => {
+  try {
+    loading.value = true;
+    const response = await api.get('/transporters');
+    
+    if (response.data.success && response.data.data) {
+      transporters.value = response.data.data.map((t: any) => ({
+        ...t,
+        status: t.status || 'Unknown'
+      }));
+    } else {
+      throw new Error(response.data.message || 'Failed to load transporters');
+    }
+  } catch (err: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Erreur',
+      text: err.response?.data?.error || err.message || 'Échec du chargement des transporteurs',
+      confirmButtonColor: '#dc2626'
     });
-
-    api.interceptors.request.use(config => {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-    // Computed
-    const filteredTransporters = computed(() => {
-      let filtered = transporters.value;
-      const term = searchTerm.value.toLowerCase();
-      
-      if (term) {
-        filtered = filtered.filter(t => {
-          const fullName = `${t.firstName || ''} ${t.lastName || ''}`.toLowerCase();
-          return (
-            fullName.includes(term) ||
-            t.phoneNumber?.toLowerCase().includes(term) ||
-            t.CIN?.toLowerCase().includes(term)
-          );
-        });
-      }
-      
-      if (statusFilter.value) {
-        filtered = filtered.filter(t => t.status === statusFilter.value);
-      }
-      
-      if (licenceFilter.value) {
-        filtered = filtered.filter(t => t.typeDrivingLicence === licenceFilter.value);
-      }
-      
-      return filtered;
-    });
-
-    const availableTransportersCount = computed(() => {
-      return transporters.value.filter(t => t.status === 'Available').length;
-    });
-
-    // Methods
-    const formatDate = (dateString) => {
-      return dayjs(dateString).format('DD/MM/YYYY');
-    };
-
-    const getInitials = (transporter) => {
-      const firstName = transporter.firstName || '';
-      const lastName = transporter.lastName || '';
-      let initials = firstName.charAt(0).toUpperCase();
-      if (lastName) {
-        initials += lastName.charAt(0).toUpperCase();
-      }
-      return initials || '';
-    };
-
-    const resetSearch = () => {
-      searchTerm.value = '';
-    };
-
-    const resetFilters = () => {
-      statusFilter.value = '';
-      licenceFilter.value = '';
-    };
-
-    const fetchTransporters = async () => {
-      try {
-        loading.value = true;
-        const response = await api.get('/transporters');
-        
-        if (response.data.success && response.data.data) {
-          transporters.value = response.data.data.map(t => ({
-            ...t,
-            createdAt: formatDate(t.createdAt),
-            status: t.status || 'Unknown'
-          }));
-        } else {
-          throw new Error(response.data.message || 'Failed to load transporters');
-        }
-      } catch (err) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.response?.data?.error || err.message || 'Failed to load transporters',
-          confirmButtonColor: '#dc2626'
-        });
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const handleSubmit = async () => {
-      try {
-        isSubmitting.value = true;
-        formErrors.value = {};
-
-        // Validation des champs
-        const requiredFields = ['firstName', 'lastName', 'email', 'CIN', 'phoneNumber', 'typeDrivingLicence'];
-        for (const field of requiredFields) {
-          if (!transporterForm.value[field]) {
-            formErrors.value[field] = `Le champ ${field} est obligatoire`;
-            throw new Error(`Le champ ${field} est obligatoire`);
-          }
-        }
-
-        // Validation explicite pour firstName et lastName
-        const nameRegex = /^[A-Za-z\u00C0-\u017F\s'-]+$/;
-        if (!nameRegex.test(transporterForm.value.firstName)) {
-          formErrors.value.firstName = 'Le prénom ne doit contenir que des lettres, espaces, tirets ou apostrophes';
-          throw new Error('Le prénom ne doit contenir que des lettres, espaces, tirets ou apostrophes');
-        }
-        if (!nameRegex.test(transporterForm.value.lastName)) {
-          formErrors.value.lastName = 'Le nom ne doit contenir que des lettres, espaces, tirets ou apostrophes';
-          throw new Error('Le nom ne doit contenir que des lettres, espaces, tirets ou apostrophes');
-        }
-
-        // Préparation FormData
-        const formData = new FormData();
-        formData.append('firstName', transporterForm.value.firstName);
-        formData.append('lastName', transporterForm.value.lastName);
-        formData.append('email', transporterForm.value.email);
-        formData.append('CIN', transporterForm.value.CIN);
-        formData.append('phoneNumber', transporterForm.value.phoneNumber);
-        formData.append('typeDrivingLicence', transporterForm.value.typeDrivingLicence);
-        formData.append('status', transporterForm.value.status || 'Available');
-
-        if (transporterForm.value.password) {
-          formData.append('password', transporterForm.value.password);
-        }
-        if (selectedFile.value) {
-          formData.append('profilePicture', selectedFile.value);
-        }
-
-        let response;
-        if (isEditing.value) {
-          response = await api.put(
-            `/updateTransporter/${currentTransporterId.value}`,
-            formData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data'
-              }
-            }
-          );
-        } else {
-          response = await api.post('/add', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-        }
-
-        if (!response.data.success) {
-          throw new Error(response.data.error || 'Erreur lors de l\'opération');
-        }
-
-        await fetchTransporters();
-        closeModals();
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: isEditing.value ? 'Transporteur mis à jour avec succès' : 'Transporteur ajouté avec succès',
-          confirmButtonColor: '#16a34a',
-          timer: 3000,
-          timerProgressBar: true
-        });
-      } catch (error) {
-        console.error('Erreur:', {
-          message: error.message,
-          response: error.response?.data,
-          stack: error.stack
-        });
-        Swal.fire({
-          icon: 'error',
-          title: 'Erreur',
-          text: error.response?.data?.error || error.message || 'Erreur lors de l\'opération',
-          confirmButtonColor: '#dc2626'
-        });
-      } finally {
-        isSubmitting.value = false;
-      }
-    };
-
-    const openDeleteModal = async (transporter) => {
-      const result = await Swal.fire({
-        icon: 'warning',
-        title: 'Confirm Deletion',
-        html: `Are you sure you want to delete <strong>${(transporter.firstName + ' ' + transporter.lastName).trim() || 'this transporter'}</strong>?`,
-        showCancelButton: true,
-        confirmButtonText: 'Delete',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#64748b'
-      });
-
-      if (result.isConfirmed) {
-        await confirmDelete(transporter._id);
-      }
-    };
-
-    const confirmDelete = async (id) => {
-      try {
-        const response = await api.delete(`/delete/${id}`);
-
-        if (response.data.success) {
-          transporters.value = transporters.value.filter(t => t._id !== id);
-          Swal.fire({
-            icon: 'success',
-            title: 'Deleted',
-            text: 'Transporteur supprimé avec succès',
-            confirmButtonColor: '#16a34a',
-            timer: 3000,
-            timerProgressBar: true
-          });
-        } else {
-          throw new Error(response.data.error || 'Échec de la suppression');
-        }
-      } catch (err) {
-        console.error(' управління помилкою:', {
-          message: err.message,
-          response: err.response?.data,
-          stack: err.stack
-        });
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.response?.data?.error || err.response?.data?.message || 'Échec de la suppression du transporteur',
-          confirmButtonColor: '#dc2626'
-        });
-      }
-    };
-
-    const openAddModal = () => {
-      isEditing.value = false;
-      currentTransporterId.value = null;
-      transporterForm.value = {
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        CIN: '',
-        phoneNumber: '',
-        typeDrivingLicence: '',
-        profilePicture: null,
-        status: 'Available'
-      };
-      previewImage.value = null;
-      selectedFile.value = null;
-      formErrors.value = {};
-      showTransporterModal.value = true;
-    };
-
-    const editTransporter = (transporter) => {
-      isEditing.value = true;
-      currentTransporterId.value = transporter._id;
-      
-      transporterForm.value = {
-        firstName: transporter.firstName || '',
-        lastName: transporter.lastName || '',
-        email: transporter.email || '',
-        password: '',
-        CIN: transporter.CIN || '',
-        phoneNumber: transporter.phoneNumber || '',
-        typeDrivingLicence: transporter.typeDrivingLicence || '',
-        profilePicture: transporter.profilePicture || null,
-        status: transporter.status || 'Available'
-      };
-      
-      previewImage.value = transporter.profilePicture || null;
-      selectedFile.value = null;
-      formErrors.value = {};
-      showTransporterModal.value = true;
-    };
-
-    const handleFileUpload = (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        if (!file.type.startsWith('image/')) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Invalid File',
-            text: 'Please select an image file',
-            confirmButtonColor: '#dc2626'
-          });
-          return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-          Swal.fire({
-            icon: 'error',
-            title: 'File Too Large',
-            text: 'Image size must be less than 5MB',
-            confirmButtonColor: '#dc2626'
-          });
-          return;
-        }
-        selectedFile.value = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          previewImage.value = e.target.result;
-        };
-        reader.onerror = () => {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to read image file',
-            confirmButtonColor: '#dc2626'
-          });
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-
-    const removeImage = () => {
-      previewImage.value = null;
-      selectedFile.value = null;
-      transporterForm.value.profilePicture = null;
-    };
-
-    const closeModals = () => {
-      showTransporterModal.value = false;
-      formErrors.value = {};
-    };
-
-    onMounted(() => {
-      fetchTransporters();
-    });
-
-    return {
-      // State
-      transporters,
-      loading,
-      searchTerm,
-      statusFilter,
-      licenceFilter,
-      showTransporterModal,
-      isSubmitting,
-      isEditing,
-      currentTransporterId,
-      transporterForm,
-      previewImage,
-      formErrors,
-
-      // Computed
-      filteredTransporters,
-      availableTransportersCount,
-
-      // Methods
-      formatDate,
-      getInitials,
-      resetSearch,
-      resetFilters,
-      fetchTransporters,
-      openAddModal,
-      editTransporter,
-      handleFileUpload,
-      removeImage,
-      openDeleteModal,
-      closeModals,
-      handleSubmit
-    };
+  } finally {
+    loading.value = false;
   }
 };
+
+const handleSubmit = async () => {
+  try {
+    isSubmitting.value = true;
+    formErrors.value = {};
+
+    const nameRegex = /^[A-Za-z\u00C0-\u017F\s'-]+$/;
+    if (!nameRegex.test(transporterForm.value.firstName)) {
+      formErrors.value.firstName = 'Format invalide';
+      throw new Error('Prénom invalide');
+    }
+    if (!nameRegex.test(transporterForm.value.lastName)) {
+      formErrors.value.lastName = 'Format invalide';
+      throw new Error('Nom invalide');
+    }
+
+    const formData = new FormData();
+    formData.append('firstName', transporterForm.value.firstName);
+    formData.append('lastName', transporterForm.value.lastName);
+    formData.append('email', transporterForm.value.email);
+    formData.append('CIN', transporterForm.value.CIN);
+    formData.append('phoneNumber', transporterForm.value.phoneNumber);
+    formData.append('typeDrivingLicence', transporterForm.value.typeDrivingLicence);
+    formData.append('status', transporterForm.value.status || 'Available');
+
+    if (transporterForm.value.password) {
+      formData.append('password', transporterForm.value.password);
+    }
+    if (selectedFile.value) {
+      formData.append('profilePicture', selectedFile.value);
+    }
+
+    let response;
+    if (isEditing.value) {
+      response = await api.put(
+        `/updateTransporter/${currentTransporterId.value}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    } else {
+      response = await api.post('/add', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Erreur lors de l\'opération');
+    }
+
+    await fetchTransporters();
+    closeModals();
+    Swal.fire({
+      icon: 'success',
+      title: 'Succès',
+      text: isEditing.value ? 'Profil mis à jour' : 'Transporteur ajouté',
+      confirmButtonColor: '#16a34a',
+      timer: 2000
+    });
+  } catch (error: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Erreur',
+      text: error.response?.data?.error || error.message || 'Une erreur est survenue',
+      confirmButtonColor: '#dc2626'
+    });
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const openDeleteModal = async (transporter: any) => {
+  const result = await Swal.fire({
+    title: 'Supprimer ?',
+    html: `Voulez-vous vraiment supprimer <strong>${transporter.firstName} ${transporter.lastName}</strong> ?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Supprimer',
+    cancelButtonText: 'Annuler',
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#64748b'
+  });
+
+  if (result.isConfirmed) {
+    await confirmDelete(transporter._id);
+  }
+};
+
+const confirmDelete = async (id: string) => {
+  try {
+    const response = await api.delete(`/delete/${id}`);
+    if (response.data.success) {
+      transporters.value = transporters.value.filter(t => t._id !== id);
+      Swal.fire({ icon: 'success', title: 'Supprimé', timer: 2000 });
+    }
+  } catch (err: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Erreur',
+      text: err.response?.data?.error || 'Échec de la suppression',
+      confirmButtonColor: '#dc2626'
+    });
+  }
+};
+
+const openAddModal = () => {
+  isEditing.value = false;
+  currentTransporterId.value = null;
+  transporterForm.value = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    CIN: '',
+    phoneNumber: '',
+    typeDrivingLicence: '',
+    profilePicture: null,
+    status: 'Available'
+  };
+  previewImage.value = null;
+  selectedFile.value = null;
+  formErrors.value = {};
+  showTransporterModal.value = true;
+};
+
+const editTransporter = (transporter: any) => {
+  isEditing.value = true;
+  currentTransporterId.value = transporter._id;
+  transporterForm.value = {
+    firstName: transporter.firstName || '',
+    lastName: transporter.lastName || '',
+    email: transporter.email || '',
+    password: '',
+    CIN: transporter.CIN || '',
+    phoneNumber: transporter.phoneNumber || '',
+    typeDrivingLicence: transporter.typeDrivingLicence || '',
+    profilePicture: transporter.profilePicture || null,
+    status: transporter.status || 'Available'
+  };
+  previewImage.value = transporter.profilePicture || null;
+  selectedFile.value = null;
+  formErrors.value = {};
+  showTransporterModal.value = true;
+};
+
+const handleFileUpload = (event: any) => {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({ icon: 'error', title: 'Fichier trop lourd', text: 'Max 5MB' });
+      return;
+    }
+    selectedFile.value = file;
+    const reader = new FileReader();
+    reader.onload = (e: any) => previewImage.value = e.target.result;
+    reader.readAsDataURL(file);
+  }
+};
+
+const removeImage = () => {
+  previewImage.value = null;
+  selectedFile.value = null;
+  transporterForm.value.profilePicture = null;
+};
+
+const closeModals = () => {
+  showTransporterModal.value = false;
+  formErrors.value = {};
+};
+
+onMounted(fetchTransporters);
 </script>
 
 <style scoped>
-.transporter-container {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  background-color: #f8fafc;
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Stats Header */
-.stats-header {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+.animate-modal-in {
+  animation: modalIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.stat-card {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.stat-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  background-color: #e0f2fe;
-  color: #0369a1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(30px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.stat-content h3 {
-  color: #64748b;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
 
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #0f172a;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Search and Actions */
-.actions-section {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 10px;
 }
 
-.search-bar {
-  flex: 1;
-  position: relative;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #C4A484;
 }
 
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #64748b;
-}
-
-.search-input {
-  width: 50%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  background-color: white;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #0369a1;
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
-}
-
-.add-transporter-btn {
-  background-color: #0369a1;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  border: none;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.add-transporter-btn:hover {
-  background-color: #075985;
-}
-
-/* Status Filter */
-.status-filter {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  background: white;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.status-filter label {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.status-filter select {
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: #0f172a;
-  background-color: white;
-}
-
-.type-filter {
-  margin-left: 1.5rem;
-}
-
-/* Transporter Grid */
-.transporter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.transporter-card {
-  background: white;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-}
-
-.transporter-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  background-color: #f8fafc;
-}
-
-.transporter-icon {
-  width: 3rem;
-  height: 3rem;
-  background-color: #e0f2fe;
-  color: #0369a1;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.profile-pic {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.transporter-info {
-  flex: 1;
-}
-
-.transporter-info h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
-}
-
-.transporter-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.phone, .cin {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.transporter-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.action-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: white;
-}
-
-.action-btn.edit {
-  color: #0369a1;
-  border: 1px solid #e0f2fe;
-}
-
-.action-btn.edit:hover {
-  background-color: #e0f2fe;
-}
-
-.action-btn.delete {
-  color: #dc2626;
-  border: 1px solid #fee2e2;
-}
-
-.action-btn.delete:hover {
-  background-color: #fee2e2;
-}
-
-.card-content {
-  padding: 1.5rem;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.info-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.info-value {
-  font-size: 0.875rem;
-  color: #0f172a;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-badge.available {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.status-badge.on-mission {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.status-badge.on-leave {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-/* Empty State */
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 3rem;
-  color: #64748b;
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.empty-state i {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #cbd5e1;
-}
-
-.empty-state p {
-  margin-bottom: 1.5rem;
-}
-
-/* Messages */
-.message {
-  padding: 1rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  position: relative;
-}
-
-.message.error {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.message.success {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.message.loading {
-  background-color: #e0f2fe;
-  color: #0369a1;
-}
-
-.close-message {
-  position: absolute;
-  right: 1rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-}
-
-/* Modals */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 2rem;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 1rem;
-  width: 100%;
-  max-width: 900px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.modal-content.delete-modal {
-  max-width: 500px;
-}
-
-.modal-header {
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 10;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #0f172a;
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
   margin: 0;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.close-btn:hover {
-  color: #0f172a;
-}
-
-.modal-form {
-  padding: 2rem;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #0f172a;
-  margin-bottom: 0.5rem;
-}
-
-.form-group input,
-.form-group select {
-  width: 80%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-  background-color: white;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #0369a1;
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
-}
-
-.form-group input:invalid:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-}
-
-.form-group[for="profilePicture"] {
-  grid-column: span 2;
-}
-
-.form-input[type="file"] {
-  padding: 0.5rem;
-}
-
-.form-input[type="file"]::file-selector-button {
-  padding: 0.5rem 1rem;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 0.375rem;
-  cursor: pointer;
-}
-
-.form-input[type="file"]::file-selector-button:hover {
-  background: #e0e0e0;
-}
-
-.error-message {
-  color: #dc2626;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-  display: block;
-}
-
-.preview-container {
-  margin-top: 1rem;
-  position: relative;
-  width: 120px;
-  height: 120px;
-}
-
-.image-preview {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 1rem;
-  border: 2px solid #e2e8f0;
-}
-
-.remove-image-btn {
-  position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.remove-image-btn:hover {
-  background: #b91c1c;
-}
-
-.modal-actions {
-  position: sticky;
-  bottom: 0;
-  background: white;
-  padding: 1.5rem 2rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  grid-column: span 2;
-}
-
-.cancel-btn,
-.submit-btn,
-.delete-btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-btn {
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #64748b;
-}
-
-.cancel-btn:hover {
-  background-color: #f8fafc;
-}
-
-.submit-btn {
-  background-color: #0369a1;
-  color: white;
-  border: none;
-  min-width: 120px;
-}
-
-.submit-btn:hover {
-  background-color: #075985;
-}
-
-.submit-btn:disabled {
-  background-color: #94a3b8;
-  cursor: not-allowed;
-}
-
-.delete-btn {
-  background-color: #dc2626;
-  color: white;
-  border: none;
-  min-width: 120px;
-}
-
-.delete-btn:hover {
-  background-color: #b91c1c;
-}
-
-.delete-content {
-  padding: 2.5rem;
-  text-align: center;
-}
-
-.warning-icon {
-  font-size: 3.5rem;
-  color: #dc2626;
-  margin-bottom: 1.5rem;
-}
-
-.delete-name {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 1rem 0;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .transporter-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .modal-content {
-    margin: 1rem;
-    max-height: calc(100vh - 2rem);
-  }
-
-  .modal-form {
-    grid-template-columns: 1fr;
-    padding: 1.5rem;
-  }
-
-  .form-group[for="profilePicture"] {
-    grid-column: span 1;
-  }
-
-  .modal-actions {
-    padding: 1.25rem;
-  }
-
-  .actions-section {
-    flex-direction: column;
-  }
-  
-  .search-bar {
-    width: 100%;
-  }
-  
-  .add-transporter-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-}
-/* Messages */
-.message {
-  padding: 1rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  position: relative;
-}
-
-.message.error {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.message.success {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.message.loading {
-  background-color: #e0f2fe;
-  color: #0369a1;
-}
-
-.close-message {
-  position: absolute;
-  right: 1rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-}
-
-/* Delete Confirmation Modal */
-.modal-content.delete-modal {
-  max-width: 500px;
-}
-
-.delete-content {
-  padding: 2.5rem;
-  text-align: center;
-}
-
-.warning-icon {
-  font-size: 3.5rem;
-  color: #dc2626;
-  margin-bottom: 1.5rem;
-}
-
-.delete-name {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 1rem 0;
+input[type=number] {
+  -moz-appearance: textfield;
 }
 </style>

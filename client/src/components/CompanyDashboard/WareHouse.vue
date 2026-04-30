@@ -1,544 +1,424 @@
 <template>
-  <div class="warehouse-container">
-    <!-- Statistics Header -->
-    <div class="stats-header">
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-warehouse"></i>
+  <div class="space-y-8 animate-fade-in pb-12">
+    <!-- Page Header -->
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+          <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion des Stocks</span>
         </div>
-        <div class="stat-content">
-          <h3>Warehouses</h3>
-          <div class="stat-value">{{ filteredWarehouses.length }}</div>
-        </div>
+        <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Entrepôts</h1>
+        <p class="text-slate-500 text-sm font-medium mt-1">Supervisez vos espaces de stockage et niveaux d'inventaire.</p>
       </div>
       
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-cubes"></i>
-        </div>
-        <div class="stat-content">
-          <h3>Storage Types</h3>
-          <div class="stat-value">{{ storageTypesCount }}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Search and Actions -->
-    <div class="actions-section">
-      <div class="search-bar">
-        <i class="fas fa-search search-icon"></i>
-        <input
-          type="text"
-          class="search-input"
-          placeholder="Search By Name..."
-          v-model="searchTerm"
-        />
-      </div>
-      <button class="add-warehouse-btn" @click="openAddModal">
-        <i class="fas fa-plus"></i>
-        Add a Warehouse
-      </button>
-      <button class="rent-warehouse-btn" @click="openExternalWarehouse">
-        <i class="fas fa-plus"></i>
-        Rent a Warehouse
-      </button>
-    </div>
-    
-    <!-- Filters -->
-    <div class="status-filter">
-      <label>Filter by status:</label>
-      <select v-model="statusFilter">
-        <option value="">All</option>
-        <option value="available">Available</option>
-        <option value="occupied">Occupied</option>
-        <option value="maintenance">Maintenance</option>
-      </select>
-      
-      <label class="type-filter">Filter by type:</label>
-      <select v-model="typeFilter">
-        <option value="">All</option>
-        <option value="internal">Internal</option>
-        <option value="external">External</option>
-      </select>
-    </div>
-
-    <!-- Status Messages -->
-    <div v-if="error" class="message error">
-      <i class="fas fa-exclamation-circle"></i>
-      {{ error }}
-    </div>
-
-    <div v-if="loading" class="message loading">
-      <i class="fas fa-spinner fa-spin"></i>
-      Loading...
-    </div>
-    <div v-if="showExternalWarehouseModal" class="modal-overlay" @click.self="closeModals">
-      <div class="modal-content large">
-        <div class="modal-header">
-          <h2>Available External Warehouses</h2>
-          <button class="close-btn" @click="closeModals">×</button>
-        </div>
-        
-        <div v-if="externalError" class="message error">
-          <i class="fas fa-exclamation-circle"></i>
-          {{ externalError }}
-        </div>
-        
-        <div v-if="externalLoading" class="message loading">
-          <i class="fas fa-spinner fa-spin"></i>
-          Loading external warehouses...
-        </div>
-        
-        <div v-else class="external-warehouse-grid">
-          <div 
-            v-for="warehouse in externalWarehouses" 
-            :key="warehouse._id" 
-            class="warehouse-card external"
-          >
-            <div class="card-header">
-              <div class="warehouse-icon">
-                <i class="fas fa-warehouse"></i>
-              </div>
-              <div class="warehouse-info">
-                <h3>{{ warehouse.name }}</h3>
-                <div class="warehouse-meta">
-                  <span class="location">
-                    <i class="fas fa-map-marker-alt"></i>
-                    {{ warehouse.location }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="card-content">
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="info-label">Type</span>
-                  <span class="info-value">{{ warehouse.type }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Status</span>
-                  <span class="info-value status-badge" :class="warehouse.status">
-                    {{ warehouse.status }}
-                  </span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Storage</span>
-                  <span class="info-value">
-                    <i :class="getStorageTypeIcon(warehouse.storage_type)"></i>
-                    {{ formatStorageType(warehouse.storage_type) }}
-                  </span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Available Capacity</span>
-                  <span class="info-value">{{ warehouse.capacity }} units</span>
-                </div>
-              </div>
-              
-              <div class="rental-section">
-                <div v-if="hasRentalRequest(warehouse)" class="rental-status">
-                  <div class="request-details">
-                    <span class="status-badge" :class="getRentalRequest(warehouse)?.status">
-                      {{ getRentalRequest(warehouse)?.status }}
-                    </span>
-                    <div class="request-info">
-                      <div><strong>Capacity:</strong> {{ getRentalRequest(warehouse)?.requested_capacity }} units</div>
-                      <div><strong>Period:</strong> {{ formatDate(getRentalRequest(warehouse)?.start_date) }} - {{ formatDate(getRentalRequest(warehouse)?.end_date) }}</div>
-                      <div><strong>Requested:</strong> {{ formatDate(getRentalRequest(warehouse)?.requested_at) }}</div>
-                    </div>
-                  </div>
-                  <button 
-                    v-if="getRentalRequest(warehouse)?.status === 'pending'"
-                    class="cancel-request-btn"
-                    @click="cancelRentalRequest(warehouse._id, getRentalRequest(warehouse)?._id ?? '')"
-                  >
-                    Cancel Request
-                  </button>
-                </div>
-                
-                <div v-else class="rental-form">
-                  <div class="form-group">
-                    <label>Requested Capacity (units)</label>
-                    <input 
-                      type="number" 
-                      v-model.number="rentalRequests[warehouse._id]"
-                      min="1"
-                      :max="warehouse.capacity"
-                      placeholder="Enter capacity"
-                    />
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>Start Date</label>
-                    <input
-                      type="date"
-                      v-model="rentalStartDates[warehouse._id]"
-                      :min="new Date().toISOString().split('T')[0]"
-                    />
-                  </div>
-                  
-                  <div class="form-group">
-                    <label>End Date</label>
-                    <input
-                      type="date"
-                      v-model="rentalEndDates[warehouse._id]"
-                      :min="rentalStartDates[warehouse._id] || new Date().toISOString().split('T')[0]"
-                    />
-                  </div>
-                  
-                  <button 
-                    class="rent-btn"
-                    @click="submitRentalRequest(warehouse._id)"
-                    :disabled="!isRentalFormValid(warehouse._id)"
-                  >
-                    Submit Rental Request
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  <!-- Add Product Modal -->
-  <div v-if="showProductModal" class="modal-overlay" @click.self="closeModals">
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3>Add Product to Warehouse</h3>
-        <button class="modal-close" @click="closeModals">
-          <i class="fas fa-times"></i>
+      <div class="flex flex-wrap items-center gap-3">
+        <button @click="openExternalWarehouse" class="px-6 py-3 rounded-xl border-2 border-premium-midnight text-premium-midnight hover:bg-premium-midnight hover:text-white text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2">
+          <Handshake class="w-4 h-4" />
+          Louer un Entrepôt
+        </button>
+        <button @click="openAddModal" class="btn-gold !px-8 !py-3.5 !text-xs flex items-center gap-2 shrink-0">
+          <Plus class="w-4 h-4" />
+          Nouvel Entrepôt
         </button>
       </div>
-      
-      <div class="modal-body">
-        <div v-if="loadingProducts" class="loading-message">
-          <i class="fas fa-spinner fa-spin"></i> Loading products...
+    </div>
+
+    <!-- KPI Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-premium-midnight transition-colors duration-500">
+          <WarehouseIcon class="w-6 h-6 text-slate-400 group-hover:text-premium-gold transition-colors" />
         </div>
-        
-        <form @submit.prevent="handleProductSubmit" v-else>
-          <div class="form-group">
-            <label for="product">Product</label>
-            <select 
-              id="product" 
-              v-model="productForm.productId" 
-              required
-            >
-              <option value="" disabled selected>Select a product</option>
-              <option 
-                v-for="product in availableProducts" 
-                :key="product._id" 
-                :value="product._id"
-              >
-                {{ product.name }} ({{ product.category }})
-              </option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="quantity">Quantity</label>
-            <input 
-              type="number" 
-              id="quantity" 
-              v-model.number="productForm.quantity" 
-              required 
-              min="1"
-              :max="maxQuantityForWarehouse"
-            >
-            <div v-if="maxQuantityForWarehouse > 0" class="capacity-info">
-              Available capacity: {{ maxQuantityForWarehouse }} units
-            </div>
-            <div v-else class="capacity-info error">
-              No available capacity in this warehouse
-            </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="cancel-btn" @click="closeModals">
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              class="submit-btn" 
-              :disabled="isSubmitting || maxQuantityForWarehouse <= 0"
-            >
-              <span v-if="isSubmitting">
-                <i class="fas fa-spinner fa-spin"></i> Adding...
-              </span>
-              <span v-else>Add Product</span>
-            </button>
-          </div> 
-        </form>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">{{ filteredWarehouses.length }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Entrepôts Actifs</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">
+          <Box class="w-6 h-6 text-blue-500" />
+        </div>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">{{ storageTypesCount }}</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Types de Stockage</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center mb-6">
+          <CheckCircle2 class="w-6 h-6 text-green-500" />
+        </div>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">
+          {{ warehouses.filter(w => w.status === 'available').length }}
+        </p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Disponibles</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-1 transition-all duration-300">
+        <div class="w-12 h-12 rounded-2xl bg-premium-gold/10 flex items-center justify-center mb-6">
+          <ShieldCheck class="w-6 h-6 text-premium-gold" />
+        </div>
+        <p class="text-4xl font-display font-black text-premium-midnight tracking-tight">100%</p>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Conformité Sécurité</p>
       </div>
     </div>
-  </div>
 
-    <!-- Warehouses List -->
-    <div class="warehouse-grid">
+    <!-- Filters & Search -->
+    <div class="bg-white rounded-3xl border border-slate-100 p-6 flex flex-col md:flex-row gap-4 shadow-sm">
+      <div class="relative flex-grow">
+        <Search class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+        <input
+          v-model="searchTerm"
+          type="text"
+          placeholder="Rechercher par nom ou localisation..."
+          class="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all placeholder:text-slate-300"
+        />
+      </div>
+      
+      <div class="flex gap-3">
+        <select v-model="statusFilter" class="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-premium-gold/5 transition-all">
+          <option value="">Tous les statuts</option>
+          <option value="available">Disponible</option>
+          <option value="occupied">Occupé</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+        
+        <select v-model="typeFilter" class="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-premium-gold/5 transition-all">
+          <option value="">Tous les types</option>
+          <option value="internal">Interne</option>
+          <option value="external">Externe</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Warehouse Grid -->
+    <div v-if="!loading" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8">
       <div 
         v-for="warehouse in filteredWarehouses" 
-        :key="warehouse._id" 
-        class="warehouse-card"
-        :class="[warehouse.status, warehouse.type, { 'rented': warehouse.is_rented }]"
+        :key="warehouse._id"
+        class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/30 overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-premium-midnight/5 transition-all duration-500"
       >
-        <div class="card-header">
-          <div class="warehouse-icon">
-            <i class="fas fa-warehouse"></i>
-          </div>
-          <div class="warehouse-info">
-            <h3>{{ warehouse.name }}</h3>
-            <div class="warehouse-meta">
-              <span class="location">
-                <i class="fas fa-map-marker-alt"></i>
-                {{ warehouse.location }}
-              </span>
-              <span v-if="warehouse.is_rented" class="rented-tag">
-                <i class="fas fa-handshake"></i> Rented
-              </span>
+        <!-- Card Header -->
+        <div class="p-8 pb-0 flex items-start justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-premium-midnight flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
+              <WarehouseIcon class="w-7 h-7 text-premium-gold" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">{{ warehouse.type === 'internal' ? 'Interne' : 'Externe' }}</span>
+                <span v-if="warehouse.is_rented" class="px-2 py-0.5 rounded-md bg-premium-gold/10 text-premium-gold text-[9px] font-black uppercase tracking-widest">Loué</span>
+              </div>
+              <h3 class="text-xl font-display font-black text-premium-midnight leading-tight line-clamp-1">{{ warehouse.name }}</h3>
+              <div class="flex items-center gap-1.5 text-slate-400 text-xs font-medium mt-1">
+                <MapPin class="w-3.5 h-3.5" />
+                <span class="line-clamp-1">{{ warehouse.location }}</span>
+              </div>
             </div>
           </div>
           
-          <div class="warehouse-actions" >
-            <button class="action-btn edit" @click="editWarehouse(warehouse)">
-              <i class="fas fa-edit"></i>
+          <div class="flex items-center gap-1.5">
+            <button @click="editWarehouse(warehouse)" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 hover:bg-slate-50 hover:text-premium-midnight transition-all">
+              <Pencil class="w-4 h-4" />
             </button>
-            <button class="action-btn delete" @click="openDeleteModal(warehouse._id)">
-              <i class="fas fa-trash-alt"></i>
+            <button @click="openDeleteModal(warehouse._id)" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all">
+              <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div class="card-content">
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Type</span>
-              <span class="info-value">{{ warehouse.type === 'internal' ? 'Internal' : 'External' }}</span>
+        <!-- Card Body -->
+        <div class="p-8 space-y-6 flex-grow">
+          <!-- Main Info Grid -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-slate-50/50 p-4 rounded-2xl">
+              <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Capacité</p>
+              <p class="text-sm font-bold text-premium-midnight">{{ warehouse.capacity }} <span class="text-[10px] font-medium text-slate-400">Unités</span></p>
             </div>
-            
-            <div class="info-item">
-              <span class="info-label">Status</span>
-              <span class="info-value status-badge" :class="warehouse.status">
-                {{ formatStatus(warehouse.status) }}
-              </span>
-            </div>
-            
-            <div class="info-item">
-              <span class="info-label">Storage</span>
-              <span class="info-value">
-                <i :class="getStorageTypeIcon(warehouse.storage_type)"></i>
-                {{ formatStorageType(warehouse.storage_type) }}
-              </span>
-            </div>
-            
-            <div class="info-item">
-              <span class="info-label">Capacity</span>
-              <span class="info-value">{{ warehouse.capacity }} units</span>
+            <div class="bg-slate-50/50 p-4 rounded-2xl">
+              <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Type Stockage</p>
+              <div class="flex items-center gap-2">
+                <i :class="getStorageTypeIcon(warehouse.storage_type)" class="w-3.5 h-3.5 text-premium-gold"></i>
+                <p class="text-sm font-bold text-premium-midnight capitalize">{{ warehouse.storage_type }}</p>
+              </div>
             </div>
           </div>
 
-          <div class="capacity-info" v-if="warehouse.is_rented">
-            <div class="capacity-header">
-              <span>Rented Capacity</span>
-              <span class="capacity-value">
-                {{ warehouse.rented_capacity || 0 }} units
-                <span class="percentage" v-if="warehouse.capacity">
-                  ({{ Math.round(((warehouse.rented_capacity || 0) / warehouse.capacity * 100)) }}%)
-                </span>
-              </span>
+          <!-- Status Badge -->
+          <div class="flex items-center justify-between">
+            <span :class="[
+              'inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest',
+              warehouse.status === 'available' ? 'bg-green-50 text-green-600' :
+              warehouse.status === 'occupied' ? 'bg-premium-gold/10 text-premium-gold' : 'bg-red-50 text-red-500'
+            ]">
+              <span class="w-2 h-2 rounded-full" :class="[
+                warehouse.status === 'available' ? 'bg-green-500' :
+                warehouse.status === 'occupied' ? 'bg-premium-gold' : 'bg-red-500'
+              ]"></span>
+              {{ formatStatus(warehouse.status) }}
+            </span>
+          </div>
+
+          <!-- Capacity Bar (for rented) -->
+          <div v-if="warehouse.is_rented" class="space-y-2">
+            <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+              <span class="text-slate-400">Utilisation Location</span>
+              <span class="text-premium-midnight">{{ Math.round(((warehouse.rented_capacity || 0) / warehouse.capacity * 100)) }}%</span>
             </div>
-            
-            <div class="capacity-bar" v-if="warehouse.capacity">
+            <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
               <div 
-                class="capacity-fill"
+                class="h-full bg-premium-gold rounded-full transition-all duration-1000"
                 :style="{ width: `${Math.round((warehouse.rented_capacity || 0) / warehouse.capacity * 100)}%` }"
               ></div>
             </div>
           </div>
 
-          <div class="products-section">
-            <div class="section-header">
-              <h4>Products</h4>
-              <button 
-                
-                class="add-product-btn" 
-                @click="openAddProductModal(warehouse._id)"
-              >
-                <i class="fas fa-plus"></i> Add Product
+          <!-- Products Section -->
+          <div class="pt-6 border-t border-slate-50">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-xs font-black text-premium-midnight uppercase tracking-widest flex items-center gap-2">
+                <Box class="w-4 h-4 text-slate-300" />
+                Inventaire
+              </h4>
+              <button @click="openAddProductModal(warehouse._id)" class="text-[10px] font-black text-premium-gold uppercase tracking-widest hover:underline flex items-center gap-1">
+                <Plus class="w-3 h-3" />
+                Ajouter
               </button>
             </div>
-            
-            <div v-if="warehouse.products && warehouse.products.length > 0" class="products-list">
-              <div 
-                v-for="product in warehouse.products" 
-                :key="getProductKey(product)" 
-                class="product-item"
-              >
-                <div class="product-info">
-                  <div class="product-name">
-                    {{ getProductName(product) }}
-                  </div>
-                  <div class="product-category">
-                    {{ getProductCategory(product) }}
-                  </div>
+
+            <div v-if="warehouse.products && warehouse.products.length > 0" class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+              <div v-for="product in warehouse.products" :key="getProductKey(product)" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                <div>
+                  <p class="text-xs font-bold text-premium-midnight">{{ getProductName(product) }}</p>
+                  <p class="text-[9px] font-medium text-slate-400 uppercase tracking-tight">{{ getProductCategory(product) }}</p>
                 </div>
-                <div class="product-quantity">
-                  <div class="quantity-input-container">
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center bg-white border border-slate-100 rounded-lg overflow-hidden shadow-sm">
+                    <button 
+                      @click="updateProductQuantity(warehouse._id, getProductId(product), product.quantity - 1)"
+                      :disabled="product.quantity <= 0 || updatingProduct"
+                      class="px-2 py-1 hover:bg-slate-50 disabled:opacity-30 transition-colors"
+                    >
+                      <Minus class="w-3 h-3" />
+                    </button>
                     <input
                       type="number"
                       v-model.number="product.quantity"
                       @change="updateProductQuantity(warehouse._id, getProductId(product), product.quantity)"
-                      min="0"
-                      class="quantity-input"
+                      class="w-10 text-center text-xs font-bold text-premium-midnight bg-transparent focus:outline-none"
+                    />
+                    <button 
+                      @click="updateProductQuantity(warehouse._id, getProductId(product), product.quantity + 1)"
                       :disabled="updatingProduct"
+                      class="px-2 py-1 hover:bg-slate-50 transition-colors"
                     >
-                    <div class="quantity-controls" >
-                      <button 
-                        class="quantity-btn minus"
-                        @click="updateProductQuantity(warehouse._id, getProductId(product), product.quantity - 1)"
-                        :disabled="product.quantity <= 0 || updatingProduct"
-                      >
-                        <i class="fas fa-minus"></i>
-                      </button>
-                      <button 
-                        class="quantity-btn plus"
-                        @click="updateProductQuantity(warehouse._id, getProductId(product), product.quantity + 1)"
-                        :disabled="updatingProduct"
-                      >
-                        <i class="fas fa-plus"></i>
-                      </button>
-                      <button 
-                        
-                        class="delete-btn" 
-                        @click="removeProduct(warehouse._id, getProductId(product))"
-                        :disabled="updatingProduct"
-                      >
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
+                      <Plus class="w-3 h-3" />
+                    </button>
                   </div>
+                  <button @click="removeProduct(warehouse._id, getProductId(product))" class="text-slate-300 hover:text-red-500 transition-colors">
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
-            <div v-else class="no-products">
-              <p>No products in this warehouse</p>
+            <div v-else class="py-8 flex flex-col items-center justify-center gap-2 opacity-40">
+              <PackageOpen class="w-8 h-8 text-slate-300" />
+              <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Aucun produit</p>
             </div>
           </div>
         </div>
       </div>
+      
+      <!-- Empty State -->
+      <div v-if="!filteredWarehouses.length && !loading" class="col-span-full py-32 flex flex-col items-center justify-center gap-6">
+        <div class="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center">
+          <WarehouseIcon class="w-12 h-12 text-slate-200" />
+        </div>
+        <div class="text-center">
+          <p class="text-xl font-display font-black text-premium-midnight">Aucun entrepôt trouvé</p>
+          <p class="text-slate-400 text-sm mt-1">Commencez par ajouter ou louer un espace de stockage.</p>
+        </div>
+        <button @click="openAddModal" class="btn-gold !px-10">Créer mon premier entrepôt</button>
+      </div>
+    </div>
 
-      <div v-if="!filteredWarehouses.length && !loading" class="empty-state">
-        <i class="fas fa-warehouse"></i>
-        <p>No warehouses found</p>
-        <button class="add-warehouse-btn" @click="openAddModal">
-          <i class="fas fa-plus"></i>
-          Add a Warehouse
-        </button>
+    <!-- Loading State -->
+    <div v-if="loading" class="py-32 flex flex-col items-center justify-center gap-4">
+      <div class="w-12 h-12 border-4 border-premium-gold/20 border-t-premium-gold rounded-full animate-spin"></div>
+      <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Chargement des données...</p>
+    </div>
+
+    <!-- External Warehouse Modal (Rental) -->
+    <div v-if="showExternalWarehouseModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+      <div class="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-modal-in">
+        <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 class="text-2xl font-display font-black text-premium-midnight">Entrepôts Externes Disponibles</h2>
+            <p class="text-slate-500 text-xs font-medium mt-1">Choisissez une capacité à louer auprès de nos partenaires.</p>
+          </div>
+          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center text-slate-400 transition-all shadow-sm">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div class="flex-grow overflow-y-auto p-8">
+          <div v-if="externalLoading" class="py-20 flex flex-col items-center gap-4">
+            <div class="w-10 h-10 border-4 border-premium-gold/20 border-t-premium-gold rounded-full animate-spin"></div>
+            <span class="text-xs font-black text-slate-300 uppercase tracking-[0.2em]">Chargement des offres...</span>
+          </div>
+          
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div v-for="warehouse in externalWarehouses" :key="warehouse._id" class="p-6 rounded-3xl border border-slate-100 bg-slate-50/30 hover:border-premium-gold/30 transition-all group">
+              <div class="flex items-start justify-between mb-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-premium-midnight flex items-center justify-center shadow-lg">
+                    <WarehouseIcon class="w-5 h-5 text-premium-gold" />
+                  </div>
+                  <div>
+                    <h3 class="font-display font-black text-premium-midnight tracking-tight">{{ warehouse.name }}</h3>
+                    <div class="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
+                      <MapPin class="w-3 h-3" />
+                      {{ warehouse.location }}
+                    </div>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ warehouse.type }}</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-white p-3 rounded-xl border border-slate-100">
+                  <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Capacité Dispo</p>
+                  <p class="text-sm font-bold text-premium-midnight">{{ warehouse.capacity }} <span class="text-[10px] text-slate-400">Units</span></p>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-100">
+                  <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Type Stockage</p>
+                  <p class="text-sm font-bold text-premium-midnight capitalize">{{ warehouse.storage_type }}</p>
+                </div>
+              </div>
+              
+              <!-- Rental Form / Status -->
+              <div class="pt-6 border-t border-slate-100">
+                <div v-if="hasRentalRequest(warehouse)" class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">État de la demande</span>
+                    <span :class="[
+                      'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest',
+                      getRentalRequest(warehouse)?.status === 'approved' ? 'bg-green-50 text-green-600' :
+                      getRentalRequest(warehouse)?.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+                    ]">
+                      {{ getRentalRequest(warehouse)?.status }}
+                    </span>
+                  </div>
+                  <button v-if="getRentalRequest(warehouse)?.status === 'pending'" @click="cancelRentalRequest(warehouse._id, getRentalRequest(warehouse)?._id ?? '')" class="w-full py-2.5 text-[10px] font-black text-red-500 uppercase tracking-widest border border-red-100 rounded-xl hover:bg-red-50 transition-all">Annuler la demande</button>
+                </div>
+                
+                <div v-else class="space-y-4">
+                  <div class="grid grid-cols-1 gap-3">
+                    <div>
+                      <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Capacité souhaitée</label>
+                      <input type="number" v-model.number="rentalRequests[warehouse._id]" :max="warehouse.capacity" class="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:border-premium-gold/30" :placeholder="'Max: ' + warehouse.capacity">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Début</label>
+                        <input type="date" v-model="rentalStartDates[warehouse._id]" class="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-premium-gold/30">
+                      </div>
+                      <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Fin</label>
+                        <input type="date" v-model="rentalEndDates[warehouse._id]" class="w-full bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-premium-gold/30">
+                      </div>
+                    </div>
+                  </div>
+                  <button @click="submitRentalRequest(warehouse._id)" :disabled="!isRentalFormValid(warehouse._id)" class="w-full py-3.5 bg-premium-midnight text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 disabled:opacity-20 transition-all shadow-lg shadow-premium-midnight/10">Envoyer la demande</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Add/Edit Warehouse Modal -->
-    <div v-if="showWarehouseModal" class="modal-overlay" @click.self="closeModals">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>{{ isEditing ? 'Edit' : 'Add' }} Warehouse</h2>
-          <button class="close-btn" @click="closeModals">×</button>
+    <div v-if="showWarehouseModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+      <div class="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-modal-in">
+        <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="text-2xl font-display font-black text-premium-midnight">{{ isEditing ? 'Modifier' : 'Ajouter' }} un Entrepôt</h3>
+          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-all">
+            <X class="w-5 h-5" />
+          </button>
         </div>
-
-        <form @submit.prevent="handleSubmit" class="modal-form">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="name">Name</label>
-              <input
-                type="text"
-                id="name"
-                v-model="warehouseForm.name"
-                required
-                placeholder="Warehouse name"
-              />
+        <div class="p-8">
+          <form @submit.prevent="handleSubmit" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Nom</label>
+                <input v-model="warehouseForm.name" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Localisation</label>
+                <input v-model="warehouseForm.location" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Type de Stockage</label>
+                <select v-model="warehouseForm.storage_type" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+                  <option value="ambient">Ambiant</option>
+                  <option value="freezer">Congélateur</option>
+                  <option value="refrigerated">Réfrigéré</option>
+                  <option value="controlled">Contrôlé</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Capacité (Unités)</label>
+                <input v-model.number="warehouseForm.capacity" type="number" required min="1" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Statut</label>
+                <select v-model="warehouseForm.status" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+                  <option value="available">Disponible</option>
+                  <option value="occupied">Occupé</option>
+                  <option value="maintenance">Maintenance</option>
+                </select>
+              </div>
             </div>
-
-            <div class="form-group">
-              <label for="location">Location</label>
-              <input
-                type="text"
-                id="location"
-                v-model="warehouseForm.location"
-                required
-                placeholder="Address"
-              />
+            <div class="flex gap-4 pt-4">
+              <button type="button" @click="closeModals" class="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Annuler</button>
+              <button type="submit" :disabled="isSubmitting" class="btn-gold flex-1 py-4 !text-xs font-black uppercase tracking-widest shadow-xl shadow-premium-gold/20">
+                {{ isEditing ? 'Mettre à jour' : 'Ajouter l\'entrepôt' }}
+              </button>
             </div>
-
-            <div class="form-group">
-              <label for="storage_type">Storage Type</label>
-              <select
-                id="storage_type"
-                v-model="warehouseForm.storage_type"
-                required
-              >
-                <option value="freezer">Freezer</option>
-                <option value="refrigerated">Refrigerated</option>
-                <option value="ambient">Ambient</option>
-                <option value="controlled">Controlled</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="capacity">Capacity</label>
-              <input
-                type="number"
-                id="capacity"
-                v-model.number="warehouseForm.capacity"
-                required
-                min="1"
-                placeholder="In units"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="status">Status</label>
-              <select
-                id="status"
-                v-model="warehouseForm.status"
-                required
-              >
-                <option value="available">Available</option>
-                <option value="occupied">Occupied</option>
-                <option value="maintenance">Maintenance</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="cancel-btn" @click="closeModals">
-              Cancel
-            </button>
-            <button type="submit" class="submit-btn" :disabled="isSubmitting">
-              <span v-if="isSubmitting">
-                <i class="fas fa-spinner fa-spin"></i> Processing...
-              </span>
-              <span v-else>{{ isEditing ? 'Update' : 'Add' }}</span>
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div v-if="showConfirmModal" class="modal-overlay">
-      <div class="modal-content small">
-        <div class="modal-header">
-          <h2>Confirm Deletion</h2>
-          <button class="close-btn" @click="showConfirmModal = false">×</button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete this warehouse?</p>
-        </div>
-        <div class="modal-actions">
-          <button class="cancel-btn" @click="showConfirmModal = false">No</button>
-          <button class="delete-btn" @click="confirmDelete">
-            <span v-if="loading">Deleting...</span>
-            <span v-else>Yes, delete</span>
+    <!-- Product Modal -->
+    <div v-if="showProductModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm" @click="closeModals"></div>
+      <div class="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-modal-in">
+        <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="text-2xl font-display font-black text-premium-midnight">Ajouter un Produit</h3>
+          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-all">
+            <X class="w-5 h-5" />
           </button>
+        </div>
+        <div class="p-8">
+          <form @submit.prevent="handleProductSubmit" class="space-y-6">
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Sélectionner le produit</label>
+              <select v-model="productForm.productId" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+                <option value="" disabled>Choisir un produit...</option>
+                <option v-for="product in availableProducts" :key="product._id" :value="product._id">{{ product.name }} ({{ product.category }})</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Quantité</label>
+              <input type="number" v-model.number="productForm.quantity" required min="1" :max="maxQuantityForWarehouse" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+              <p class="text-[10px] font-medium text-slate-400 ml-1">Capacité disponible : {{ maxQuantityForWarehouse }} unités</p>
+            </div>
+            <div class="flex gap-4 pt-4">
+              <button type="button" @click="closeModals" class="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Annuler</button>
+              <button type="submit" :disabled="isSubmitting || maxQuantityForWarehouse <= 0" class="btn-gold flex-1 py-4 !text-xs font-black uppercase tracking-widest shadow-xl shadow-premium-gold/20">Confirmer l'ajout</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -549,6 +429,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import { Warehouse as WarehouseIcon, Plus, Handshake, Box, CheckCircle2, ShieldCheck, Search, MapPin, Pencil, Trash2, Minus, PackageOpen, X } from 'lucide-vue-next'
 
 interface Product {
   _id: string
@@ -600,7 +481,6 @@ const warehouses = ref<Warehouse[]>([])
 const availableProducts = ref<Product[]>([])
 const externalWarehouses = ref<Warehouse[]>([])
 const loading = ref(true)
-const loadingProducts = ref(false)
 const externalLoading = ref(false)
 const isSubmitting = ref(false)
 const updatingProduct = ref(false)
@@ -611,7 +491,6 @@ const statusFilter = ref('')
 const typeFilter = ref('')
 const showWarehouseModal = ref(false)
 const showProductModal = ref(false)
-const showConfirmModal = ref(false)
 const showExternalWarehouseModal = ref(false)
 const isEditing = ref(false)
 const currentWarehouseId = ref<string | null>(null)
@@ -643,6 +522,15 @@ const api = axios.create({
   }
 })
 
+// Auth interceptor
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Computed Properties
 const filteredWarehouses = computed(() => {
   let filtered = warehouses.value
@@ -652,7 +540,8 @@ const filteredWarehouses = computed(() => {
     filtered = filtered.filter(w => 
       w.name.toLowerCase().includes(term) || 
       w.location.toLowerCase().includes(term)
-)}
+    )
+  }
   
   if (statusFilter.value) {
     filtered = filtered.filter(w => w.status === statusFilter.value)
@@ -675,55 +564,40 @@ const storageTypesCount = computed(() => {
 })
 
 // Utility Functions
-const formatStorageType = (type: string) => {
-  const types: Record<string, string> = {
-    freezer: 'Freezer',
-    refrigerated: 'Refrigerated',
-    ambient: 'Ambient',
-    controlled: 'Controlled'
-  }
-  return types[type] || type
-}
-
 const getProductKey = (product: WarehouseProduct) => {
   if (typeof product.product === 'object') {
     return product.product._id
   }
-  return product.product
+  return String(product.product)
 }
 
 const getProductId = (product: WarehouseProduct) => {
   if (typeof product.product === 'object') {
     return product.product._id
   }
-  return product.product
+  return String(product.product)
 }
 
 const getProductName = (product: WarehouseProduct): string => {
-  // Cas 1: Le produit est un objet complet
   if (typeof product.product === 'object' && product.product !== null) {
     return product.product.name;
   }
-  
-  // Cas 2: Le produit est juste un ID - cherchez dans availableProducts
-  const foundProduct = availableProducts.value.find(p => p._id === product.product);
-  return foundProduct?.name || `Product (ID: ${String(product.product).slice(0, 5)}...)`;
+  const foundProduct = availableProducts.value.find(p => p._id === String(product.product));
+  return foundProduct?.name || `Produit (${String(product.product).slice(-4)})`;
 };
+
 const getProductCategory = (product: WarehouseProduct): string => {
-  // Cas 1: Le produit est un objet complet
   if (typeof product.product === 'object' && product.product !== null) {
     return product.product.category;
   }
-  
-  // Cas 2: Le produit est juste un ID - cherchez dans availableProducts
-  const foundProduct = availableProducts.value.find(p => p._id === product.product);
-  return foundProduct?.category || 'No category';
+  const foundProduct = availableProducts.value.find(p => p._id === String(product.product));
+  return foundProduct?.category || 'Sans catégorie';
 };
 
 const formatStatus = (status: string) => {
   const statuses: Record<string, string> = {
-    available: 'Available',
-    occupied: 'Occupied',
+    available: 'Disponible',
+    occupied: 'Occupé',
     maintenance: 'Maintenance'
   }
   return statuses[status] || status
@@ -737,16 +611,6 @@ const getStorageTypeIcon = (type: string) => {
     controlled: 'fas fa-sliders-h'
   }
   return icons[type] || 'fas fa-warehouse'
-}
-
-const formatDate = (dateString: string | Date | undefined) => {
-  if (!dateString) return 'N/A'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
 }
 
 // Rental Request Functions
@@ -770,57 +634,27 @@ const isRentalFormValid = (warehouseId: string) => {
 const submitRentalRequest = async (warehouseId: string) => {
   try {
     externalLoading.value = true
-    externalError.value = null
-
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-
     const capacity = Number(rentalRequests.value[warehouseId])
     const startDate = rentalStartDates.value[warehouseId]
     const endDate = rentalEndDates.value[warehouseId]
 
-    if (!capacity || !startDate || !endDate) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'All fields are required'
-      })
-      return
-    }
-
-    const response = await api.post(
-      '/request/send',
-      {
-        warehouse_id: warehouseId,
-        requested_capacity: capacity,
-        start_date: new Date(startDate).toISOString(),
-        end_date: new Date(endDate).toISOString()
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
+    await api.post('/request/send', {
+      warehouse_id: warehouseId,
+      requested_capacity: capacity,
+      start_date: new Date(startDate).toISOString(),
+      end_date: new Date(endDate).toISOString()
+    })
 
     await Swal.fire({
       icon: 'success',
-      title: 'Success',
-      text: 'Rental request submitted successfully'
+      title: 'Demande envoyée',
+      text: 'Votre demande de location a été transmise.'
     })
 
     await loadExternalWarehouses()
     
   } catch (err: any) {
-    console.error('Error submitting rental request:', err)
-    externalError.value = err.response?.data?.message || err.message || 'Failed to submit request'
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: externalError.value
-    })
+    Swal.fire({ icon: 'error', title: 'Erreur', text: err.response?.data?.message || err.message })
   } finally {
     externalLoading.value = false
   }
@@ -829,159 +663,57 @@ const submitRentalRequest = async (warehouseId: string) => {
 const cancelRentalRequest = async (warehouseId: string, requestId: string) => {
   try {
     const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You want to cancel this rental request?",
+      title: 'Annuler la demande ?',
+      text: "Cette action est irréversible.",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, cancel it!'
+      confirmButtonText: 'Oui, annuler'
     })
 
     if (!result.isConfirmed) return
 
     externalLoading.value = true
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
+    await api.delete(`/rental-requests/${requestId}`)
 
-    await api.delete(`/rental-requests/${requestId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      }
-    })
-
-    await Swal.fire(
-      'Cancelled!',
-      'Your rental request has been cancelled.',
-      'success'
-    )
-
+    await Swal.fire('Annulée', 'La demande a été annulée.', 'success')
     await loadExternalWarehouses()
-    
   } catch (err: any) {
-    console.error('Error cancelling rental request:', err)
-    externalError.value = err.response?.data?.message || err.message || 'Failed to cancel rental request'
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: externalError.value
-    })
+    Swal.fire({ icon: 'error', title: 'Erreur', text: err.response?.data?.message || err.message })
   } finally {
     externalLoading.value = false
   }
+}
+
+// Warehouse CRUD
+const fetchWarehouses = async () => {
   try {
-    loadingProducts.value = true;
-    error.value = null;
-    currentWarehouseId.value = warehouseId;
+    loading.value = true
+    const { data } = await api.get('/warehouses/getCompanyWarehouses?populate=products.product')
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) throw new Error('Authentication required');
-
-    // Load available products
-    const response = await axios.get('http://localhost:3000/api/products/get', {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    availableProducts.value = response.data.data || response.data;
-
-    // Calculate available capacity
-    const warehouse = warehouses.value.find(w => w._id === warehouseId);
-    if (warehouse) {
-      if (warehouse.type === 'internal') {
-        // For internal warehouses, use total capacity
-        const usedCapacity = warehouse.products?.reduce((sum, p) => sum + p.quantity, 0) || 0;
-        maxQuantityForWarehouse.value = warehouse.capacity - usedCapacity;
-      } else if (warehouse.type === 'external' && warehouse.is_rented) {
-        // For external rented warehouses, use rented capacity
-        const usedCapacity = warehouse.products?.reduce((sum, p) => sum + p.quantity, 0) || 0;
-        maxQuantityForWarehouse.value = (warehouse.rented_capacity || 0) - usedCapacity;
-      }
+    if (data.success && data.data) {
+      warehouses.value = [
+        ...(data.data.internal || []).map((w: any) => ({ ...w, type: 'internal' })),
+        ...(data.data.external || []).map((w: any) => ({ ...w, type: 'external', is_rented: true }))
+      ]
     }
-
-    // Initialize form
-    productForm.value = {
-      warehouseId,
-      productId: '',
-      quantity: 1
-    };
-
-    showProductModal.value = true;
   } catch (err: any) {
-    console.error('Error loading products:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to load products';
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.value
-    });
+    console.error('Error fetching warehouses:', err)
   } finally {
-    loadingProducts.value = false;
+    loading.value = false
   }
-};
-const openAddProductModal = async (warehouseId: string) => {
-  try {
-    loadingProducts.value = true;
-    error.value = null;
-    currentWarehouseId.value = warehouseId;
+}
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) throw new Error('Authentication required');
-
-    // Load available products
-    const response = await axios.get('http://localhost:3000/api/products/get', {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    availableProducts.value = response.data.data || response.data;
-
-    // Calculate available capacity
-    const warehouse = warehouses.value.find(w => w._id === warehouseId);
-    if (warehouse) {
-      if (warehouse.type === 'internal') {
-        // For internal warehouses, use total capacity
-        const usedCapacity = warehouse.products?.reduce((sum, p) => sum + p.quantity, 0) || 0;
-        maxQuantityForWarehouse.value = warehouse.capacity - usedCapacity;
-      } else if (warehouse.type === 'external' && warehouse.is_rented) {
-        // For external rented warehouses, use rented capacity
-        const usedCapacity = warehouse.products?.reduce((sum, p) => sum + p.quantity, 0) || 0;
-        maxQuantityForWarehouse.value = (warehouse.rented_capacity || 0) - usedCapacity;
-      }
-    }
-
-    // Initialize form
-    productForm.value = {
-      warehouseId,
-      productId: '',
-      quantity: 1
-    };
-
-    showProductModal.value = true;
-  } catch (err: any) {
-    console.error('Error loading products:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to load products';
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.value
-    });
-  } finally {
-    loadingProducts.value = false;
-  }
-};
-// Warehouse CRUD Operations
 const openAddModal = () => {
   isEditing.value = false
   currentWarehouseId.value = null
-  resetForm()
+  warehouseForm.value = {
+    name: '',
+    type: 'internal',
+    location: '',
+    storage_type: 'ambient',
+    capacity: 1000,
+    status: 'available'
+  }
   showWarehouseModal.value = true
 }
 
@@ -992,1804 +724,196 @@ const editWarehouse = (warehouse: Warehouse) => {
     name: warehouse.name,
     type: warehouse.type,
     location: warehouse.location,
-    storage_type: warehouse.storage_type as 'freezer' | 'refrigerated' | 'ambient' | 'controlled',
+    storage_type: warehouse.storage_type as any,
     capacity: warehouse.capacity,
-    status: warehouse.status as 'available' | 'occupied' | 'maintenance'
+    status: warehouse.status as any
   }
   showWarehouseModal.value = true
 }
 
-const openDeleteModal = (id: string) => {
-  currentWarehouseId.value = id
-  showConfirmModal.value = true
-}
+const openDeleteModal = async (id: string) => {
+  const result = await Swal.fire({
+    title: 'Supprimer ?',
+    text: "L'entrepôt sera définitivement supprimé.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626'
+  })
 
-const closeModals = () => {
-  showWarehouseModal.value = false
-  showConfirmModal.value = false
-  showProductModal.value = false
-  showExternalWarehouseModal.value = false
-}
-
-const resetForm = () => {
-  warehouseForm.value = {
-    name: '',
-    type: 'internal',
-    location: '',
-    storage_type: 'ambient',
-    capacity: 1000,
-    status: 'available'
-  }
-  productForm.value = {
-    warehouseId: '',
-    productId: '',
-    quantity: 1
+  if (result.isConfirmed) {
+    try {
+      await api.delete(`/warehouses/deleteInternalDepot/${id}`)
+      warehouses.value = warehouses.value.filter(w => w._id !== id)
+      Swal.fire('Supprimé', '', 'success')
+    } catch (err: any) {
+      Swal.fire('Erreur', err.response?.data?.message || err.message, 'error')
+    }
   }
 }
 
 const handleSubmit = async () => {
-  if (isEditing.value) {
-    await updateWarehouse()
-  } else {
-    await addWarehouse()
-  }
-}
-
-
-const addWarehouse = async () => {
   try {
     isSubmitting.value = true
-    error.value = null
-
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-    
-    const response = await axios.post('http://localhost:3000/api/warehouses/addInternalDepot', {
-      ...warehouseForm.value,
-      companyId: currentCompanyId.value
-    }, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-    
-    warehouses.value.unshift(response.data)
-    
-    await Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Warehouse added successfully'
-    })
-    
-    closeModals()
+    if (isEditing.value) {
+      const { data } = await api.put(`/warehouses/updateInternalDepot/${currentWarehouseId.value}`, warehouseForm.value)
+      const index = warehouses.value.findIndex(w => w._id === currentWarehouseId.value)
+      if (index !== -1) warehouses.value[index] = { ...data.data, type: 'internal' }
+    } else {
+      const { data } = await api.post('/warehouses/addInternalDepot', { ...warehouseForm.value, companyId: currentCompanyId.value })
+      warehouses.value.unshift({ ...data.data, type: 'internal' })
+    }
+    showWarehouseModal.value = false
+    Swal.fire('Succès', '', 'success')
   } catch (err: any) {
-    console.error('Error adding warehouse:', err)
-    error.value = err.response?.data?.message || err.message || 'An error occurred'
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.value
-    })
+    Swal.fire('Erreur', err.response?.data?.message || err.message, 'error')
   } finally {
     isSubmitting.value = false
   }
 }
 
-const updateWarehouse = async () => {
-  try {
-    isSubmitting.value = true
-    error.value = null
-
-    if (!currentWarehouseId.value) throw new Error('No warehouse selected')
-
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-    
-    const response = await axios.put(
-      `http://localhost:3000/api/warehouses/updateInternalDepot/${currentWarehouseId.value}`,
-      warehouseForm.value,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    const index = warehouses.value.findIndex(w => w._id === currentWarehouseId.value)
-    if (index !== -1) {
-      warehouses.value[index] = response.data
-    }
-    
-    await Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Warehouse updated successfully'
-    })
-    
-    closeModals()
-  } catch (err: any) {
-    console.error('Error updating warehouse:', err)
-    error.value = err.response?.data?.message || err.message || 'An error occurred'
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.value
-    })
-  } finally {
-    isSubmitting.value = false
+// Product Management
+const openAddProductModal = async (warehouseId: string) => {
+  currentWarehouseId.value = warehouseId
+  const warehouse = warehouses.value.find(w => w._id === warehouseId)
+  if (warehouse) {
+    const used = warehouse.products?.reduce((sum, p) => sum + p.quantity, 0) || 0
+    const total = warehouse.type === 'internal' ? warehouse.capacity : (warehouse.rented_capacity || 0)
+    maxQuantityForWarehouse.value = total - used
   }
+  productForm.value = { warehouseId, productId: '', quantity: 1 }
+  showProductModal.value = true
 }
-
-const confirmDelete = async () => {
-  try {
-    loading.value = true;
-    error.value = null;
-
-    if (!currentWarehouseId.value) throw new Error('No warehouse selected');
-
-    const token = localStorage.getItem('accessToken');
-    if (!token) throw new Error('Authentication required');
-
-    await axios.delete(`http://localhost:3000/api/warehouses/deleteInternalDepot/${currentWarehouseId.value}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    warehouses.value = warehouses.value.filter(w => w._id !== currentWarehouseId.value);
-
-    await Swal.fire(
-      'Deleted!',
-      'The warehouse has been deleted.',
-      'success'
-    );
-
-    showConfirmModal.value = false;
-  } catch (err: any) {
-    console.error('Error deleting warehouse:', err);
-    let errorMessage = err.response?.data?.message || err.message || 'An error occurred';
-
-    // Gestion spécifique pour les contrats actifs
-    if (err.response?.status === 400 && err.response?.data?.message.includes('contrats actifs')) {
-      errorMessage = `Cannot delete warehouse because it is referenced in ${err.response.data.activeContractsCount} active contract(s).`;
-    }
-
-    error.value = errorMessage;
-
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: errorMessage
-    });
-  } finally {
-    loading.value = false;
-  }
-};
-
 
 const handleProductSubmit = async () => {
   try {
     isSubmitting.value = true
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-
-    // Validation
-    if (!productForm.value.productId) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Please select a product'
-      })
-      return
-    }
-
-    if (!productForm.value.quantity || productForm.value.quantity <= 0) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Quantity must be a positive number'
-      })
-      return
-    }
-
-    const response = await api.post(
-      `/warehouses/${productForm.value.warehouseId}/products`,
-      {
-        productId: productForm.value.productId,
-        quantity: productForm.value.quantity
-      },
-      {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }
-    )
-
-    // Optimistic update
-    const warehouse = warehouses.value.find(w => w._id === productForm.value.warehouseId)
-    if (warehouse) {
-      const product = availableProducts.value.find(p => p._id === productForm.value.productId)
-      if (product) {
-        if (!warehouse.products) {
-          warehouse.products = []
-        }
-        
-        // Check if product already exists in warehouse
-        const existingProductIndex = warehouse.products.findIndex(
-          p => getProductId(p) === productForm.value.productId
-        )
-        
-        if (existingProductIndex !== -1) {
-          // Update quantity if product exists
-          warehouse.products[existingProductIndex].quantity += productForm.value.quantity
-        } else {
-          // Add new product
-          warehouse.products.push({
-            product: {
-              _id: product._id,
-              name: product.name,
-              category: product.category
-            },
-            quantity: productForm.value.quantity
-          })
-        }
-      }
-    }
-
-    await Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Product added successfully'
+    await api.post(`/warehouses/${productForm.value.warehouseId}/products`, {
+      productId: productForm.value.productId,
+      quantity: productForm.value.quantity
     })
-
-    closeModals()
-  } catch (err: any) {
-    console.error('Error adding product:', err)
-    
-    let errorMsg = 'An unknown error occurred'
-    if (err.response?.data?.error === 'Not enough capacity') {
-      errorMsg = `Not enough space. Only ${err.response.data.available} units available`
-    } else if (err.response?.data?.error) {
-      errorMsg = err.response.data.error
-    } else if (err.message) {
-      errorMsg = err.message
-    }
-
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: errorMsg
-    })
-    
-    // Refresh data to sync with server
     await fetchWarehouses()
+    showProductModal.value = false
+    Swal.fire('Succès', 'Produit ajouté', 'success')
+  } catch (err: any) {
+    Swal.fire('Erreur', err.response?.data?.error || err.message, 'error')
   } finally {
     isSubmitting.value = false
   }
 }
-const checkAvailableCapacity = (warehouseId: string, quantityToAdd: number) => {
-  const warehouse = warehouses.value.find(w => w._id === warehouseId);
-  if (!warehouse) return false;
 
-  // Pour les entrepôts internes, utiliser la capacité totale
-  if (warehouse.type === 'internal') {
-    const usedCapacity = warehouse.products?.reduce((sum, p) => sum + p.quantity, 0) || 0;
-    return usedCapacity + quantityToAdd <= warehouse.capacity;
-  }
-  
-  // Pour les entrepôts externes, utiliser la capacité louée
-  if (warehouse.type === 'external' && warehouse.is_rented) {
-    const usedCapacity = warehouse.products?.reduce((sum, p) => sum + p.quantity, 0) || 0;
-    return usedCapacity + quantityToAdd <= (warehouse.rented_capacity || 0);
-  }
-
-  return false;
-};
 const updateProductQuantity = async (warehouseId: string, productId: string, newQuantity: number) => {
+  if (newQuantity < 0) return
   try {
-    if (newQuantity < 0) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Quantity cannot be negative'
-      })
-      return
-    }
-    
     updatingProduct.value = true
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-
-    await axios.put(
-      `http://localhost:3000/api/warehouses/${warehouseId}/products/${productId}`,
-      { quantity: newQuantity },
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    )
-
-    // Optimistic update
-    const warehouse = warehouses.value.find(w => w._id === warehouseId)
-    if (warehouse?.products) {
-      const productIndex = warehouse.products.findIndex(p => getProductId(p) === productId)
-      if (productIndex !== -1) {
-        warehouse.products[productIndex].quantity = newQuantity
-      }
+    await api.put(`/warehouses/${warehouseId}/products/${productId}`, { quantity: newQuantity })
+    const wh = warehouses.value.find(w => w._id === warehouseId)
+    if (wh?.products) {
+      const p = wh.products.find(p => getProductId(p) === productId)
+      if (p) p.quantity = newQuantity
     }
-
   } catch (err: any) {
-    console.error('Error updating quantity:', err)
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: err.response?.data?.message || err.message || 'Failed to update quantity'
-    })
-    
-    // Refresh data to sync with server
-    await fetchWarehouses()
+    Swal.fire('Erreur', err.response?.data?.message || err.message, 'error')
   } finally {
     updatingProduct.value = false
   }
 }
 
 const removeProduct = async (warehouseId: string, productId: string) => {
+  const result = await Swal.fire({ title: 'Retirer le produit ?', icon: 'warning', showCancelButton: true })
+  if (!result.isConfirmed) return
   try {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
-    })
-
-    if (!result.isConfirmed) return
-
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-
-    await axios.delete(
-      `http://localhost:3000/api/warehouses/${warehouseId}/products/${productId}`,
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    )
-
-    // Optimistic update
-    const warehouse = warehouses.value.find(w => w._id === warehouseId)
-    if (warehouse?.products) {
-      warehouse.products = warehouse.products.filter(p => getProductId(p) !== productId)
-    }
-
-    await Swal.fire(
-      'Deleted!',
-      'The product has been removed.',
-      'success'
-    )
+    await api.delete(`/warehouses/${warehouseId}/products/${productId}`)
+    const wh = warehouses.value.find(w => w._id === warehouseId)
+    if (wh) wh.products = wh.products?.filter(p => getProductId(p) !== productId)
   } catch (err: any) {
-    console.error('Error removing product:', err)
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: err.response?.data?.message || err.message || 'Failed to remove product'
-    })
-  }
-}
-
-// API Functions
-const fetchWarehouses = async () => {
-  try {
-    loading.value = true
-    error.value = null
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-
-    const { data } = await axios.get(
-      'http://localhost:3000/api/warehouses/getCompanyWarehouses?populate=products.product', 
-      {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }
-    )
-
-    // Normalize data structure
-    warehouses.value = [
-      ...(data?.data?.internal || []).map((w: any) => ({
-        ...w,
-        type: 'internal',
-        products: w.products?.map((p: any) => ({
-          ...p,
-          product: p.product?._id ? {
-            _id: p.product._id,
-            name: p.product.name,
-            category: p.product.category
-          } : p.product
-        })) || []
-      })),
-      ...(data?.data?.external || []).map((w: any) => ({ 
-        ...w, 
-        type: 'external',
-        is_rented: true,
-        products: w.products?.map((p: any) => ({
-          ...p,
-          product: p.product?._id ? {
-            _id: p.product._id,
-            name: p.product.name,
-            category: p.product.category
-          } : p.product
-        })) || []
-      }))
-    ]
-
-  } catch (err: any) {
-    console.error('Error loading warehouses:', err)
-    error.value = err.response?.data?.message || err.message || 'Loading error'
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.value
-    })
-  } finally {
-    loading.value = false
+    Swal.fire('Erreur', err.response?.data?.message || err.message, 'error')
   }
 }
 
 const loadExternalWarehouses = async () => {
   try {
     externalLoading.value = true
-    externalError.value = null
-
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-
-    // Chargement des entrepôts externes disponibles
-    const { data } = await axios.get(
-      'http://localhost:3000/api/warehouses/external',
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    )
-
-    externalWarehouses.value = data.data.map((wh: any) => ({
-      ...wh,
-      type: 'external',
-      // S'assurer que rental_requests existe
-      rental_requests: wh.rental_requests || []
-    }))
-
-  } catch (err: any) {
-    console.error('Error loading external warehouses:', err)
-    externalError.value = err.response?.data?.message || err.message || 'Failed to load external warehouses'
+    const { data } = await api.get('/warehouses/external')
+    externalWarehouses.value = (data.data || []).map((wh: any) => ({ ...wh, type: 'external' }))
+  } catch (err) {
+    console.error(err)
   } finally {
     externalLoading.value = false
   }
 }
+
 const openExternalWarehouse = async () => {
-  try {
-    externalLoading.value = true
-    externalError.value = null
-    
-    const token = localStorage.getItem('accessToken')
-    if (!token) {
-      externalError.value = 'Authentication required. Please login again.'
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: externalError.value
-      })
-      return
-    }
-
-    if (!currentCompanyId.value) {
-      const { data: userData } = await axios.get(
-        'http://localhost:3000/api/users/meCompany', 
-        {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }
-      )
-      currentCompanyId.value = userData.companyId
-    }
-
-    const { data } = await axios.get(
-      'http://localhost:3000/api/warehouses/getExternalDepots?populate=products.product',
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-Company-ID': currentCompanyId.value
-        },
-        params: {
-          companyId: currentCompanyId.value
-        }
-      }
-    )
-    
-    externalWarehouses.value = (data.data || []).map((warehouse: any) => ({
-      ...warehouse,
-      products: warehouse.products?.map((p: any) => ({
-        ...p,
-        product: p.product?._id ? {
-          _id: p.product._id,
-          name: p.product.name,
-          category: p.product.category
-        } : p.product
-      })) || []
-    }))
-    
-    showExternalWarehouseModal.value = true
-  } catch (err: any) {
-    console.error('Error loading external warehouses:', {
-      status: err.response?.status,
-      data: err.response?.data,
-      headers: err.response?.headers
-    })
-    
-    if (err.response?.status === 403) {
-      externalError.value = 'Permission denied. Your role (entreprise) may not have access to external warehouses.'
-    } else {
-      externalError.value = err.response?.data?.message || 'Failed to load external warehouses'
-    }
-    
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: externalError.value
-    })
-  } finally {
-    externalLoading.value = false
-  }
+  await loadExternalWarehouses()
+  showExternalWarehouseModal.value = true
 }
+
+const closeModals = () => {
+  showWarehouseModal.value = false
+  showProductModal.value = false
+  showExternalWarehouseModal.value = false
+}
+
 onMounted(async () => {
-  await fetchWarehouses();
-  
-  // Chargez aussi les produits disponibles
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken')
   if (token) {
     try {
-      const { data } = await axios.get(
-        'http://localhost:3000/api/products/get', 
-        {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      availableProducts.value = data.data || data;
+      const { data: userData } = await api.get('/users/meCompany')
+      currentCompanyId.value = userData.companyId
       
-      // Chargez l'ID de l'entreprise
-      const { data: userData } = await axios.get(
-        'http://localhost:3000/api/users/meCompany', 
-        {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }
-      );
-      currentCompanyId.value = userData.companyId;
+      const { data: productsData } = await api.get('/products/get')
+      availableProducts.value = productsData.data || productsData
+      
+      await fetchWarehouses()
     } catch (err) {
-      console.error('Error fetching initial data:', err);
+      console.error('Initialization error:', err)
     }
   }
-});
+})
 </script>
+
 <style scoped>
-/* Base Styles */
-.warehouse-container {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  background-color: #f8fafc;
-  min-height: 100vh;
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Message Styles */
-.message-container {
-  margin-bottom: 1.5rem;
+.animate-modal-in {
+  animation: modalIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.message {
-  display: flex;
-  align-items: flex-start;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  gap: 0.75rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.message i {
-  font-size: 1.25rem;
-  margin-top: 0.15rem;
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(30px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.message-content {
-  flex: 1;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
 
-.message-content h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 0.875rem;
-  font-weight: 600;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.message-content p {
-  margin: 0;
-  font-size: 0.875rem;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 10px;
 }
 
-.message.error {
-  background-color: #fee2e2;
-  color: #dc2626;
-  border-left: 4px solid #dc2626;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #C4A484;
 }
 
-.message.success {
-  background-color: #dcfce7;
-  color: #16a34a;
-  border-left: 4px solid #16a34a;
-}
-
-.close-message {
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  padding: 0;
-  font-size: 1rem;
-}
-
-/* Validation Errors */
-.validation-errors {
-  background-color: #fef2f2;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border-left: 4px solid #dc2626;
-}
-
-.error-message {
-  color: #dc2626;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.error-message:last-child {
-  margin-bottom: 0;
-}
-
-.error-input {
-  border-color: #dc2626 !important;
-  background-color: #fef2f2 !important;
-}
-
-/* Loading State */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  color: #64748b;
-}
-
-.loading-state i {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Stats Header */
-.stats-header {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.stat-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  background-color: #e0f2fe;
-  color: #0369a1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-}
-
-.stat-content h3 {
-  color: #64748b;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-/* Search and Actions */
-.actions-section {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
-}
-
-.search-bar {
-  flex: 1;
-  position: relative;
-}
-
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #64748b;
-}
-
-.search-input {
-  width: 50%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  background-color: white;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #0369a1;
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
-}
-
-.add-warehouse-btn {
-  background-color: #0369a1;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  border: none;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.add-warehouse-btn:hover {
-  background-color: #075985;
-}
-
-.rent-warehouse-btn {
-  background-color: #39711c;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  border: none;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.rent-warehouse-btn:hover {
-  background-color: #1c5a0b;
-}
-
-/* Status Filter */
-.status-filter {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  background: white;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.status-filter label {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.status-filter select {
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: #0f172a;
-  background-color: white;
-}
-
-.type-filter {
-  margin-left: 1.5rem;
-}
-
-/* Warehouse Grid */
-.warehouse-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.warehouse-card {
-  background: white;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.warehouse-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  background-color: #f8fafc;
-}
-
-.warehouse-icon {
-  width: 3rem;
-  height: 3rem;
-  background-color: #e0f2fe;
-  color: #0369a1;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.warehouse-info {
-  flex: 1;
-}
-
-.warehouse-info h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
-}
-
-.warehouse-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.location {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.rented-tag {
-  background: #fff3e0;
-  color: #ff9800;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.warehouse-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.action-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: white;
-}
-
-.action-btn.edit {
-  color: #0369a1;
-  border: 1px solid #e0f2fe;
-}
-
-.action-btn.edit:hover {
-  background-color: #e0f2fe;
-}
-
-.action-btn.delete {
-  color: #dc2626;
-  border: 1px solid #fee2e2;
-}
-
-.action-btn.delete:hover {
-  background-color: #fee2e2;
-}
-
-.card-content {
-  padding: 1.5rem;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.info-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.info-value {
-  font-size: 0.875rem;
-  color: #0f172a;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-badge.available {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.status-badge.occupied {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.status-badge.maintenance {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.status-badge.pending {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.status-badge.approved {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.status-badge.rejected {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.capacity-info {
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-radius: 0.5rem;
-}
-
-.capacity-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.capacity-value {
-  font-weight: 500;
-  color: #0f172a;
-}
-
-.capacity-bar {
-  height: 0.5rem;
-  background-color: #e2e8f0;
-  border-radius: 0.25rem;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.capacity-fill {
-  height: 100%;
-  background-color: #0369a1;
-  transition: width 0.3s ease;
-}
-
-.rental-info-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.rental-stats {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.rental-value {
-  font-weight: 500;
-}
-
-.percentage {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-/* External Warehouse Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 600px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
-}
-
-.modal-content.large {
-  max-width: 900px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.modal-content.small {
-  max-width: 400px;
-}
-
-.modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
   margin: 0;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  line-height: 1;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.close-btn:hover {
-  color: #0f172a;
-}
-
-.modal-form {
-  padding: 1.5rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #0f172a;
-  margin-bottom: 0.5rem;
-}
-
-.form-group input,
-.form-group select {
-  width: 80%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  background-color: white;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #0369a1;
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  text-align: center;
-}
-
-.modal-body p {
-  margin: 0;
-  color: #64748b;
-}
-
-.warning-text {
-  color: #dc2626;
-  font-weight: 500;
-  margin-top: 0.5rem;
-}
-
-.modal-actions {
-  padding: 1.25rem 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.cancel-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  background: white;
-  color: #64748b;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-btn:hover {
-  background-color: #f8fafc;
-}
-
-.submit-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.375rem;
-  background-color: #0369a1;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.submit-btn:hover {
-  background-color: #075985;
-}
-
-.submit-btn:disabled {
-  background-color: #94a3b8;
-  cursor: not-allowed;
-}
-
-.delete-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.375rem;
-  background-color: #dc2626;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.delete-btn:hover {
-  background-color: #b91c1c;
-}
-
-.delete-btn:disabled {
-  background-color: #fca5a5;
-  cursor: not-allowed;
-}
-
-/* External Warehouse Grid */
-.external-warehouse-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.rental-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.rental-form {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  align-items: end;
-}
-
-.rental-form .form-group {
-  margin-bottom: 0;
-}
-
-.rental-form .form-group label {
-  font-size: 0.75rem;
-  margin-bottom: 0.25rem;
-}
-
-.rent-btn {
-  grid-column: 1 / -1;
-  padding: 0.5rem;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.rent-btn:hover {
-  background-color: #3e8e41;
-}
-
-.rent-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.request-details {
-  flex: 1;
-}
-
-.request-info {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-top: 0.5rem;
-}
-
-.request-info div {
-  margin-bottom: 0.25rem;
-}
-
-.cancel-request-btn {
-  padding: 0.5rem 1rem;
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.cancel-request-btn:hover {
-  background-color: #d32f2f;
-}
-
-/* Empty State */
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 3rem;
-  color: #64748b;
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.empty-state i {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #cbd5e1;
-}
-
-.empty-state p {
-  margin-bottom: 1.5rem;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .warehouse-grid {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .actions-section {
-    flex-direction: column;
-  }
-  
-  .search-bar {
-    width: 100%;
-  }
-  
-  .search-input {
-    width: 100%;
-  }
-
-  .add-warehouse-btn,
-  .rent-warehouse-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .rental-form {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .warehouse-container {
-    padding: 1rem;
-  }
-
-  .warehouse-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-header {
-    grid-template-columns: 1fr;
-  }
-
-  .status-filter {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .type-filter {
-    margin-left: 0;
-  }
-}
-
-/* Products Section Styles */
-.products-section {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.section-header h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #334155;
-  margin: 0;
-}
-
-.add-product-btn {
-  background-color: #3b82f6;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  border: none;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.add-product-btn:hover {
-  background-color: #2563eb;
-}
-
-.add-product-btn i {
-  font-size: 0.75rem;
-}
-
-.products-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.product-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background-color: #f8fafc;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-}
-
-.product-item:hover {
-  background-color: #f1f5f9;
-  transform: translateY(-1px);
-}
-
-.product-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.product-name {
-  font-weight: 500;
-  color: #1e293b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.product-category {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.25rem;
-}
-
-.product-quantity {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: 1rem;
-}
-
-.quantity-value {
-  font-weight: 500;
-  color: #334155;
-  min-width: 5rem;
-  text-align: right;
-}
-
-.quantity-controls {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.quantity-btn, .delete-btn {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.quantity-btn {
-  background-color: #e2e8f0;
-  color: #334155;
-}
-
-.quantity-btn:hover {
-  background-color: #cbd5e1;
-}
-
-.quantity-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.delete-btn {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.delete-btn:hover {
-  background-color: #fecaca;
-}
-
-.no-products {
-  text-align: center;
-  padding: 1rem;
-  color: #64748b;
-  font-size: 0.875rem;
-  background-color: #f8fafc;
-  border-radius: 0.5rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .product-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .product-quantity {
-    margin-left: 0;
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .quantity-value {
-    text-align: left;
-  }
-}
-/* Product Modal Styles */
-.modal-container {
-  background: white;
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.modal-close:hover {
-  color: #0f172a;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.25rem;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #0f172a;
-  margin-bottom: 0.5rem;
-}
-
-.form-group select,
-.form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  background-color: white;
-}
-
-.form-group select:focus,
-.form-group input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.cancel-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: white;
-  color: #64748b;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-btn:hover {
-  background-color: #f8fafc;
-}
-.quantity-input-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.quantity-input {
-  width: 60px;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  text-align: center;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-}
-
-.quantity-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
-}
-
-.quantity-btn {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.375rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  background-color: #e2e8f0;
-  color: #334155;
-}
-
-.quantity-btn:hover {
-  background-color: #cbd5e1;
-}
-
-.quantity-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.quantity-btn.plus {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.quantity-btn.plus:hover {
-  background-color: #bbf7d0;
-}
-
-.quantity-btn.minus {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.quantity-btn.minus:hover {
-  background-color: #fecaca;
-}
-
-.delete-btn {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.375rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.delete-btn:hover {
-  background-color: #fecaca;
-}
-.submit-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  background-color: #3b82f6;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.submit-btn:hover {
-  background-color: #2563eb;
-}
-
-.submit-btn:disabled {
-  background-color: #94a3b8;
-  cursor: not-allowed;
-}
-
-.loading-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  color: #64748b;
-  gap: 0.75rem;
+input[type=number] {
+  -moz-appearance: textfield;
 }
 </style>
