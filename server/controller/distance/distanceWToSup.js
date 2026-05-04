@@ -1,4 +1,4 @@
-import DistanceService from '../../services/DistanceSservice.js';
+import DistanceService from '../../services/DistanceService.js';
 import Warehouse from '../../models/warehouse.js';
 
 export default {
