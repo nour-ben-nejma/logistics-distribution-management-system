@@ -1,6 +1,6 @@
 import calculateDistance from '../utils/distanceCalculator.js';
 import Warehouse from '../models/warehouse.js';
-import SalePoint from '../models/salePoint.js';
+import SalePoint from '../models/salepoint.js';
 import Supplier from '../models/Fourniss.js';
 import Distance from '../models/DistanceFromWarehouseToSP.js';
 import DistanceSpToSp from '../models/DistanceFromSpToSp.js';
@@ -23,7 +23,7 @@ class DistanceService {
 
   static async updateWarehouseDistances(warehouse) {
     if (!this._hasValidCoordinates(warehouse)) return;
-    
+
     const [salePoints, suppliers] = await Promise.all([
       SalePoint.find().select('position'),
       Supplier.find().select('position')
@@ -76,7 +76,7 @@ class DistanceService {
     if (!config) return;
 
     await Promise.all(
-      config.models.map((Model, index) => 
+      config.models.map((Model, index) =>
         Model.deleteMany({ [config.fields[index]]: entityId })
       )
     );
@@ -99,8 +99,8 @@ class DistanceService {
 
   static async _processDistanceUpdates(fromType, fromEntity, toType, toEntities) {
     const updates = toEntities
-      .filter(toEntity => 
-        this._hasValidCoordinates(toEntity) && 
+      .filter(toEntity =>
+        this._hasValidCoordinates(toEntity) &&
         !this._isSameEntity(fromEntity, toEntity)
       )
       .map(toEntity => ({
@@ -126,31 +126,31 @@ class DistanceService {
     const { field1, field2 } = this._getFieldNames(fromType, toType);
 
     const bulkOps = updates.map(update => ({
-        updateOne: {
-            filter: { 
-                pairId: update.pairId // Utilisez seulement pairId comme filtre
-            },
-            update: { 
-                $set: { 
-                    distance: update.distance,
-                    [field1]: update.fromId,
-                    [field2]: update.toId,
-                    pairId: update.pairId
-                } 
-            },
-            upsert: true
-        }
+      updateOne: {
+        filter: {
+          pairId: update.pairId // Utilisez seulement pairId comme filtre
+        },
+        update: {
+          $set: {
+            distance: update.distance,
+            [field1]: update.fromId,
+            [field2]: update.toId,
+            pairId: update.pairId
+          }
+        },
+        upsert: true
+      }
     }));
 
     try {
-        if (bulkOps.length > 0) {
-            await Model.bulkWrite(bulkOps);
-        }
+      if (bulkOps.length > 0) {
+        await Model.bulkWrite(bulkOps);
+      }
     } catch (error) {
-        console.error('Error saving distance updates:', error);
-        throw error;
+      console.error('Error saving distance updates:', error);
+      throw error;
     }
-}
+  }
 
   static _getDistanceModel(fromType, toType) {
     const models = {
