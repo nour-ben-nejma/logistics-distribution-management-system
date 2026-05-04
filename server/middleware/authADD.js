@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import User from '../models/user.js';
 import Company from '../models/company.js';
 
 async function authenticateToken(req, res, next) {
@@ -16,15 +16,15 @@ async function authenticateToken(req, res, next) {
                 url: req.originalUrl,
                 method: req.method
             });
-            return res.status(401).json({ 
+            return res.status(401).json({
                 success: false,
-                message: "Authentification requise" 
+                message: "Authentification requise"
             });
         }
 
         // 3. Vérification et décodage du token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
+
         // 4. Récupération de l'utilisateur et de son entreprise
         const user = await User.findById(decoded.userId);
         if (!user) {
@@ -61,7 +61,7 @@ async function authenticateToken(req, res, next) {
             email: user.email,
             role: user.role
         };
-        
+
         if (company) {
             req.company = {
                 _id: company._id,
