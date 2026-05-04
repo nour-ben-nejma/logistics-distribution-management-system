@@ -2029,8 +2029,8 @@ watch(
         </div>
       </div>
 
-      <!-- Action Toolbar - Full Width -->
-      <div class="bg-white/80 backdrop-blur-md p-3 rounded-[2.5rem] border border-white shadow-2xl shadow-slate-200/60 flex flex-col md:flex-row items-center gap-4">
+      <!-- Action Toolbar - Responsive -->
+      <div class="bg-white/80 backdrop-blur-md p-3 rounded-[2rem] lg:rounded-[2.5rem] border border-white shadow-2xl shadow-slate-200/60 flex flex-col xl:flex-row items-center gap-4">
         <!-- Search Tool -->
         <div class="relative flex-1 group w-full">
           <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors text-sm"></i>
@@ -2038,27 +2038,27 @@ watch(
             type="text"
             v-model="contractSearch"
             placeholder="Rechercher un contrat spécifique..."
-            class="w-full bg-slate-50/50 border border-transparent rounded-[2rem] py-4 pl-14 pr-6 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-premium-gold/10 focus:border-premium-gold transition-all"
+            class="w-full bg-slate-50/50 border border-transparent rounded-[1.5rem] lg:rounded-[2rem] py-4 pl-14 pr-6 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-premium-gold/10 focus:border-premium-gold transition-all"
           />
         </div>
 
         <!-- Main Actions -->
-        <div class="flex items-center gap-3 w-full md:w-auto">
+        <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-center md:justify-end">
           <button
             @click="openDistributionPlan"
             :disabled="!canOptimizeRoute"
-            class="flex-1 md:flex-none btn-outline group disabled:opacity-50"
+            class="flex-1 md:flex-none btn-outline group disabled:opacity-50 !py-3 !px-5"
           >
-            <i class="fas fa-calendar-alt text-slate-400 group-hover:text-premium-gold"></i>
+            <i class="fas fa-calendar-alt text-slate-400 group-hover:text-premium-gold mr-2"></i>
             Planification
           </button>
 
-          <button @click="openResourceManagement" class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-premium-gold hover:border-premium-gold transition-all shrink-0" title="Ressources">
+          <button @click="openResourceManagement" class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-premium-gold hover:border-premium-gold transition-all shrink-0" title="Ressources">
             <i class="fas fa-truck"></i>
           </button>
 
-          <button @click="openModal" class="flex-1 md:flex-none btn-gold shrink-0 shadow-lg shadow-premium-gold/20">
-            <i class="fas fa-plus text-[10px]"></i>
+          <button @click="openModal" class="flex-1 md:flex-none btn-gold shrink-0 shadow-lg shadow-premium-gold/20 !py-3 !px-6">
+            <i class="fas fa-plus text-[10px] mr-2"></i>
             Nouveau Contrat
           </button>
         </div>

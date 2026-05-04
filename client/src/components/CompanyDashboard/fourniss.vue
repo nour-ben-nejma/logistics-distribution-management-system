@@ -21,7 +21,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex items-center gap-6 hover:shadow-md transition-all duration-300">
         <div class="w-16 h-16 rounded-2xl bg-premium-midnight/5 flex items-center justify-center text-premium-midnight text-2xl">
           <i class="fas fa-users"></i>
@@ -34,31 +34,32 @@
     </div>
 
     <!-- Search and filters bar -->
-    <div class="actions-bar">
-      <div class="search-wrapper">
-        <i class="fas fa-search search-icon"></i>
+    <div class="flex flex-col lg:flex-row gap-4 items-center justify-between bg-white/50 backdrop-blur-md p-4 rounded-3xl border border-slate-100 mb-8 shadow-sm">
+      <div class="relative w-full lg:max-w-md group">
+        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
         <input 
           type="text" 
           v-model="searchTerm" 
           placeholder="Rechercher par nom, catégorie, contact..."
-          class="search-input"
+          class="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all"
           @input="applyFilters"
         >
-        <span v-if="searchTerm" class="clear-search" @click="resetFilters">
+        <span v-if="searchTerm" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 cursor-pointer" @click="resetFilters">
           <i class="fas fa-times"></i>
         </span>
       </div>
-      <div class="filters">
-        <div class="filter-dropdown">
-          <select v-model="selectedCategory" class="filter-select" @change="applyFilters">
+      <div class="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+        <div class="relative w-full sm:w-64 group">
+          <select v-model="selectedCategory" class="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-4 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer" @change="applyFilters">
             <option value="">Toutes les catégories</option>
             <option v-for="category in categories" :key="category" :value="category">
               {{ category }}
             </option>
           </select>
+          <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
         </div>
         
-        <button class="btn-gold" @click="showAddModal = true">
+        <button class="btn-gold w-full sm:w-auto" @click="showAddModal = true">
           <i class="fas fa-plus"></i>
           Nouveau Fournisseur
         </button>
@@ -171,40 +172,44 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-container">
-      <div class="pagination-info">
-        <span class="selected-count">{{ selectedSuppliers.length }}</span> sélectionné(s) sur 
-        <span class="total-count">{{ filteredSuppliers.length }}</span> fournisseurs
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white/50 backdrop-blur-md rounded-3xl border border-slate-100 mt-8 shadow-sm">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-widest text-center md:text-left">
+        <span class="text-premium-gold">{{ selectedSuppliers.length }}</span> sélectionné(s) sur 
+        <span class="text-premium-midnight">{{ filteredSuppliers.length }}</span> fournisseurs
       </div>
-        <div class="flex items-center gap-2">
-          <button 
-            @click="prevPage" 
-            :disabled="currentPage === 1"
-            class="btn-outline !p-2 !w-10 !h-10 flex items-center justify-center !rounded-xl"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          
-          <div class="flex items-center gap-1 mx-2">
-            <span class="text-xs font-black text-premium-midnight">Page {{ currentPage }}</span>
-            <span class="text-xs font-bold text-slate-400">sur {{ totalPages }}</span>
-          </div>
-
-          <button 
-            @click="nextPage" 
-            :disabled="currentPage === totalPages"
-            class="btn-outline !p-2 !w-10 !h-10 flex items-center justify-center !rounded-xl"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
+      
+      <div class="flex items-center gap-2">
+        <button 
+          @click="prevPage" 
+          :disabled="currentPage === 1"
+          class="btn-outline !p-2 !w-10 !h-10 flex items-center justify-center !rounded-xl disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <i class="fas fa-chevron-left text-[10px]"></i>
+        </button>
+        
+        <div class="flex items-center gap-1 mx-4">
+          <span class="text-xs font-black text-premium-midnight uppercase tracking-widest">Page</span>
+          <div class="w-8 h-8 rounded-lg bg-premium-midnight text-white flex items-center justify-center text-xs font-black">{{ currentPage }}</div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">sur {{ totalPages }}</span>
         </div>
-      <div class="items-per-page">
-        <select v-model="itemsPerPage" class="items-select">
+
+        <button 
+          @click="nextPage" 
+          :disabled="currentPage === totalPages"
+          class="btn-outline !p-2 !w-10 !h-10 flex items-center justify-center !rounded-xl disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <i class="fas fa-chevron-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <div class="relative group">
+        <select v-model="itemsPerPage" class="bg-white border border-slate-200 rounded-xl py-2 pl-4 pr-10 text-xs font-bold text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
           <option :value="5">5 par page</option>
           <option :value="10">10 par page</option>
           <option :value="20">20 par page</option>
           <option :value="50">50 par page</option>
         </select>
+        <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]"></i>
       </div>
     </div>
 
