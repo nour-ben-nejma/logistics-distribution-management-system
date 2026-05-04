@@ -2,14 +2,14 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Contract from '../../models/contract.js';
 import Warehouse from '../../models/warehouse.js';
-import SalePoint from '../../models/salePoint.js';
+import SalePoint from '../../models/salepoint.js';
 import Supplier from '../../models/Fourniss.js';
 import DistanceWS from '../../models/DistanceFromWarehouseToSP.js';
 import DistanceWToSupplier from '../../models/DistanceFromWarehouseToSupplier.js';
 import DistanceSPToSP from '../../models/DistanceFromSpToSp.js';
 import Truck from '../../models/Truck.js';
 import Transporter from '../../models/transporter.js';
-import User from '../../models/User.js';
+import User from '../../models/user.js';
 import authenticateToken from '../../middleware/authADD.js';
 
 const router = express.Router();

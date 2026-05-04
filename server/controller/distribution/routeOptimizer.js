@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import express from 'express';
 import Supplier from '../../models/Fourniss.js';  // Adjust path as needed
 import Warehouse from '../../models/warehouse.js';
-import SalesPoint from '../../models/salePoint.js';
+import SalesPoint from '../../models/salepoint.js';
 import Product from '../../models/Product.js';
 import DistanceFromWarehouseToSupplier from '../../models/DistanceFromWarehouseToSupplier.js';
 const router = express.Router();

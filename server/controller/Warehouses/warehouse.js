@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 import ExternalWarehouse from '../../models/ExternalWarehouses.js';
 import { getExactCoordinates } from '../../services/gecodingService.js';
 import recalculateDistancess from '../distance/distanceWToSup.js';
-import SalePoint from '../../models/salePoint.js';
+import SalePoint from '../../models/salepoint.js';
 import Supplier from '../../models/Fourniss.js';
 import Contract from '../../models/contract.js';
 const router = express.Router();

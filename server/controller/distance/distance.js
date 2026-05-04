@@ -1,6 +1,6 @@
 import Distance from '../../models/DistanceFromWarehouseToSP.js';
 import Warehouse from '../../models/warehouse.js';
-import SalePoint from '../../models/salePoint.js';
+import SalePoint from '../../models/salepoint.js';
 
 // Haversine formula for distance calculation
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {

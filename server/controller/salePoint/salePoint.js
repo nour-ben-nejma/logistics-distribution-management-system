@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import SalePoint from '../../models/salePoint.js';
+import SalePoint from '../../models/salepoint.js';
 import authori from '../../middleware/authADD.js';
 import Joi from 'joi';
 import { getExactCoordinates } from '../../services/gecodingService.js';

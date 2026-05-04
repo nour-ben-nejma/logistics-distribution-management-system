@@ -1,5 +1,5 @@
 import DistanceSpToSp from '../../models/DistanceFromSpToSp.js';
-import SalePoint from '../../models/salePoint.js';
+import SalePoint from '../../models/salepoint.js';
 
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Rayon de la Terre en km
