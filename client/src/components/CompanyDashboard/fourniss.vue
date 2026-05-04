@@ -1,13 +1,33 @@
 <template>
-  <div class="suppliers-container">
-    <!-- Header with category statistics -->
+  <div class="space-y-8 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <div class="mb-10">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Réseau Fournisseurs</span>
+          </div>
+          <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Fournisseurs</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Gérez vos partenaires commerciaux et votre catalogue de produits</p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button @click="loadData" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold transition-all shadow-sm" title="Rafraîchir">
+            <i class="fas fa-sync-alt text-xs" :class="{'animate-spin': loading}"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex items-center gap-6 hover:shadow-md transition-all duration-300">
         <div class="w-16 h-16 rounded-2xl bg-premium-midnight/5 flex items-center justify-center text-premium-midnight text-2xl">
           <i class="fas fa-users"></i>
         </div>
         <div>
-          <h3 class="text-slate-500 text-sm font-medium uppercase tracking-wider mb-1">Total Suppliers</h3>
+          <h3 class="text-slate-500 text-sm font-medium uppercase tracking-wider mb-1">Total Fournisseurs</h3>
           <div class="text-3xl font-bold text-premium-midnight">{{ suppliers.length }}</div>
         </div>
       </div>
@@ -20,7 +40,7 @@
         <input 
           type="text" 
           v-model="searchTerm" 
-          placeholder="Search by name, category, contact..."
+          placeholder="Rechercher par nom, catégorie, contact..."
           class="search-input"
           @input="applyFilters"
         >
@@ -31,19 +51,16 @@
       <div class="filters">
         <div class="filter-dropdown">
           <select v-model="selectedCategory" class="filter-select" @change="applyFilters">
-            <option value="">All categories</option>
+            <option value="">Toutes les catégories</option>
             <option v-for="category in categories" :key="category" :value="category">
               {{ category }}
             </option>
           </select>
         </div>
-        <button class="action-btn" @click="resetFilters">
-          <i class="fas fa-sync-alt"></i>
-          Reset
-        </button>
-        <button class="action-btn !bg-premium-midnight !text-white hover:!bg-premium-midnight/90" @click="showAddModal = true">
+        
+        <button class="btn-gold" @click="showAddModal = true">
           <i class="fas fa-plus"></i>
-          New Supplier
+          Nouveau Fournisseur
         </button>
       </div>
     </div>
@@ -54,11 +71,11 @@
         <thead>
           <tr class="bg-slate-50/50">
             <th class="w-12"></th>
-            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Name</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Nom</th>
             <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">CONTACT</th>
-            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Category</th>
-            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Last Order</th>
-            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Location</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Catégorie</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Dernière Commande</th>
+            <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6">Localisation</th>
             <th class="text-xs uppercase tracking-[0.15em] font-bold text-slate-400 py-6 text-right px-8">ACTIONS</th>
           </tr>
         </thead>
@@ -121,29 +138,29 @@
               <td colspan="7">
                 <div class="products-container">
                   <div class="products-header">
-                    <h4>Products</h4>
-                    <button class="add-product-btn" @click="showAddProductModal(supplier)">
-                      <i class="fas fa-plus"></i> Add Product
+                    <h4>Produits</h4>
+                    <button class="btn-gold !py-2 !px-4 !text-[10px]" @click="showAddProductModal(supplier)">
+                      <i class="fas fa-plus"></i> Ajouter Produit
                     </button>
                   </div>
                   <div v-if="supplier.products && supplier.products.length > 0" class="products-list">
                     <div v-for="(product, index) in supplier.products" :key="index" class="product-item">
                       <div class="product-info">
-                        <div class="product-name">Product: {{ product.name }}</div>
-                        <div class="product-quantity">Quantity: {{ product.quantity }}</div>
+                        <div class="product-name">Produit: {{ product.name }}</div>
+                        <div class="product-quantity">Quantité: {{ product.quantity }}</div>
                       </div>
                       <div class="product-actions">
-                        <button class="action-icon edit" @click="showEditProductModal(supplier, index)" title="Edit">
+                        <button class="action-icon edit" @click="showEditProductModal(supplier, index)" title="Modifier">
                           <i class="fas fa-edit"></i>
                         </button>
-                        <button class="action-icon delete" @click="deleteProduct(supplier._id, product.name)" title="Delete">
+                        <button class="action-icon delete" @click="deleteProduct(supplier._id, product.name)" title="Supprimer">
                           <i class="fas fa-trash-alt"></i>
                         </button>
                       </div>
                     </div>
                   </div>
                   <div v-else class="no-products">
-                    No products available for this supplier
+                    Aucun produit disponible pour ce fournisseur
                   </div>
                 </div>
               </td>
@@ -156,36 +173,37 @@
     <!-- Pagination -->
     <div class="pagination-container">
       <div class="pagination-info">
-        <span class="selected-count">{{ selectedSuppliers.length }}</span> selected of 
-        <span class="total-count">{{ filteredSuppliers.length }}</span> suppliers
+        <span class="selected-count">{{ selectedSuppliers.length }}</span> sélectionné(s) sur 
+        <span class="total-count">{{ filteredSuppliers.length }}</span> fournisseurs
       </div>
-      <div class="pagination-controls">
-        <button 
-          class="pagination-btn" 
-          :disabled="currentPage === 1"
-          @click="currentPage--"
-        >
-          <i class="fas fa-chevron-left"></i>
-          Previous
-        </button>
-        <span class="page-info">
-          Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong>
-        </span>
-        <button 
-          class="pagination-btn" 
-          :disabled="currentPage === totalPages"
-          @click="currentPage++"
-        >
-          Next
-          <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
+        <div class="flex items-center gap-2">
+          <button 
+            @click="prevPage" 
+            :disabled="currentPage === 1"
+            class="btn-outline !p-2 !w-10 !h-10 flex items-center justify-center !rounded-xl"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          
+          <div class="flex items-center gap-1 mx-2">
+            <span class="text-xs font-black text-premium-midnight">Page {{ currentPage }}</span>
+            <span class="text-xs font-bold text-slate-400">sur {{ totalPages }}</span>
+          </div>
+
+          <button 
+            @click="nextPage" 
+            :disabled="currentPage === totalPages"
+            class="btn-outline !p-2 !w-10 !h-10 flex items-center justify-center !rounded-xl"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       <div class="items-per-page">
         <select v-model="itemsPerPage" class="items-select">
-          <option :value="5">5 per page</option>
-          <option :value="10">10 per page</option>
-          <option :value="20">20 per page</option>
-          <option :value="50">50 per page</option>
+          <option :value="5">5 par page</option>
+          <option :value="10">10 par page</option>
+          <option :value="20">20 par page</option>
+          <option :value="50">50 par page</option>
         </select>
       </div>
     </div>
@@ -199,7 +217,7 @@
             <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
               <i class="fas fa-plus-circle text-premium-gold"></i>
             </div>
-            Add New Supplier
+            Nouveau Fournisseur
           </h2>
           <button @click="showAddModal = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
             <i class="fas fa-times"></i>
@@ -209,10 +227,10 @@
           <form @submit.prevent="handleAddSupplier" id="addSupplierForm" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2 text-left">
-                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Supplier Name*</label>
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom du Fournisseur*</label>
                 <div class="relative group">
                   <i class="fas fa-building absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
-                  <input v-model="newSupplier.name" placeholder="Enter supplier name" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" pattern="[A-Za-zÀ-ÿ\s]+" title="Name must contain only letters and spaces" @input="validateField('name')">
+                  <input v-model="newSupplier.name" placeholder="Nom de l'entreprise" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" pattern="[A-Za-zÀ-ÿ\s]+" title="Le nom ne doit contenir que des lettres" @input="validateField('name')">
                 </div>
                 <span v-if="formErrors.name" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.name }}</span>
               </div>
@@ -220,34 +238,34 @@
                 <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Contact*</label>
                 <div class="relative group">
                   <i class="fas fa-phone-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
-                  <input v-model="newSupplier.contact" required placeholder="8-digit phone number" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" pattern="[0-9]{8}" title="Contact must be exactly 8 digits" @input="validateField('contact')">
+                  <input v-model="newSupplier.contact" required placeholder="Numéro à 8 chiffres" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" pattern="[0-9]{8}" title="Le contact doit comporter 8 chiffres" @input="validateField('contact')">
                 </div>
                 <span v-if="formErrors.contact" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.contact }}</span>
               </div>
               <div class="space-y-2 text-left">
-                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Category*</label>
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Catégorie*</label>
                 <div class="relative group">
                   <i class="fas fa-tags absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
                   <select v-model="newSupplier.category" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer" @change="validateField('category')">
-                    <option value="electronics">electronics</option>
-                    <option value="clothing">clothing</option>
-                    <option value="food">food</option>
-                    <option value="furniture">furniture</option>
-                    <option value="health">health</option>
-                    <option value="beauty">beauty</option>
-                    <option value="sports">sports</option>
-                    <option value="automotive">automotive</option>
-                    <option value="home">home</option>
-                    <option value="books">books</option>
+                    <option value="electronics">Électronique</option>
+                    <option value="clothing">Vêtements</option>
+                    <option value="food">Alimentation</option>
+                    <option value="furniture">Mobilier</option>
+                    <option value="health">Santé</option>
+                    <option value="beauty">Beauté</option>
+                    <option value="sports">Sports</option>
+                    <option value="automotive">Automobile</option>
+                    <option value="home">Maison</option>
+                    <option value="books">Livres</option>
                   </select>
                 </div>
                 <span v-if="formErrors.category" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.category }}</span>
               </div>
               <div class="space-y-2 text-left">
-                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Location*</label>
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Localisation*</label>
                 <div class="relative group">
                   <i class="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
-                  <input v-model="newSupplier.location" required placeholder="Full address" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" @input="validateField('location')">
+                  <input v-model="newSupplier.location" required placeholder="Adresse complète" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" @input="validateField('location')">
                 </div>
                 <span v-if="formErrors.location" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.location }}</span>
               </div>
@@ -255,11 +273,11 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" @click="showAddModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
-            Cancel
+          <button type="button" @click="showAddModal = false" class="btn-slate flex-1">
+            Annuler
           </button>
-          <button type="submit" form="addSupplierForm" :disabled="isSubmitting || hasFormErrors" class="flex-1 btn-gold">
-            {{ isSubmitting ? 'Saving...' : 'Save' }}
+          <button type="submit" form="addSupplierForm" :disabled="isSubmitting || hasFormErrors" class="btn-gold flex-1">
+            {{ isSubmitting ? 'Enregistrement...' : 'Enregistrer' }}
           </button>
         </div>
       </div>
@@ -298,11 +316,11 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" @click="showProductModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
-            Cancel
+          <button type="button" @click="showProductModal = false" class="btn-slate flex-1">
+            Annuler
           </button>
-          <button type="submit" form="productForm" class="flex-1 btn-gold">
-            {{ isEditingProduct ? 'Update' : 'Add' }}
+          <button type="submit" form="productForm" class="btn-gold flex-1">
+            {{ isEditingProduct ? 'Modifier' : 'Ajouter' }}
           </button>
         </div>
       </div>
@@ -390,30 +408,30 @@ const validateSupplier = (supplier: NewSupplier) => {
   const errors: string[] = []
 
   if (!supplier.name.trim()) {
-    errors.push('Supplier name is required')
+    errors.push('Le nom du fournisseur est requis')
   } else if (!/^[A-Za-zÀ-ÿ\s]+$/.test(supplier.name.trim())) {
-    errors.push('Name must contain only letters and spaces')
+    errors.push('Le nom ne doit contenir que des lettres et des espaces')
   }
 
   if (!supplier.contact.trim()) {
-    errors.push('Contact is required')
+    errors.push('Le contact est requis')
   } else if (!/^[0-9]{8}$/.test(supplier.contact.trim())) {
-    errors.push('Contact must be exactly 8 digits')
+    errors.push('Le contact doit comporter exactement 8 chiffres')
   }
 
   if (!supplier.location.trim()) {
-    errors.push('Location is required')
+    errors.push('La localisation est requise')
   }
 
   if (!supplier.category) {
-    errors.push('Category is required')
+    errors.push('La catégorie est requise')
   }
 
   if (supplier.lastOrder) {
     const lastOrderDate = new Date(supplier.lastOrder)
     const today = new Date()
     if (lastOrderDate > today) {
-      errors.push('Last order date cannot be in the future')
+      errors.push('La date de dernière commande ne peut pas être dans le futur')
     }
   }
 
@@ -424,11 +442,11 @@ const validateProduct = (product: { name: string; quantity: number }) => {
   const errors: string[] = []
 
   if (!product.name.trim()) {
-    errors.push('Product name is required')
+    errors.push('Le nom du produit est requis')
   }
 
   if (!product.quantity || product.quantity < 1) {
-    errors.push('Quantity must be at least 1')
+    errors.push('La quantité doit être d\'au moins 1')
   }
 
   return errors
@@ -520,9 +538,9 @@ const toggleSelectAll = () => {
 
 // Format date
 const formatDate = (dateString: string | Date | null) => {
-  if (!dateString) return 'Never'
+  if (!dateString) return 'Jamais'
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-US')
+  return date.toLocaleDateString('fr-FR')
 }
 
 // Generate avatar from initials
@@ -1574,4 +1592,4 @@ onMounted(() => {
 .modal-content {
   cursor: default;
 }
-</style>
+</style>

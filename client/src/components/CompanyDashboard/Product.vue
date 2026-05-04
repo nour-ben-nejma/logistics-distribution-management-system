@@ -1,17 +1,28 @@
 
 
 <template>
-  <div class="p-6 md:p-8 animate-in fade-in duration-500">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h1 class="text-3xl font-display font-bold text-premium-midnight tracking-tight">Gestion des Produits</h1>
-        <p class="text-slate-500 mt-1">Gérez votre catalogue de produits et leurs exigences de stockage</p>
+  <div class="space-y-8 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <div class="mb-10">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion des Produits</span>
+          </div>
+          <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Catalogue Produits</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Gérez votre catalogue de produits et leurs exigences de stockage</p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button @click="fetchProducts" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold transition-all shadow-sm" title="Rafraîchir">
+            <i class="fas fa-sync-alt text-xs" :class="{'animate-spin': loading}"></i>
+          </button>
+          <button @click="openCreateModal" class="btn-gold ml-2">
+            <i class="fas fa-plus mr-2"></i> Nouveau Produit
+          </button>
+        </div>
       </div>
-      <button @click="openCreateModal" class="btn-gold group">
-        <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>
-        Nouveau Produit
-      </button>
     </div>
 
     <!-- Error Alert -->
@@ -143,10 +154,10 @@
 
         <!-- Modal Footer -->
         <div class="modal-footer">
-          <button type="button" @click="showModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+          <button type="button" @click="showModal = false" class="btn-slate flex-1">
             Annuler
           </button>
-          <button type="submit" form="productForm" class="flex-1 btn-gold">
+          <button type="submit" form="productForm" class="btn-gold flex-1">
             {{ editingProduct ? 'Mettre à jour' : 'Créer le produit' }}
           </button>
         </div>

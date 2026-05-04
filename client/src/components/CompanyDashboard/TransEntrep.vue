@@ -1,20 +1,26 @@
 <template>
   <div class="space-y-8 animate-fade-in pb-12">
     <!-- Page Header -->
-    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
-          <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion du Personnel</span>
+    <div class="mb-10">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion du Personnel</span>
+          </div>
+          <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Transporteurs</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Gérez votre équipe de chauffeurs et leurs disponibilités.</p>
         </div>
-        <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Transporteurs</h1>
-        <p class="text-slate-500 text-sm font-medium mt-1">Gérez votre équipe de chauffeurs et leurs disponibilités.</p>
+        
+        <div class="flex items-center gap-2">
+          <button @click="fetchTransporters" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold transition-all shadow-sm" title="Rafraîchir">
+            <i class="fas fa-sync-alt text-xs" :class="{'animate-spin': loading}"></i>
+          </button>
+          <button @click="openAddModal" class="btn-gold ml-2">
+            <Plus class="w-4 h-4" /> Nouveau Transporteur
+          </button>
+        </div>
       </div>
-      
-      <button @click="openAddModal" class="btn-gold !px-8 !py-3.5 !text-xs flex items-center gap-2 shrink-0">
-        <Plus class="w-4 h-4" />
-        Nouveau Transporteur
-      </button>
     </div>
 
     <!-- KPI Stats -->

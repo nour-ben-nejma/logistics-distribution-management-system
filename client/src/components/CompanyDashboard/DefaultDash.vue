@@ -1,78 +1,107 @@
 <template>
   <div class="space-y-8 animate-in fade-in duration-700">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
-          <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Surveillance en Temps Réel</span>
+    <!-- Page Header -->
+    <div class="mb-10">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Surveillance en Temps Réel</span>
+          </div>
+          <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Réseau Logistique</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Cartographie interactive de vos implantations stratégiques et flux opérationnels.</p>
         </div>
-        <h1 class="text-3xl font-display font-black text-premium-midnight tracking-tight">Réseau Logistique</h1>
-        <p class="text-slate-500 text-sm font-medium">Cartographie interactive de vos implantations stratégiques.</p>
+        
+        <div class="flex items-center gap-2">
+          <button @click="loadData" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold transition-all shadow-sm" title="Rafraîchir">
+            <i class="fas fa-sync-alt text-xs" :class="{'animate-spin': loading}"></i>
+          </button>
+        </div>
       </div>
-      
-      
     </div>
 
     <!-- Key Performance Indicators -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <!-- KPI Card 1 -->
-      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- KPI Card 1: Sale Points -->
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/20 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
         <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl -mr-16 -mt-16"></div>
         <div class="flex justify-between items-start mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-500/10">
-            <Store class="w-6 h-6" />
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-lg shadow-blue-500/10">
+            <Store class="w-7 h-7" />
           </div>
-          <span class="px-2.5 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-wider">+12%</span>
+          <div class="flex flex-col items-end">
+            <span class="px-2.5 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-wider mb-1">+12%</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Croissance</span>
+          </div>
         </div>
-        <p class="text-3xl font-display font-black text-premium-midnight mb-1">{{ salePoints.length }}</p>
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Points de Vente</p>
+        <p class="text-4xl font-display font-black text-premium-midnight mb-1">{{ salePoints.length }}</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Points de Vente</p>
       </div>
 
-      <!-- KPI Card 2 -->
-      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
+      <!-- KPI Card 2: Warehouses -->
+      <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/20 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
         <div class="absolute top-0 right-0 w-32 h-32 bg-premium-gold/5 blur-3xl -mr-16 -mt-16"></div>
         <div class="flex justify-between items-start mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-premium-gold/10 flex items-center justify-center text-premium-gold group-hover:bg-premium-gold group-hover:text-white transition-all duration-500 shadow-lg shadow-premium-gold/10">
-            <Warehouse class="w-6 h-6" />
+          <div class="w-14 h-14 rounded-2xl bg-premium-gold/10 flex items-center justify-center text-premium-gold group-hover:bg-premium-gold group-hover:text-white transition-all duration-500 shadow-lg shadow-premium-gold/10">
+            <Warehouse class="w-7 h-7" />
           </div>
-          <span class="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider">Stable</span>
+          <div class="flex flex-col items-end">
+            <span class="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Optimisé</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Statut</span>
+          </div>
         </div>
-        <p class="text-3xl font-display font-black text-premium-midnight mb-1">{{ warehouses.length }}</p>
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Dépôts Stratégiques</p>
+        <p class="text-4xl font-display font-black text-premium-midnight mb-1">{{ warehouses.length }}</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Dépôts Stratégiques</p>
       </div>
 
-      <!-- Filters Panel -->
-      <div class="bg-premium-midnight p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
+      <!-- KPI Card 3: Global Activity -->
+      <div class="bg-premium-midnight p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
         <div class="absolute top-0 right-0 w-32 h-32 bg-premium-gold/10 blur-3xl -mr-16 -mt-16"></div>
-        <h4 class="text-white text-xs font-bold uppercase tracking-widest mb-4">Contrôles</h4>
-        <div class="space-y-3">
-          <label class="flex items-center justify-between cursor-pointer group">
-            <span class="text-[11px] font-bold text-slate-400 group-hover:text-white transition-colors uppercase tracking-wider">Points de Vente</span>
-            <input type="checkbox" v-model="showSalePoints" @change="updateMap" class="w-4 h-4 rounded border-white/10 bg-white/5 text-premium-gold focus:ring-premium-gold/20" />
-          </label>
-          <label class="flex items-center justify-between cursor-pointer group">
-            <span class="text-[11px] font-bold text-slate-400 group-hover:text-white transition-colors uppercase tracking-wider">Entrepôts</span>
-            <input type="checkbox" v-model="showWarehouses" @change="updateMap" class="w-4 h-4 rounded border-white/10 bg-white/5 text-premium-gold focus:ring-premium-gold/20" />
-          </label>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 blur-3xl -ml-12 -mb-12"></div>
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-premium-gold shadow-lg">
+            <Activity class="w-7 h-7" />
+          </div>
+          <div class="text-right">
+            <div class="flex items-center gap-1.5 justify-end mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
+              <span class="text-[10px] font-bold text-green-500 uppercase tracking-wider">Live</span>
+            </div>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Flux Actif</span>
+          </div>
         </div>
+        <p class="text-4xl font-display font-black text-white mb-1">{{ salePoints.length + warehouses.length }}</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Implantations Totales</p>
       </div>
     </div>
 
-    <!-- Main Map View -->
-    <div class="relative">
+    <!-- Main Map View Section -->
+    <div class="relative group/map">
+      <!-- Floating Map Controls -->
+      <div class="absolute top-6 left-6 z-10 flex items-center gap-3 p-2 bg-white/80 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl shadow-slate-900/10">
+        <button @click="showSalePoints = !showSalePoints; updateMap()" :class="showSalePoints ? 'bg-blue-500 text-white' : 'bg-slate-50 text-slate-400'" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2">
+          <Store class="w-3.5 h-3.5" /> Points de Vente
+        </button>
+        <button @click="showWarehouses = !showWarehouses; updateMap()" :class="showWarehouses ? 'bg-premium-gold text-white' : 'bg-slate-50 text-slate-400'" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2">
+          <Warehouse class="w-3.5 h-3.5" /> Entrepôts
+        </button>
+      </div>
+
       <!-- Status Overlay -->
       <Transition name="fade">
-        <div v-if="loading" class="absolute inset-0 z-20 bg-white/40 backdrop-blur-[2px] flex items-center justify-center rounded-[2.5rem]">
-          <div class="bg-white p-6 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-4">
-            <div class="w-10 h-10 border-4 border-premium-gold/20 border-t-premium-gold rounded-full animate-spin"></div>
-            <span class="text-sm font-bold text-premium-midnight">Synchronisation GPS en cours...</span>
+        <div v-if="loading" class="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex items-center justify-center rounded-[2.5rem]">
+          <div class="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 flex items-center gap-5 animate-in zoom-in duration-300">
+            <div class="w-12 h-12 border-4 border-premium-gold/20 border-t-premium-gold rounded-full animate-spin"></div>
+            <div>
+              <p class="text-sm font-black text-premium-midnight uppercase tracking-widest">Synchronisation</p>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mise à jour des flux GPS...</p>
+            </div>
           </div>
         </div>
       </Transition>
 
-      <div class="bg-white p-3 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
-        <div id="tunisia-map" class="w-full h-[650px] rounded-[2rem] z-0 grayscale-[0.2] contrast-[1.1]"></div>
+      <div class="bg-white p-3 rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/60 relative overflow-hidden group-hover/map:shadow-slate-300/60 transition-all duration-700">
+        <div id="tunisia-map" class="w-full h-[680px] rounded-[2.5rem] z-0 grayscale-[0.1] contrast-[1.05] brightness-[1.02]"></div>
       </div>
 
       <!-- Errors List -->

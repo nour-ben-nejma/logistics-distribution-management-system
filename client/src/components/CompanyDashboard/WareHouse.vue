@@ -1,25 +1,28 @@
 <template>
   <div class="space-y-8 animate-fade-in pb-12">
     <!-- Page Header -->
-    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
-          <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion des Stocks</span>
+    <div class="mb-10">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Gestion des Stocks</span>
+          </div>
+          <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Entrepôts</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Supervisez vos espaces de stockage et niveaux d'inventaire.</p>
         </div>
-        <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Entrepôts</h1>
-        <p class="text-slate-500 text-sm font-medium mt-1">Supervisez vos espaces de stockage et niveaux d'inventaire.</p>
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-3">
-        <button @click="openExternalWarehouse" class="px-6 py-3 rounded-xl border-2 border-premium-midnight text-premium-midnight hover:bg-premium-midnight hover:text-white text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2">
-          <Handshake class="w-4 h-4" />
-          Louer un Entrepôt
-        </button>
-        <button @click="openAddModal" class="btn-gold !px-8 !py-3.5 !text-xs flex items-center gap-2 shrink-0">
-          <Plus class="w-4 h-4" />
-          Nouvel Entrepôt
-        </button>
+        
+        <div class="flex flex-wrap items-center gap-3">
+          <button @click="fetchWarehouses" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold transition-all shadow-sm" title="Rafraîchir">
+            <i class="fas fa-sync-alt text-xs" :class="{'animate-spin': loading}"></i>
+          </button>
+          <button @click="openExternalWarehouse" class="btn-midnight">
+            <Handshake class="w-4 h-4" /> Louer un Entrepôt
+          </button>
+          <button @click="openAddModal" class="btn-gold">
+            <Plus class="w-4 h-4" /> Nouvel Entrepôt
+          </button>
+        </div>
       </div>
     </div>
 

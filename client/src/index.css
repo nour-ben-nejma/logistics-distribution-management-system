@@ -153,11 +153,19 @@
 }
 
 @utility btn-gold {
-  @apply px-6 py-3 rounded-premium font-semibold transition-all duration-300 active:scale-95 bg-premium-gold text-white shadow-gold hover:bg-premium-gold/90;
+  @apply px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 active:scale-95 bg-premium-gold text-white shadow-sm shadow-premium-gold/10 hover:bg-[#C19A2E] hover:shadow-md hover:shadow-premium-gold/20 flex items-center justify-center gap-2;
 }
 
 @utility btn-outline {
-  @apply px-6 py-3 rounded-premium font-semibold transition-all duration-300 active:scale-95 border-2 border-premium-gold text-premium-gold hover:bg-premium-gold hover:text-white;
+  @apply px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 active:scale-95 border-2 border-slate-200 text-slate-500 hover:border-premium-gold hover:text-premium-gold hover:bg-premium-gold/5 flex items-center justify-center gap-2;
+}
+
+@utility btn-slate {
+  @apply px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 active:scale-95 bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-2;
+}
+
+@utility btn-midnight {
+  @apply px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 active:scale-95 bg-premium-midnight text-white shadow-sm shadow-premium-midnight/5 hover:bg-slate-800 hover:shadow-md flex items-center justify-center gap-2;
 }
 
 @utility card-premium {

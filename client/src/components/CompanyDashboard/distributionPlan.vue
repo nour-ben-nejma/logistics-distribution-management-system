@@ -2009,44 +2009,57 @@ watch(
 </script>
 
 <template>
-  <div class="p-6 md:p-8 animate-in fade-in duration-500">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-      <div>
-        <h1 class="text-3xl font-display font-bold text-premium-midnight tracking-tight">Plan de Distribution</h1>
-        <p class="text-slate-500 mt-1">Gérez vos contrats et optimisez vos tournées logistiques</p>
+  <div class="space-y-8 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <div class="mb-12">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Logistique Avancée</span>
+          </div>
+          <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Plan de Distribution</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Gérez vos contrats et optimisez vos tournées logistiques</p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button @click="fetchContracts" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold transition-all shadow-sm" title="Rafraîchir">
+            <i class="fas fa-sync-alt text-xs" :class="{'animate-spin': loading.contracts}"></i>
+          </button>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="relative min-w-[280px]">
-          <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+      <!-- Action Toolbar - Full Width -->
+      <div class="bg-white/80 backdrop-blur-md p-3 rounded-[2.5rem] border border-white shadow-2xl shadow-slate-200/60 flex flex-col md:flex-row items-center gap-4">
+        <!-- Search Tool -->
+        <div class="relative flex-1 group w-full">
+          <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors text-sm"></i>
           <input
             type="text"
             v-model="contractSearch"
-            placeholder="Rechercher un contrat..."
-            class="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-premium-gold focus:ring-1 focus:ring-premium-gold transition-all shadow-sm"
+            placeholder="Rechercher un contrat spécifique..."
+            class="w-full bg-slate-50/50 border border-transparent rounded-[2rem] py-4 pl-14 pr-6 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-premium-gold/10 focus:border-premium-gold transition-all"
           />
         </div>
 
-        <div class="flex items-center gap-2">
-          <button class="btn-gold group" @click="openModal">
-            <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>
-            Nouveau Contrat
-          </button>
+        <!-- Main Actions -->
+        <div class="flex items-center gap-3 w-full md:w-auto">
           <button
-            class="btn-outline flex items-center gap-2"
             @click="openDistributionPlan"
             :disabled="!canOptimizeRoute"
-            :class="{'opacity-50 cursor-not-allowed': !canOptimizeRoute}"
+            class="flex-1 md:flex-none btn-outline group disabled:opacity-50"
           >
-            <i class="fas fa-calendar-alt"></i>
+            <i class="fas fa-calendar-alt text-slate-400 group-hover:text-premium-gold"></i>
             Planification
           </button>
-          <button class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold hover:border-premium-gold transition-all shadow-sm" @click="openResourceManagement" title="Ressources">
+
+          <button @click="openResourceManagement" class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-premium-gold hover:border-premium-gold transition-all shrink-0" title="Ressources">
             <i class="fas fa-truck"></i>
           </button>
-          <button class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold hover:border-premium-gold transition-all shadow-sm" @click="fetchContracts" title="Rafraîchir">
-            <i class="fas fa-sync-alt" :class="{'animate-spin': loading.contracts}"></i>
+
+          <button @click="openModal" class="flex-1 md:flex-none btn-gold shrink-0 shadow-lg shadow-premium-gold/20">
+            <i class="fas fa-plus text-[10px]"></i>
+            Nouveau Contrat
           </button>
         </div>
       </div>

@@ -1,15 +1,26 @@
 <template>
-  <div class="p-6 md:p-8 animate-in fade-in duration-500">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h1 class="text-3xl font-display font-bold text-premium-midnight tracking-tight">Points de Vente</h1>
-        <p class="text-slate-500 mt-1">Gérez vos magasins, relais et centres de distribution</p>
+  <div class="space-y-8 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <div class="mb-10">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-premium-gold animate-pulse"></span>
+            <span class="text-[10px] font-bold text-premium-gold uppercase tracking-[0.3em]">Réseau de Vente</span>
+          </div>
+          <h1 class="text-4xl font-display font-black text-premium-midnight tracking-tight">Points de Vente</h1>
+          <p class="text-slate-500 text-sm font-medium mt-1">Gérez vos magasins, relais et centres de distribution</p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button @click="loadData" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-premium-gold transition-all shadow-sm" title="Rafraîchir">
+            <i class="fas fa-sync-alt text-xs" :class="{'animate-spin': loading}"></i>
+          </button>
+          <button @click="handleAddSalePoint" class="btn-gold ml-2">
+            <i class="fas fa-plus mr-2"></i> Nouveau Point
+          </button>
+        </div>
       </div>
-      <button @click="handleAddSalePoint" class="btn-gold group">
-        <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>
-        Nouveau Point
-      </button>
     </div>
 
     <!-- Toolbar: Search & Filter -->
@@ -38,7 +49,7 @@
       </div>
       <h3 class="text-xl font-bold text-premium-midnight mb-2">Aucun point de vente trouvé</h3>
       <p class="text-slate-500 max-w-md mb-8">Commencez par ajouter votre premier point de vente ou modifiez vos critères de recherche.</p>
-      <button @click="handleAddSalePoint" class="btn-outline">
+      <button @click="handleAddSalePoint" class="btn-outline !py-2.5 !px-5">
         <i class="fas fa-plus mr-2"></i> Ajouter un point
       </button>
     </div>
