@@ -7,7 +7,7 @@ import DefaultDash from '../components/CompanyDashboard/DefaultDash.vue';
 import about from '../components/HomeEntreprise/FeatureSection.vue';
 import Footer from '../components/HomeEntreprise/Footer.vue';
 import services from '../components/HomeEntreprise/ServicesSection.vue';
-import profile from '../components/CompanyDashboard/profile.vue';
+import profile from '../components/CompanyDashboard/Profile.vue';
 import Salepoint from '../components/CompanyDashboard/SalePoint.vue';
 import TransEntrep from '../components/CompanyDashboard/TransEntrep.vue';
 import WareHouse from '../components/CompanyDashboard/WareHouse.vue';
