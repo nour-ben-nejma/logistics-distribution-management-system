@@ -18,6 +18,59 @@
   --radius-premium: 1.25rem;
 }
 
+@utility animate-in {
+  animation-duration: 300ms;
+  animation-fill-mode: both;
+}
+
+@utility fade-in {
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  animation-name: fade-in;
+}
+
+@utility animate-fade-in {
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+@utility zoom-in-95 {
+  @keyframes zoom-in-95 {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  animation-name: zoom-in-95;
+}
+
+@utility slide-in-from-top-2 {
+  @keyframes slide-in-from-top-2 {
+    from { transform: translateY(-0.5rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  animation-name: slide-in-from-top-2;
+}
+
+@utility slide-in-from-top-4 {
+  @keyframes slide-in-from-top-4 {
+    from { transform: translateY(-1rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  animation-name: slide-in-from-top-4;
+}
+
+@utility slide-in-from-bottom-4 {
+  @keyframes slide-in-from-bottom-4 {
+    from { transform: translateY(1rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  animation-name: slide-in-from-bottom-4;
+}
+
 @layer base {
   body {
     @apply bg-premium-surface text-premium-slate font-sans antialiased;
@@ -35,26 +88,59 @@
 
   /* Global Modal Centering & Premium Style */
   .modal-overlay, .modal, .modal-backdrop {
-    @apply fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-premium-midnight/60 backdrop-blur-sm;
+    @apply fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-premium-midnight/60 backdrop-blur-md;
     margin: 0 !important;
   }
 
   .modal-content, .modal-container {
-    @apply relative bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300;
+    @apply relative bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 w-full max-w-2xl mx-auto flex flex-col max-h-[90vh];
     margin: auto !important;
+  }
+
+  /* Standardized Modal Sections */
+  .modal-header {
+    @apply px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0;
+  }
+
+  .modal-body {
+    @apply p-8 overflow-y-auto flex-1 space-y-8;
+  }
+
+  .modal-footer {
+    @apply px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50 shrink-0;
+  }
+
+  .modal-title {
+    @apply text-xl md:text-2xl font-display font-black text-premium-midnight flex items-center gap-3;
   }
 
   /* Premium SweetAlert2 Styling */
   .premium-swal-popup {
-    @apply rounded-[2.5rem] p-8 !shadow-2xl border-none !font-sans;
+    @apply rounded-2xl !p-8 !shadow-2xl border-none !font-sans !bg-white;
+  }
+
+  .premium-swal-title {
+    @apply !text-2xl !font-display !font-black !text-premium-midnight !pt-0;
+  }
+
+  .premium-swal-html {
+    @apply !text-slate-500 !text-sm !font-medium;
   }
 
   .premium-swal-confirm {
-    @apply !bg-premium-midnight !text-white !rounded-xl !px-8 !py-3 !font-semibold !transition-all hover:!opacity-90;
+    @apply !bg-premium-midnight !text-white !rounded-2xl !px-8 !py-4 !text-xs !font-black !uppercase !tracking-widest !transition-all hover:!bg-slate-800 !shadow-lg !shadow-premium-midnight/10;
   }
 
   .premium-swal-cancel {
-    @apply !bg-slate-100 !text-slate-600 !rounded-xl !px-8 !py-3 !font-semibold !transition-all hover:!bg-slate-200;
+    @apply !bg-slate-100 !text-slate-400 !rounded-2xl !px-8 !py-4 !text-xs !font-black !uppercase !tracking-widest !transition-all hover:!bg-slate-200;
+  }
+
+  .premium-swal-input {
+    @apply !bg-slate-50 !border-slate-100 !rounded-2xl !px-5 !py-4 !text-sm !font-bold !text-premium-midnight focus:!border-premium-gold/30 focus:!ring-premium-gold/5 !transition-all !shadow-none !h-auto !my-4;
+  }
+
+  .premium-swal-select {
+    @apply !bg-slate-50 !border-slate-100 !rounded-2xl !px-5 !py-4 !text-sm !font-bold !text-premium-midnight focus:!border-premium-gold/30 focus:!ring-premium-gold/5 !transition-all !shadow-none !h-auto !my-4;
   }
 }
 

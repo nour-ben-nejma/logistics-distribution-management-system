@@ -192,39 +192,44 @@ const toggleProfileDropdown = () => {
 
   <!-- View Profile Modal -->
   <div v-if="showViewProfileModal" class="modal-overlay" @click.self="showViewProfileModal = false">
-    <div class="modal-content">
+    <div class="modal-content !max-w-md">
       <div class="modal-header">
-        <h3>Your Profile</h3>
-        <button class="modal-close" @click="showViewProfileModal = false">
+        <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+            <i class="fas fa-user text-premium-gold"></i>
+          </div>
+          Your Profile
+        </h2>
+        <button @click="showViewProfileModal = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
           <i class="fas fa-times"></i>
         </button>
       </div>
       <div class="modal-body">
-        <div class="profile-info">
-          <div class="info-row">
-            <label>First Name:</label>
-            <span>{{ userInfo.firstName }}</span>
+        <div class="space-y-8">
+          <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">First Name</span>
+            <span class="text-sm font-bold text-premium-midnight">{{ userInfo.firstName }}</span>
           </div>
-          <div class="info-row">
-            <label>Last Name:</label>
-            <span>{{ userInfo.lastName }}</span>
+          <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Name</span>
+            <span class="text-sm font-bold text-premium-midnight">{{ userInfo.lastName }}</span>
           </div>
-          <div class="info-row">
-            <label>Email:</label>
-            <span>{{ userInfo.email }}</span>
+          <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</span>
+            <span class="text-sm font-bold text-premium-midnight">{{ userInfo.email }}</span>
           </div>
-          <div class="info-row">
-            <label>Role:</label>
-            <span>{{ userInfo.role }}</span>
+          <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</span>
+            <span class="px-3 py-1 rounded-full bg-premium-midnight text-white text-[10px] font-black uppercase tracking-widest">{{ userInfo.role }}</span>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" @click="showEditProfileModal = true; showViewProfileModal = false">
-          Edit Profile
-        </button>
-        <button class="btn btn-secondary" @click="showViewProfileModal = false">
+        <button class="px-6 py-2 rounded-xl bg-slate-100 text-slate-500 font-bold hover:bg-slate-200 transition-all" @click="showViewProfileModal = false">
           Close
+        </button>
+        <button class="btn-gold px-8" @click="showEditProfileModal = true; showViewProfileModal = false">
+          Edit Profile
         </button>
       </div>
     </div>
@@ -232,51 +237,60 @@ const toggleProfileDropdown = () => {
 
   <!-- Edit Profile Modal -->
   <div v-if="showEditProfileModal" class="modal-overlay" @click.self="showEditProfileModal = false">
-    <div class="modal-content">
+    <div class="modal-content !max-w-lg">
       <div class="modal-header">
-        <h3>Edit Profile</h3>
-        <button class="modal-close" @click="showEditProfileModal = false">
+        <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+            <i class="fas fa-edit text-premium-gold"></i>
+          </div>
+          Edit Profile
+        </h2>
+        <button @click="showEditProfileModal = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
           <i class="fas fa-times"></i>
         </button>
       </div>
       <div class="modal-body">
-        <form @submit.prevent="updateProfile">
-          <div class="form-group">
-            <label>First Name</label>
-            <input v-model="editForm.firstName" type="text" required>
+        <form @submit.prevent="updateProfile" id="editProfileForm" class="space-y-8">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2 text-left">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
+              <input v-model="editForm.firstName" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold/30 transition-all">
+            </div>
+            <div class="space-y-2 text-left">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+              <input v-model="editForm.lastName" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold/30 transition-all">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Last Name</label>
-            <input v-model="editForm.lastName" type="text" required>
-          </div>
-          <div class="form-group">
-            <label>Email</label>
-            <input v-model="editForm.email" type="email" required>
+          <div class="space-y-2 text-left">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+            <input v-model="editForm.email" type="email" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold/30 transition-all">
           </div>
           
-          <div class="password-section">
-            <h4>Change Password</h4>
-            <div class="form-group">
-              <label>Current Password</label>
-              <input v-model="editForm.currentPassword" type="password">
+          <div class="pt-6 border-t border-slate-100 space-y-6">
+            <h4 class="text-xs font-black uppercase tracking-widest text-premium-midnight">Change Password</h4>
+            <div class="space-y-2 text-left">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Password</label>
+              <input v-model="editForm.currentPassword" type="password" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold/30 transition-all">
             </div>
-            <div class="form-group">
-              <label>New Password</label>
-              <input v-model="editForm.newPassword" type="password">
-            </div>
-            <div class="form-group">
-              <label>Confirm New Password</label>
-              <input v-model="editForm.confirmPassword" type="password">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2 text-left">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                <input v-model="editForm.newPassword" type="password" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold/30 transition-all">
+              </div>
+              <div class="space-y-2 text-left">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm New Password</label>
+                <input v-model="editForm.confirmPassword" type="password" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:border-premium-gold/30 transition-all">
+              </div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" @click="updateProfile">
-          Save Changes
-        </button>
-        <button class="btn btn-secondary" @click="showEditProfileModal = false">
+        <button class="px-8 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold hover:bg-slate-200 transition-all" @click="showEditProfileModal = false">
           Cancel
+        </button>
+        <button class="btn-gold px-10" form="editProfileForm">
+          Save Changes
         </button>
       </div>
     </div>
@@ -462,158 +476,5 @@ const toggleProfileDropdown = () => {
   transition: transform 0.2s;
 }
 
-/* Modal styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.modal-content {
-  background-color: white;
-  border-radius: 0.5rem;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: #6b7280;
-  cursor: pointer;
-  font-size: 1.25rem;
-  transition: color 0.2s;
-}
-
-.modal-close:hover {
-  color: #1f2937;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* Profile info styles */
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.info-row {
-  display: flex;
-  align-items: center;
-}
-
-.info-row label {
-  font-weight: 500;
-  color: #4b5563;
-  width: 120px;
-}
-
-.info-row span {
-  color: #1f2937;
-}
-
-/* Form styles */
-.form-group {
-  margin-bottom: 1.25rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #4b5563;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.password-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.password-section h4 {
-  margin-top: 0;
-  margin-bottom: 1.25rem;
-  font-size: 1.1rem;
-  color: #1f2937;
-}
-
-/* Button styles */
-.btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-}
-
-.btn-primary:hover {
-  background-color: #2563eb;
-}
-
-.btn-secondary {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
-}
-
-.btn-secondary:hover {
-  background-color: #e5e7eb;
-}
+/* Local modal styles removed to use global index.css rules */
 </style>

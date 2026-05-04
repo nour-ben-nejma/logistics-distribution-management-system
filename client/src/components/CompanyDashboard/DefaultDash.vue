@@ -11,17 +11,7 @@
         <p class="text-slate-500 text-sm font-medium">Cartographie interactive de vos implantations stratégiques.</p>
       </div>
       
-      <div class="flex items-center gap-3 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
-        <button 
-          v-for="view in ['Map', 'List', 'Analytics']" 
-          :key="view"
-          class="px-5 py-2 rounded-xl text-xs font-bold transition-all"
-          :class="activeView === view ? 'bg-premium-midnight text-white shadow-lg' : 'text-slate-400 hover:text-premium-midnight hover:bg-slate-50'"
-          @click="activeView = view"
-        >
-          {{ view }}
-        </button>
-      </div>
+      
     </div>
 
     <!-- Key Performance Indicators -->
@@ -41,28 +31,15 @@
 
       <!-- KPI Card 2 -->
       <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl -mr-16 -mt-16"></div>
+        <div class="absolute top-0 right-0 w-32 h-32 bg-premium-gold/5 blur-3xl -mr-16 -mt-16"></div>
         <div class="flex justify-between items-start mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all duration-500 shadow-lg shadow-red-500/10">
+          <div class="w-12 h-12 rounded-2xl bg-premium-gold/10 flex items-center justify-center text-premium-gold group-hover:bg-premium-gold group-hover:text-white transition-all duration-500 shadow-lg shadow-premium-gold/10">
             <Warehouse class="w-6 h-6" />
           </div>
           <span class="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider">Stable</span>
         </div>
         <p class="text-3xl font-display font-black text-premium-midnight mb-1">{{ warehouses.length }}</p>
         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Dépôts Stratégiques</p>
-      </div>
-
-      <!-- KPI Card 3 -->
-      <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-premium-gold/5 blur-3xl -mr-16 -mt-16"></div>
-        <div class="flex justify-between items-start mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-premium-gold/10 flex items-center justify-center text-premium-gold group-hover:bg-premium-gold group-hover:text-white transition-all duration-500 shadow-lg shadow-premium-gold/10">
-            <Activity class="w-6 h-6" />
-          </div>
-          <span class="px-2.5 py-1 rounded-lg bg-premium-gold/10 text-premium-gold text-[10px] font-bold uppercase tracking-wider">98%</span>
-        </div>
-        <p class="text-3xl font-display font-black text-premium-midnight mb-1">Optimum</p>
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Efficacité Flux</p>
       </div>
 
       <!-- Filters Panel -->
@@ -155,14 +132,14 @@ const preciseLocations: Record<string, [number, number]> = {
 
 // Create custom icons with more premium SVG style if possible, or just better markers
 const createCustomMarker = (type: 'sale' | 'warehouse') => {
-  const color = type === 'sale' ? '#3B82F6' : '#EF4444';
+  const color = type === 'sale' ? '#3B82F6' : '#D4AF37';
   const svgIcon = `
     <div class="relative flex items-center justify-center">
       <div class="absolute inset-0 scale-150 blur-sm bg-white/20 rounded-full"></div>
-      <div class="w-8 h-8 rounded-full bg-white border-4 border-[${color}] shadow-xl flex items-center justify-center">
-        <div class="w-2 h-2 rounded-full bg-[${color}] animate-pulse"></div>
+      <div class="w-8 h-8 rounded-full bg-white border-4 shadow-xl flex items-center justify-center" style="border-color: ${color}">
+        <div class="w-2 h-2 rounded-full animate-pulse" style="background-color: ${color}"></div>
       </div>
-      <div class="absolute -bottom-1 w-2 h-2 bg-[${color}] rotate-45 transform -translate-x-1/2 left-1/2"></div>
+      <div class="absolute -bottom-1 w-2 h-2 rotate-45 transform -translate-x-1/2 left-1/2" style="background-color: ${color}"></div>
     </div>
   `;
 
@@ -266,7 +243,7 @@ const updateMap = () => {
       .bindPopup(`
         <div class="map-popup-premium">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-xl ${loc.type === 'salePoint' ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-500'} flex items-center justify-center">
+            <div class="w-10 h-10 rounded-xl ${loc.type === 'salePoint' ? 'bg-blue-50 text-blue-500' : 'bg-premium-gold/10 text-premium-gold'} flex items-center justify-center">
               ${loc.type === 'salePoint' ? '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' : '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M3 7v1a3 3 0 0 0 6 0V7m6 1V7a3 3 0 0 0-6 0v1m12-1v1a3 3 0 0 1-6 0V7"/><path d="M4 21V10"/><path d="M20 21V10"/><path d="M9 21V10"/><path d="M15 21V10"/><path d="M3 7l9-4 9 4"/></svg>'}
             </div>
             <div>

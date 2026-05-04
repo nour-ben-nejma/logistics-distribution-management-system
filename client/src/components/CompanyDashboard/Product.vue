@@ -86,12 +86,10 @@
     </div>
 
     <!-- Product Form Modal -->
-    <div v-if="showModal" class="modal-overlay z-50">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showModal = false"></div>
-      
-      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+      <div class="modal-content !max-w-lg">
         <!-- Modal Header -->
-        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div class="modal-header">
           <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
               <i :class="['fas', editingProduct ? 'fa-edit' : 'fa-plus']" class="text-premium-gold"></i>
@@ -104,8 +102,8 @@
         </div>
         
         <!-- Modal Body -->
-        <div class="p-8">
-          <form @submit.prevent="saveProduct" class="space-y-6">
+        <div class="modal-body">
+          <form @submit.prevent="saveProduct" id="productForm" class="space-y-6">
             <div class="space-y-2">
               <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom du Produit *</label>
               <div class="relative group">
@@ -140,16 +138,17 @@
                 <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
               </div>
             </div>
-            
-            <div class="pt-4 flex gap-4">
-              <button type="button" @click="showModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
-                Annuler
-              </button>
-              <button type="submit" class="flex-1 btn-gold">
-                {{ editingProduct ? 'Mettre à jour' : 'Créer le produit' }}
-              </button>
-            </div>
           </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" @click="showModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+            Annuler
+          </button>
+          <button type="submit" form="productForm" class="flex-1 btn-gold">
+            {{ editingProduct ? 'Mettre à jour' : 'Créer le produit' }}
+          </button>
         </div>
       </div>
     </div>
@@ -310,15 +309,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.animate-in {
-  animation-fill-mode: forwards;
-}
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slide-in-from-top-2 { from { transform: translateY(-0.5rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes zoom-in-95 { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.fade-in { animation-name: fade-in; }
-.slide-in-from-top-2 { animation-name: slide-in-from-top-2; }
-.zoom-in-95 { animation-name: zoom-in-95; }
+/* Global animations used from index.css */
 
 /* Category Colors */
 .bg-category-electronics { background: #1a1f2c; border-bottom: 2px solid #c4a484; }

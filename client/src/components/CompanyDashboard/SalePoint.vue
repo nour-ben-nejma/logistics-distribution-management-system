@@ -122,6 +122,72 @@
         </button>
       </div>
     </div>
+
+    <Teleport to="body">
+    <!-- Sale Point Form Modal -->
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content !max-w-lg">
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i :class="['fas', isEditing ? 'fa-edit' : 'fa-plus']" class="text-premium-gold"></i>
+            </div>
+            {{ isEditing ? 'Modifier le Point de Vente' : 'Nouveau Point de Vente' }}
+          </h2>
+          <button @click="closeModal" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <form @submit.prevent="submitForm" id="salePointForm" class="space-y-6">
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom du Point *</label>
+              <div class="relative group">
+                <i class="fas fa-store absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <input v-model="salePointForm.name" type="text" required placeholder="Ex: Boutique Paris" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
+            </div>
+            
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Type de Point *</label>
+              <div class="relative group">
+                <i class="fas fa-tags absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <select v-model="salePointForm.type" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option value="" disabled>Sélectionner un type</option>
+                  <option value="Store">Magasin (Store)</option>
+                  <option value="Pickup Point">Point Relais (Pickup Point)</option>
+                  <option value="Distribution Center">Centre de Distribution</option>
+                </select>
+                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+              </div>
+            </div>
+            
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Adresse *</label>
+              <div class="relative group">
+                <i class="fas fa-map-marker-alt absolute left-4 top-4 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <textarea v-model="salePointForm.address" required placeholder="Saisir l'adresse complète" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all resize-none"></textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" @click="closeModal" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+            Annuler
+          </button>
+          <button type="submit" form="salePointForm" :disabled="isSubmitting" class="flex-1 btn-gold">
+            <i v-if="isSubmitting" class="fas fa-circle-notch fa-spin mr-2"></i>
+            {{ isEditing ? 'Mettre à jour' : 'Ajouter le point' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    </Teleport>
   </div>
 </template>
 <script setup lang="ts">
@@ -156,6 +222,16 @@ const isSubmitting = ref(false)
 const activeMapId = ref<string | null>(null)
 const mapInstances = ref<Record<string, MapInstance>>({})
 const isLoadingMap = ref(false)
+
+const showModal = ref(false)
+const isEditing = ref(false)
+const salePointForm = ref({
+  _id: '',
+  name: '',
+  type: '',
+  address: ''
+})
+
 const api = axios.create({
   baseURL: 'http://localhost:3000/api'
 })
@@ -395,58 +471,73 @@ const loadData = async () => {
     loading.value = false
   }
 }
-const handleAddSalePoint = async () => {
+const closeModal = () => {
+  showModal.value = false;
+  setTimeout(() => {
+    salePointForm.value = {
+      _id: '',
+      name: '',
+      type: '',
+      address: ''
+    };
+    isEditing.value = false;
+  }, 200);
+}
+
+const handleAddSalePoint = () => {
+  salePointForm.value = {
+    _id: '',
+    name: '',
+    type: '',
+    address: ''
+  };
+  isEditing.value = false;
+  showModal.value = true;
+};
+
+const handleEditSalePoint = (salePoint: SalePoint) => {
+  salePointForm.value = { 
+    _id: salePoint._id,
+    name: salePoint.name,
+    type: salePoint.type,
+    address: salePoint.address
+  };
+  isEditing.value = true;
+  showModal.value = true;
+};
+
+const submitForm = async () => {
   try {
-    const { value: formValues } = await Swal.fire({
-      title: "Add Sales Point",
-      html: `
-        <input id="swal-name" class="swal2-input" placeholder="Name" required>
-        <select id="swal-type" class="swal2-input" required>
-          <option value="Store">Store</option>
-          <option value="Pickup Point">Pickup Point</option>
-          <option value="Distribution Center">Distribution Center</option>
-        </select>
-        <input id="swal-address" class="swal2-input" placeholder="Address" required>
-      `,
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: "Add",
-      preConfirm: () => {
-        const getValue = (id: string) => {
-          const el = document.getElementById(id) as HTMLInputElement;
-          return el ? el.value : null;
-        };
+    isSubmitting.value = true;
+    const token = localStorage.getItem('accessToken');
+    if (!token) throw new Error('Authentication required');
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-        const name = getValue("swal-name")?.trim();
-        const type = getValue("swal-type");
-        const address = getValue("swal-address")?.trim();
-        
-        console.log("Form values:", { name, type, address });
-
-        if (!name || !type || !address) {
-          Swal.showValidationMessage("Please fill all required fields with valid values");
-          return false;
-        }
-
-        return {
-          name,
-          type,
-          address
-        };
+    if (isEditing.value) {
+      const response = await api.put(`/salePoints/update/${salePointForm.value._id}`, salePointForm.value);
+      if (response.data.success) {
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Point de vente mis à jour',
+          icon: 'success'
+        });
+        closeModal();
+        await loadData();
       }
-    });
-
-    if (!formValues) return;
-
-    console.log("Submitting:", formValues);
-
-    const response = await api.post('/salePoints/addSalePoint', formValues);
-    if (response.data.success) {
-      await Swal.fire('Success!', 'Sales point added successfully', 'success');
-      await loadData();
+    } else {
+      const response = await api.post('/salePoints/addSalePoint', salePointForm.value);
+      if (response.data.success) {
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Point de vente ajouté',
+          icon: 'success'
+        });
+        closeModal();
+        await loadData();
+      }
     }
   } catch (error) {
-    console.error("Add sale point error:", error);
+    console.error("Sale point submit error:", error);
     let errorMessage = (error as any)?.response?.data?.message || (error as Error)?.message;
     
     if (axios.isAxiosError(error) && error.response?.data?.errors) {
@@ -454,62 +545,14 @@ const handleAddSalePoint = async () => {
     }
 
     await Swal.fire({
-      title: 'Error',
+      title: 'Erreur',
       html: errorMessage,
       icon: 'error'
     });
+  } finally {
+    isSubmitting.value = false;
   }
 };
-const handleEditSalePoint = async (salePoint: SalePoint) => {
-  try {
-    const token = localStorage.getItem('accessToken')
-    if (!token) throw new Error('Authentication required')
-    
-    api.defaults.headers.common.Authorization = `Bearer ${token}`
-
-    const { value: formValues } = await Swal.fire({
-      title: 'Edit Sales Point',
-      html:
-        `<input id="name" class="swal2-input" placeholder="Name" value="${salePoint.name}" required>` +
-        `<select id="type" class="swal2-input" required>
-          <option value="Store" ${salePoint.type === 'Store' ? 'selected' : ''}>Store</option>
-          <option value="Pickup Point" ${salePoint.type === 'Pickup Point' ? 'selected' : ''}>Pickup Point</option>
-          <option value="Distribution Center" ${salePoint.type === 'Distribution Center' ? 'selected' : ''}>Distribution Center</option>
-        </select>` +
-        `<input id="address" class="swal2-input" placeholder="Address" value="${salePoint.address}" required>` ,
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Save',
-      cancelButtonText: 'Cancel',
-      preConfirm: () => {
-        return {
-          name: (document.getElementById('name') as HTMLInputElement).value,
-          type: (document.getElementById('type') as HTMLSelectElement).value,
-          address: (document.getElementById('address') as HTMLInputElement).value,
-          }
-      }
-    })
-
-    if (formValues) {
-      const response = await api.put(`/salePoints/update/${salePoint._id}`, formValues)
-
-      if (response.data.success) {
-        await Swal.fire({
-          title: 'Success!',
-          text: 'Sales point updated successfully',
-          icon: 'success'
-        })
-        await loadData()
-      }
-    }
-  } catch (err: any) {
-    Swal.fire({
-      title: 'Error',
-      text: err.response?.data?.message || err.message || 'Error while updating',
-      icon: 'error'
-    })
-  }
-}
 
 const deleteSalePoint = async (id: string) => {
   try {
@@ -589,23 +632,5 @@ onBeforeUnmount(() => {
 :deep(.leaflet-popup-content) {
   font-family: 'Inter', sans-serif;
   margin: 1rem;
-}
-
-/* SweetAlert2 Inputs override */
-:deep(.swal2-input), :deep(.swal2-select) {
-  width: 100% !important;
-  margin: 10px 0 !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 0.75rem !important;
-  padding: 0.75rem 1rem !important;
-  font-size: 0.875rem !important;
-  font-family: 'Inter', sans-serif !important;
-  box-shadow: none !important;
-  transition: border-color 0.2s !important;
-}
-:deep(.swal2-input:focus), :deep(.swal2-select:focus) {
-  border-color: #d4af37 !important;
-  outline: none !important;
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) !important;
 }
 </style>

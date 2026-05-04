@@ -470,125 +470,128 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
-      <div v-if="showAddCompanyModal" class="modal-overlay">
-  <div class="modal-container">
-    <div class="modal-header">
-      <h3>Add New Company</h3>
-      <button class="modal-close-btn" @click="closeAddCompanyModal">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    
-    <div class="modal-body">
-      <div class="form-group">
-      <label for="logo">Company Logo</label>
-      <div class="logo-upload-container">
-        <div v-if="logoPreview" class="logo-preview">
-          <img :src="logoPreview" alt="Logo preview" class="logo-preview-image">
-          <button type="button" class="btn-remove-logo" @click="removeLogo">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div v-else class="upload-area">
-          <label for="logo-upload" class="upload-label">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <span>Click to upload logo</span>
-            <input 
-              type="file" 
-              id="logo-upload" 
-              accept="image/*"
-              @change="handleLogoUpload"
-              style="display: none;"
-            >
-          </label>
+      <div v-if="showAddCompanyModal" class="modal-overlay" @click.self="closeAddCompanyModal">
+        <div class="modal-content !max-w-2xl">
+          <div class="modal-header">
+            <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+                <i class="fas fa-building text-premium-gold"></i>
+              </div>
+              Add New Company
+            </h2>
+            <button class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors" @click="closeAddCompanyModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="space-y-8">
+              <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Company Logo</label>
+                <div class="logo-upload-container">
+                  <div v-if="logoPreview" class="logo-preview">
+                    <img :src="logoPreview" alt="Logo preview" class="logo-preview-image">
+                    <button type="button" class="btn-remove-logo" @click="removeLogo">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div v-else class="upload-area">
+                    <label for="logo-upload" class="upload-label">
+                      <i class="fas fa-cloud-upload-alt"></i>
+                      <span>Click to upload logo</span>
+                      <input 
+                        type="file" 
+                        id="logo-upload" 
+                        accept="image/*"
+                        @change="handleLogoUpload"
+                        style="display: none;"
+                      >
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <form @submit.prevent="addCompany" class="space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-2 text-left">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Company Name</label>
+                    <div class="relative group">
+                      <i class="fas fa-building absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                      <input v-model="newCompany.companyName" type="text" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-2 text-left">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Email</label>
+                    <div class="relative group">
+                      <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                      <input v-model="newCompany.email" type="email" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-2 text-left">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Password</label>
+                    <div class="relative group">
+                      <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                      <input v-model="newCompany.password" type="password" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-left">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
+                    <div class="relative group">
+                      <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                      <input v-model="newCompany.phoneNumber" type="tel" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-2 text-left">
+                  <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Registered Office Address</label>
+                  <div class="relative group">
+                    <i class="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                    <input v-model="newCompany.registeredOfficeAddress" type="text" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-2 text-left">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Legal Status</label>
+                    <div class="relative group">
+                      <i class="fas fa-gavel absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                      <select v-model="newCompany.legalStatus" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                        <option value="">Select legal status</option>
+                        <option value="LLC">LLC</option>
+                        <option value="Corporation">Corporation</option>
+                        <option value="Partnership">Partnership</option>
+                        <option value="Sole Proprietorship">Sole Proprietorship</option>
+                      </select>
+                      <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-left">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Tax Registration Number</label>
+                    <div class="relative group">
+                      <i class="fas fa-file-invoice absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                      <input v-model="newCompany.taxRegistrationNumber" type="text" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors" @click="closeAddCompanyModal">
+              Cancel
+            </button>
+            <button type="submit" class="flex-1 btn-gold" @click="addCompany">
+              Add Company
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-      <form @submit.prevent="addCompany">
-        <div class="form-group">
-          <label for="companyName">Company Name</label>
-          <input 
-            type="text" 
-            id="companyName" 
-            v-model="newCompany.companyName" 
-            required
-          >
-        </div>
-        
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            v-model="newCompany.email" 
-            required
-          >
-        </div>
-        
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="newCompany.password" 
-            required
-          >
-        </div>
-        <div class="form-group">
-  <label for="registeredOfficeAddress">Registered Office Address</label>
-  <input 
-    type="text" 
-    id="registeredOfficeAddress" 
-    v-model="newCompany.registeredOfficeAddress" 
-    required
-  >
-</div>
-<div class="form-group">
-          <label for="legalStatus">Legal Status</label>
-          <select 
-            id="legalStatus" 
-            v-model="newCompany.legalStatus" 
-            required
-          >
-            <option value="">Select legal status</option>
-            <option value="LLC">LLC</option>
-            <option value="Corporation">Corporation</option>
-            <option value="Partnership">Partnership</option>
-            <option value="Sole Proprietorship">Sole Proprietorship</option>
-          </select>
-        </div>
-<div class="form-group">
-  <label for="taxRegistrationNumber">Tax Registration Number</label>
-  <input 
-    type="text" 
-    id="taxRegistrationNumber" 
-    v-model="newCompany.taxRegistrationNumber" 
-    required
-  >
-</div>
-
-<div class="form-group">
-  <label for="phoneNumber">Phone Number</label>
-  <input 
-    type="tel" 
-    id="phoneNumber" 
-    v-model="newCompany.phoneNumber" 
-    required
-  >
-</div>
-        
-        <div class="form-actions">
-          <button type="button" class="btn-cancel" @click="closeAddCompanyModal">
-            Cancel
-          </button>
-          <button type="submit" class="btn-submit">
-            Add Company
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
       <!-- Pagination -->
       <div class="pagination" v-if="totalPages > 1">
         <button 
@@ -756,145 +759,7 @@ onMounted(() => {
   background-color: #2563eb;
 }
 
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
 
-.modal-container {
-  background-color: white;
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-.modal-close-btn {
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0.25rem;
-}
-
-.modal-close-btn:hover {
-  color: #111827;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.25rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: #111827;
-  transition: border-color 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.btn-cancel {
-  padding: 0.75rem 1.5rem;
-  background-color: #f3f4f6;
-  color: #374151;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-cancel:hover {
-  background-color: #e5e7eb;
-}
-
-.btn-submit {
-  padding: 0.75rem 1.5rem;
-  background-color: #10b981;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-submit:hover {
-  background-color: #059669;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .modal-container {
-    width: 95%;
-    margin: 0 auto;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .btn-cancel,
-  .btn-submit {
-    width: 100%;
-  }
-}
 .tabs {
   display: flex;
   gap: 0.5rem;

@@ -399,92 +399,111 @@ onMounted(() => {
     </div>
 
     <!-- Add/Edit Modal -->
-    <div v-if="showModal" class="modal">
-      <div class="modal-content">
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-content !max-w-2xl">
         <div class="modal-header">
-          <h2>{{ isEditing ? 'Edit' : 'Add' }} Warehouse</h2>
-          <button class="btn-close" @click="closeModals">×</button>
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-warehouse text-premium-gold"></i>
+            </div>
+            {{ isEditing ? 'Edit' : 'Add' }} Warehouse
+          </h2>
+          <button class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors" @click="closeModals">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        <form @submit.prevent="handleSubmit">
-          <div class="modal-body">
-            <div class="form-group">
-              <label>Name</label>
-              <input 
-                type="text"
-                v-model="warehouseForm.name"
-                required
-              >
+        <div class="modal-body">
+          <form @submit.prevent="handleSubmit" id="warehouseForm" class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Name</label>
+                <div class="relative group">
+                  <i class="fas fa-warehouse absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <input type="text" v-model="warehouseForm.name" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                </div>
+              </div>
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Location</label>
+                <div class="relative group">
+                  <i class="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <input type="text" v-model="warehouseForm.location" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                </div>
+              </div>
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Storage Type</label>
+                <div class="relative group">
+                  <i class="fas fa-box absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <select v-model="warehouseForm.storage_type" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                    <option value="freezer">Freezer</option>
+                    <option value="refrigerated">Refrigerated</option>
+                    <option value="ambient">Ambient</option>
+                    <option value="controlled">Controlled</option>
+                  </select>
+                  <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                </div>
+              </div>
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Capacity (kg)</label>
+                <div class="relative group">
+                  <i class="fas fa-weight-hanging absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <input type="number" v-model.number="warehouseForm.capacity" required min="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+                </div>
+              </div>
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Status</label>
+                <div class="relative group">
+                  <i class="fas fa-check-circle absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <select v-model="warehouseForm.status" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                    <option value="available">Available</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="maintenance">Maintenance</option>
+                  </select>
+                  <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Location</label>
-              <input 
-                type="text"
-                v-model="warehouseForm.location"
-                required
-              >
-            </div>
-            <div class="form-group">
-              <label>Storage Type</label>
-              <select v-model="warehouseForm.storage_type">
-                <option value="freezer">Freezer</option>
-                <option value="refrigerated">Refrigerated</option>
-                <option value="ambient">Ambient</option>
-                <option value="controlled">Controlled</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Capacity (kg)</label>
-              <input 
-                type="number"
-                v-model.number="warehouseForm.capacity"
-                required
-                min="1"
-              >
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select v-model="warehouseForm.status">
-                <option value="available">Available</option>
-                <option value="occupied">Occupied</option>
-                <option value="maintenance">Maintenance</option>
-              </select>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn-secondary" @click="closeModals">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">
-              {{ isEditing ? 'Update' : 'Add' }} Warehouse
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors" @click="closeModals">
+            Cancel
+          </button>
+          <button type="submit" form="warehouseForm" class="flex-1 btn-gold">
+            {{ isEditing ? 'Update' : 'Add' }} Warehouse
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <!-- Delete Confirmation Modal -->
-<div v-if="showDeleteModal" class="modal">
-  <div class="modal-content modal-sm">
-    <div class="modal-header">
-      <h2>Confirm Delete</h2>
-      <button class="btn-close" @click="closeModals">×</button>
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-content !max-w-md">
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-red-600 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+              <i class="fas fa-exclamation-triangle text-red-600"></i>
+            </div>
+            Confirm Delete
+          </h2>
+          <button class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors" @click="closeModals">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="text-slate-600 font-medium">Are you sure you want to delete this warehouse?</p>
+          <p v-if="error" class="text-red-500 text-xs font-bold mt-2">{{ error }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="px-6 py-2 rounded-xl bg-slate-100 text-slate-500 font-bold hover:bg-slate-200 transition-all" @click="closeModals">
+            Cancel
+          </button>
+          <button class="px-6 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-all" @click="handleDelete" :disabled="loading">
+            <span v-if="loading">Checking...</span>
+            <span v-else>Delete</span>
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="modal-body">
-      <p>Are you sure you want to delete this warehouse?</p>
-      <p v-if="error" class="text-error">{{ error }}</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" @click="closeModals">
-        Cancel
-      </button>
-      <button class="btn-danger" @click="handleDelete" :disabled="loading">
-        <span v-if="loading">Checking...</span>
-        <span v-else>Delete</span>
-      </button>
-    </div>
-  </div>
-</div>
   </div>
 </template>
 ```vue
@@ -763,87 +782,7 @@ onMounted(() => {
 }
 
 /* Modal */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-   z-index: 1000;
-}
-
-.modal-content {
-  background: #ffffff; /* White background */
-  border-radius: 0.5rem;
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-content.modal-sm {
-  max-width: 400px;
-}
-
-.modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb; /* Light gray for borders */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #111827; /* Dark gray for headings */
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #6b7280; /* Lighter gray for secondary text */
-  cursor: pointer;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  color: #111827; /* Dark gray for text */
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb; /* Light gray for borders */
-  border-radius: 0.375rem;
-  background: #ffffff; /* White background */
-  color: #111827; /* Dark gray for text */
-}
-
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e5e7eb; /* Light gray for borders */
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
+/* Local modal styles removed to use global index.css rules */
 
 /* Empty State */
 .empty-state {

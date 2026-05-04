@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="suppliers-container">
     <!-- Header with category statistics -->
@@ -191,177 +190,124 @@
       </div>
     </div>
 
+    <Teleport to="body">
     <!-- Add Supplier Modal -->
-    <transition name="modal">
-      <div v-if="showAddModal" class="modal-overlay z-[2000]" @click.self="showAddModal = false">
-        <div class="modal-content !max-w-2xl">
-          <div class="modal-header">
-            <div class="modal-title">
-              <i class="fas fa-plus-circle"></i>
-              <h2>Add New Supplier</h2>
+    <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
+      <div class="modal-content !max-w-2xl">
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-plus-circle text-premium-gold"></i>
             </div>
-            <button @click="showAddModal = false" class="close-btn">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="handleAddSupplier" class="add-supplier-form">
-              <div class="form-group">
-                <label>
-                  <i class="fas fa-building"></i>
-                  Supplier Name*
-                </label>
-                <input 
-                  v-model="newSupplier.name" 
-                  
-                  placeholder="Enter supplier name"
-                  class="form-input"
-                  pattern="[A-Za-zÀ-ÿ\s]+"
-                  title="Name must contain only letters and spaces"
-                  @input="validateField('name')"
-                >
-                <span v-if="formErrors.name" class="error-message">{{ formErrors.name }}</span>
+            Add New Supplier
+          </h2>
+          <button @click="showAddModal = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="handleAddSupplier" id="addSupplierForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Supplier Name*</label>
+                <div class="relative group">
+                  <i class="fas fa-building absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <input v-model="newSupplier.name" placeholder="Enter supplier name" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" pattern="[A-Za-zÀ-ÿ\s]+" title="Name must contain only letters and spaces" @input="validateField('name')">
+                </div>
+                <span v-if="formErrors.name" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.name }}</span>
               </div>
-              <div class="form-group">
-                <label>
-                  <i class="fas fa-phone-alt"></i>
-                  Contact*
-                </label>
-                <input 
-                  v-model="newSupplier.contact" 
-                  required
-                  placeholder="8-digit phone number"
-                  class="form-input"
-                  pattern="[0-9]{8}"
-                  title="Contact must be exactly 8 digits"
-                  @input="validateField('contact')"
-                >
-                <span v-if="formErrors.contact" class="error-message">{{ formErrors.contact }}</span>
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Contact*</label>
+                <div class="relative group">
+                  <i class="fas fa-phone-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <input v-model="newSupplier.contact" required placeholder="8-digit phone number" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" pattern="[0-9]{8}" title="Contact must be exactly 8 digits" @input="validateField('contact')">
+                </div>
+                <span v-if="formErrors.contact" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.contact }}</span>
               </div>
-              <div class="form-group">
-                <label>
-                  <i class="fas fa-tags"></i>
-                  Category*
-                </label>
-                <select 
-                  v-model="newSupplier.category" 
-                  required
-                  class="form-select"
-                  @change="validateField('category')"
-                >
-                  <option value="electronics">electronics</option>
-                  <option value="clothing">clothing</option>
-                  <option value="food">food</option>
-                  <option value="furniture">furniture</option>
-                  <option value="health">health</option>
-                  <option value="beauty">beauty</option>
-                  <option value="sports">sports</option>
-                  <option value="automotive">automotive</option>
-                  <option value="home">home</option>
-                  <option value="books">books</option>
-                </select>
-                <span v-if="formErrors.category" class="error-message">{{ formErrors.category }}</span>
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Category*</label>
+                <div class="relative group">
+                  <i class="fas fa-tags absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <select v-model="newSupplier.category" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer" @change="validateField('category')">
+                    <option value="electronics">electronics</option>
+                    <option value="clothing">clothing</option>
+                    <option value="food">food</option>
+                    <option value="furniture">furniture</option>
+                    <option value="health">health</option>
+                    <option value="beauty">beauty</option>
+                    <option value="sports">sports</option>
+                    <option value="automotive">automotive</option>
+                    <option value="home">home</option>
+                    <option value="books">books</option>
+                  </select>
+                </div>
+                <span v-if="formErrors.category" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.category }}</span>
               </div>
-              <div class="form-group">
-                <label>
-                  <i class="fas fa-map-marker-alt"></i>
-                  Location*
-                </label>
-                <input 
-                  v-model="newSupplier.location" 
-                  required
-                  placeholder="Full address"
-                  class="form-input"
-                  @input="validateField('location')"
-                >
-                <span v-if="formErrors.location" class="error-message">{{ formErrors.location }}</span>
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Location*</label>
+                <div class="relative group">
+                  <i class="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                  <input v-model="newSupplier.location" required placeholder="Full address" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" @input="validateField('location')">
+                </div>
+                <span v-if="formErrors.location" class="text-[10px] text-red-500 font-bold ml-1">{{ formErrors.location }}</span>
               </div>
-              
-              <div class="form-actions">
-                <button type="button" @click="showAddModal = false" class="btn-cancel">
-                  <i class="fas fa-times"></i>
-                  Cancel
-                </button>
-                <button type="submit" :disabled="isSubmitting || hasFormErrors" class="btn-submit">
-                  <i class="fas fa-save"></i>
-                  {{ isSubmitting ? 'Saving...' : 'Save' }}
-                </button>
-              </div>
-            </form>
-          </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" @click="showAddModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" form="addSupplierForm" :disabled="isSubmitting || hasFormErrors" class="flex-1 btn-gold">
+            {{ isSubmitting ? 'Saving...' : 'Save' }}
+          </button>
         </div>
       </div>
-    </transition>
+    </div>
 
     <!-- Add/Edit Product Modal -->
-    <transition name="modal">
-      <div v-if="showProductModal" class="modal-overlay z-[2000]" @click.self="showProductModal = false">
-        <div class="modal-content !max-w-md">
-          <div class="modal-header">
-            <div class="modal-title">
-              <i class="fas fa-box-open"></i>
-              <h2>{{ isEditingProduct ? 'Edit Product' : 'Add Product' }}</h2>
+    <div v-if="showProductModal" class="modal-overlay" @click.self="showProductModal = false">
+      <div class="modal-content !max-w-md">
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-box text-premium-gold"></i>
             </div>
-            <button @click="showProductModal = false" class="close-btn">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="handleProductSubmit" class="add-product-form">
-              <div class="form-group">
-                <label>
-                  <i class="fas fa-tag"></i>
-                  Product*
-                </label>
-                <select 
-                  v-model="selectedProductId" 
-                  required
-                  class="form-select"
-                  :disabled="isEditingProduct"
-                  @change="onProductSelect"
-                >
-                  <option value="" disabled selected>Select a product</option>
-                  <option 
-                    v-for="product in availableProducts" 
-                    :key="product._id" 
-                    :value="product._id"
-                  >
-                    {{ product.name }} 
-                  </option>
-                </select>
-                <span v-if="formErrors.productName" class="error-message">{{ formErrors.productName }}</span>
+            {{ isEditingProduct ? 'Edit Product' : 'Add Product' }}
+          </h2>
+          <button @click="showProductModal = false" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="handleProductSubmit" id="productForm" class="space-y-6">
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Product Name*</label>
+              <div class="relative group">
+                <i class="fas fa-box absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <input v-model="currentProduct.name" required placeholder="Enter product name" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
               </div>
-              <div class="form-group">
-                <label>
-                  <i class="fas fa-cubes"></i>
-                  Quantity*
-                </label>
-                <input 
-                  type="number" 
-                  v-model.number="currentProduct.quantity" 
-                  required
-                  min="1"
-                  placeholder="Enter quantity"
-                  class="form-input"
-                  @input="validateProductField('quantity')"
-                >
-                <span v-if="formErrors.quantity" class="error-message">{{ formErrors.quantity }}</span>
+            </div>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Quantity*</label>
+              <div class="relative group">
+                <i class="fas fa-cubes absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors"></i>
+                <input v-model.number="currentProduct.quantity" type="number" required min="1" placeholder="Enter quantity" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
               </div>
-              <div class="form-actions">
-                <button type="button" @click="showProductModal = false" class="btn-cancel">
-                  <i class="fas fa-times"></i>
-                  Cancel
-                </button>
-                <button type="submit" :disabled="isSubmitting || hasFormErrors" class="btn-submit">
-                  <i class="fas fa-save"></i>
-                  {{ isSubmitting ? 'Saving...' : 'Save' }}
-                </button>
-              </div>
-            </form>
-          </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" @click="showProductModal = false" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" form="productForm" class="flex-1 btn-gold">
+            {{ isEditingProduct ? 'Update' : 'Add' }}
+          </button>
         </div>
       </div>
-    </transition>
+    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -1621,155 +1567,11 @@ onMounted(() => {
   cursor: pointer;
 }
 
-/* Modal style overrides removed to use global index.css rules */
+/* Local modal styles removed — using global index.css rules */
 .modal-overlay {
-  @apply cursor-pointer;
+  cursor: pointer;
 }
-
 .modal-content {
-  @apply cursor-default;
+  cursor: default;
 }
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.modal-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #0f172a;
-}
-
-.modal-title h2 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #64748b;
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.add-supplier-form, .add-product-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.form-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #334155;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.form-input {
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  color: #1e293b;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus {
-  border-color: #3b82f6;
-  outline: none;
-}
-
-.form-input:invalid {
-  border-color: #dc2626;
-}
-
-.error-message {
-  color: #dc2626;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.btn-cancel {
-  padding: 0.75rem 1.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: white;
-  color: #334155;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s;
-}
-
-.btn-cancel:hover {
-  background-color: #f1f5f9;
-}
-
-.btn-submit {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: #1A1F2C; /* Premium Midnight */
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s;
-}
-
-.btn-submit:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.btn-submit:disabled {
-  background-color: #94a3b8;
-  cursor: not-allowed;
-}
-
-.modal-enter-active, .modal-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-enter-from, .modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-active .modal-content,
-.modal-leave-active .modal-content {
-  transition: transform 0.3s ease;
-}
-
-.modal-enter-from .modal-content,
-.modal-leave-to .modal-content {
-  transform: scale(0.95);
-}
-</style>
-```
+</style>

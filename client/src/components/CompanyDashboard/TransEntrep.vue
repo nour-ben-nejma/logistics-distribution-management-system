@@ -184,22 +184,25 @@
       </div>
     </div>
 
+    <Teleport to="body">
     <!-- Add/Edit Modal -->
-    <div v-if="showTransporterModal" class="modal-overlay z-[100]">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
-      <div class="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-modal-in">
-        <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div>
-            <h2 class="text-2xl font-display font-black text-premium-midnight">{{ isEditing ? 'Modifier' : 'Ajouter' }} un Transporteur</h2>
-            <p class="text-slate-500 text-xs font-medium mt-1">Remplissez les informations professionnelles du chauffeur.</p>
-          </div>
-          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center text-slate-400 transition-all shadow-sm">
+    <div v-if="showTransporterModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-content !max-w-2xl">
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <Users class="w-5 h-5 text-premium-gold" />
+            </div>
+            {{ isEditing ? 'Modifier' : 'Ajouter' }} un Transporteur
+          </h2>
+          <button @click="closeModals" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
             <X class="w-5 h-5" />
           </button>
         </div>
         
-        <div class="flex-grow overflow-y-auto p-8">
-          <form @submit.prevent="handleSubmit" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="modal-body">
+          <form @submit.prevent="handleSubmit" id="transporterForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Profile Photo Upload -->
             <div class="md:col-span-2 flex flex-col items-center py-6 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
               <div v-if="previewImage" class="relative group">
@@ -220,71 +223,90 @@
               <p class="text-[9px] text-slate-400 mt-2 font-medium">JPG, PNG ou WEBP (Max. 5MB)</p>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Prénom</label>
-              <input v-model="transporterForm.firstName" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Prénom</label>
+              <div class="relative group">
+                <User class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="transporterForm.firstName" type="text" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
               <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.firstName">{{ formErrors.firstName }}</span>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Nom</label>
-              <input v-model="transporterForm.lastName" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom</label>
+              <div class="relative group">
+                <User class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="transporterForm.lastName" type="text" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
               <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.lastName">{{ formErrors.lastName }}</span>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Email</label>
-              <input v-model="transporterForm.email" type="email" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Email</label>
+              <div class="relative group">
+                <Search class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="transporterForm.email" type="email" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
               <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.email">{{ formErrors.email }}</span>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{{ isEditing ? 'Nouveau Mot de passe (optionnel)' : 'Mot de passe' }}</label>
-              <input v-model="transporterForm.password" type="password" :required="!isEditing" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">{{ isEditing ? 'Nouveau Mot de passe' : 'Mot de passe' }}</label>
+              <div class="relative group">
+                <ShieldCheck class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="transporterForm.password" type="password" :required="!isEditing" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
               <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.password">{{ formErrors.password }}</span>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Téléphone</label>
-              <input v-model="transporterForm.phoneNumber" type="tel" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Téléphone</label>
+              <div class="relative group">
+                <Phone class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="transporterForm.phoneNumber" type="tel" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
               <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.phoneNumber">{{ formErrors.phoneNumber }}</span>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">CIN</label>
-              <input v-model="transporterForm.CIN" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
-              <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.CIN">{{ formErrors.CIN }}</span>
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Type de Permis</label>
-              <select v-model="transporterForm.typeDrivingLicence" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
-                <option value="" disabled>Sélectionnez un permis...</option>
-                <option v-for="type in ['A1', 'A', 'B', 'B+E', 'C', 'C+E', 'D', 'D1', 'D+E', 'H']" :key="type" :value="type">{{ type }}</option>
-              </select>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Type de Permis</label>
+              <div class="relative group">
+                <IdCard class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <select v-model="transporterForm.typeDrivingLicence" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option value="" disabled>Sélectionnez un permis...</option>
+                  <option v-for="type in ['A1', 'A', 'B', 'B+E', 'C', 'C+E', 'D', 'D1', 'D+E', 'H']" :key="type" :value="type">{{ type }}</option>
+                </select>
+              </div>
               <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.typeDrivingLicence">{{ formErrors.typeDrivingLicence }}</span>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Statut</label>
-              <select v-model="transporterForm.status" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
-                <option value="Available">Disponible</option>
-                <option value="On mission">En mission</option>
-                <option value="On leave">En congé</option>
-              </select>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Statut</label>
+              <div class="relative group">
+                <Truck class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <select v-model="transporterForm.status" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option value="Available">Disponible</option>
+                  <option value="On mission">En mission</option>
+                  <option value="On leave">En congé</option>
+                </select>
+              </div>
               <span class="text-[9px] text-red-500 font-bold ml-1" v-if="formErrors.status">{{ formErrors.status }}</span>
             </div>
-
-            <div class="md:col-span-2 flex gap-4 pt-6 border-t border-slate-100">
-              <button type="button" @click="closeModals" class="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Annuler</button>
-              <button type="submit" :disabled="isSubmitting" class="btn-gold flex-[2] py-4 !text-xs font-black uppercase tracking-widest shadow-xl shadow-premium-gold/20">
-                {{ isSubmitting ? 'Traitement...' : (isEditing ? 'Mettre à jour' : 'Ajouter le chauffeur') }}
-              </button>
             </div>
           </form>
         </div>
+        
+        <div class="modal-footer">
+          <button type="button" @click="closeModals" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+            Annuler
+          </button>
+          <button type="submit" form="transporterForm" :disabled="isSubmitting" class="flex-1 btn-gold">
+            {{ isSubmitting ? 'Traitement...' : (isEditing ? 'Mettre à jour' : 'Ajouter le chauffeur') }}
+          </button>
+        </div>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 

@@ -172,6 +172,85 @@
         </div>
       </div>
     </div>
+
+    <!-- Truck Form Modal -->
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content !max-w-lg">
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <Pencil v-if="isEditing" class="w-5 h-5 text-premium-gold" />
+              <Plus v-else class="w-5 h-5 text-premium-gold" />
+            </div>
+            {{ isEditing ? 'Modifier le Véhicule' : 'Nouveau Véhicule' }}
+          </h2>
+          <button @click="closeModal" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <form @submit.prevent="submitForm" id="truckForm" class="space-y-6">
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom du Véhicule *</label>
+              <div class="relative group">
+                <Truck class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="truckForm.vehicle" type="text" required placeholder="Ex: Camion Renault" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Type de Véhicule *</label>
+              <div class="relative group">
+                <Box class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <select v-model="truckForm.type" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option value="" disabled>Sélectionner un type</option>
+                  <option v-for="type in truckTypes" :key="type" :value="type">
+                    {{ type }}
+                  </option>
+                </select>
+                <ChevronDown class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Capacité (kg) *</label>
+              <div class="relative group">
+                <Weight class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model.number="truckForm.capacity" type="number" min="500" max="20000" required placeholder="Ex: 5000" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Statut *</label>
+              <div class="relative group">
+                <CheckCircle class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <select v-model="truckForm.status" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option value="" disabled>Sélectionner un statut</option>
+                  <option v-for="status in statusOptions" :key="status" :value="status">
+                    {{ status }}
+                  </option>
+                </select>
+                <ChevronDown class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" @click="closeModal" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+            Annuler
+          </button>
+          <button type="submit" form="truckForm" :disabled="isSubmitting" class="flex-1 btn-gold">
+            <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin mr-2 inline" />
+            {{ isEditing ? 'Mettre à jour' : 'Ajouter le véhicule' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -181,7 +260,7 @@ import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
 import { 
   Truck, Plus, Search, RotateCcw, CheckCircle, Wrench, 
-  ArrowRightLeft, Pencil, Trash2, ChevronLeft, ChevronRight 
+  ArrowRightLeft, Pencil, Trash2, ChevronLeft, ChevronRight, X, ChevronDown, Box, Weight, Loader2
 } from 'lucide-vue-next'
 
 interface Truck {
@@ -205,6 +284,16 @@ const minFuel = ref<number | null>(null)
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
 const isSubmitting = ref(false)
+
+const showModal = ref(false)
+const isEditing = ref(false)
+const truckForm = ref({
+  _id: '',
+  vehicle: '',
+  type: '',
+  capacity: null as number | null,
+  status: ''
+})
 
 const api = axios.create({
   baseURL: 'http://localhost:3000/api'
@@ -336,195 +425,90 @@ const loadData = async () => {
   }
 }
 
-const handleAddTruck = async () => {
+const closeModal = () => {
+  showModal.value = false;
+  setTimeout(() => {
+    truckForm.value = {
+      _id: '',
+      vehicle: '',
+      type: '',
+      capacity: null,
+      status: ''
+    };
+    isEditing.value = false;
+  }, 200);
+}
+
+const handleAddTruck = () => {
+  truckForm.value = {
+    _id: '',
+    vehicle: '',
+    type: '',
+    capacity: null,
+    status: 'available'
+  };
+  isEditing.value = false;
+  showModal.value = true;
+};
+
+const handleEditTruck = (truck: Truck) => {
+  truckForm.value = { 
+    _id: truck._id,
+    vehicle: truck.vehicle,
+    type: truck.type,
+    capacity: truck.capacity,
+    status: truck.status
+  };
+  isEditing.value = true;
+  showModal.value = true;
+};
+
+const submitForm = async () => {
   try {
     isSubmitting.value = true;
-    
     const token = localStorage.getItem('accessToken');
     if (!token) throw new Error('Authentication required');
-
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
     const { data: userData } = await api.get('/users/meCompany');
     const companyId = userData.companyId;
     if (!companyId) throw new Error('Company not found');
 
-    const { value: formValues } = await Swal.fire({
-      title: 'Add New Vehicle',
-      html: `
-        <div class="custom-form">
-          <div class="form-group">
-            <label for="swal-vehicle">Vehicle Name *</label>
-            <input id="swal-vehicle" class="swal2-input" placeholder="Enter vehicle name" required>
-          </div>
-          <div class="form-group">
-            <label for="swal-type">Vehicle Type *</label>
-            <select id="swal-type" class="swal2-select" required>
-              <option value="">Select a type</option>
-              ${truckTypes.value.map(type => 
-                `<option value="${type}">${type}</option>`
-              ).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="swal-capacity">Capacity (kg) *</label>
-            <input id="swal-capacity" type="number" class="swal2-input" 
-                   placeholder="Enter capacity (500-20000)" 
-                   min="500" max="20000" required>
-          </div>
-          <div class="form-group">
-            <label for="swal-status">Initial Status *</label>
-            <select id="swal-status" class="swal2-select" required>
-              ${statusOptions.value.map(status => 
-                `<option value="${status}">${status}</option>`
-              ).join('')}
-            </select>
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Add Vehicle',
-      cancelButtonText: 'Cancel',
-      focusConfirm: false,
-      preConfirm: () => {
-        const vehicle = (document.getElementById('swal-vehicle') as HTMLInputElement)?.value.trim();
-        const type = (document.getElementById('swal-type') as HTMLSelectElement)?.value;
-        const capacity = Number((document.getElementById('swal-capacity') as HTMLInputElement)?.value);
-        const status = (document.getElementById('swal-status') as HTMLSelectElement)?.value;
-
-        if (!vehicle) {
-          Swal.showValidationMessage('Vehicle name is required');
-          return false;
-        }
-        if (!type) {
-          Swal.showValidationMessage('Vehicle type is required');
-          return false;
-        }
-        if (!capacity || isNaN(capacity) || capacity < 500 || capacity > 20000) {
-          Swal.showValidationMessage('Please enter a valid capacity between 500 and 20000 kg');
-          return false;
-        }
-        if (!status) {
-          Swal.showValidationMessage('Status is required');
-          return false;
-        }
-
-        return { vehicle, type, capacity, status };
+    if (isEditing.value) {
+      const response = await api.put(`/trucks/updateTruck/${truckForm.value._id}`, truckForm.value);
+      if (response.data.success) {
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Véhicule mis à jour avec succès',
+          icon: 'success'
+        });
+        closeModal();
+        await loadData();
       }
-    });
-
-    if (!formValues) return;
-
-    const response = await api.post('/trucks/addTruck', {
-      vehicle: formValues.vehicle,
-      type: formValues.type,
-      capacity: formValues.capacity,
-      status: formValues.status,
-      company_id: companyId
-    });
-
-    if (response.data.success) {
-      await Swal.fire({
-        title: 'Success!',
-        text: 'Vehicle added successfully',
-        icon: 'success'
-      });
-      await loadData();
     } else {
-      throw new Error(response.data.message || 'Failed to add vehicle');
+      const response = await api.post('/trucks/addTruck', {
+        ...truckForm.value,
+        company_id: companyId
+      });
+      if (response.data.success) {
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Véhicule ajouté avec succès',
+          icon: 'success'
+        });
+        closeModal();
+        await loadData();
+      }
     }
-  } catch (err: any) {
-    console.error('Add vehicle error:', err);
+  } catch (error) {
+    console.error("Truck submit error:", error);
     await Swal.fire({
-      title: 'Error',
-      text: err.response?.data?.message || 
-           err.message || 
-           'An error occurred while adding the vehicle',
+      title: 'Erreur',
+      text: (error as any)?.response?.data?.message || (error as Error)?.message || 'Une erreur est survenue',
       icon: 'error'
     });
   } finally {
     isSubmitting.value = false;
-  }
-};
-
-const handleEditTruck = async (truck: Truck) => {
-  try {
-    const token = localStorage.getItem('accessToken');
-    if (!token) throw new Error('Authentication required');
-    
-    api.defaults.headers.common.Authorization = `Bearer ${token}`;
-
-    const { value: formValues } = await Swal.fire({
-      title: 'Edit Vehicle',
-      html: `
-        <div class="custom-form">
-          <div class="form-group">
-            <label>Vehicle Name *</label>
-            <input id="swal-vehicle" class="swal2-input" 
-                   value="${truck.vehicle}" required>
-          </div>
-          <div class="form-group">
-            <label>Type *</label>
-            <select id="swal-type" class="swal2-select" required>
-              ${truckTypes.value.map(type => 
-                `<option value="${type}" ${truck.type.trim() === type.trim() ? 'selected' : ''}>
-                  ${type}
-                </option>`
-              ).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Capacity (kg) *</label>
-            <input id="swal-capacity" type="number" class="swal2-input" 
-                   value="${truck.capacity}" min="500" max="20000" required>
-          </div>
-          <div class="form-group">
-            <label>Status *</label>
-            <select id="swal-status" class="swal2-select" required>
-              ${statusOptions.value.map(status => 
-                `<option value="${status}" ${truck.status === status ? 'selected' : ''}>
-                  ${status}
-                </option>`
-              ).join('')}
-            </select>
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Save Changes',
-      preConfirm: () => {
-        const vehicle = (document.getElementById('swal-vehicle') as HTMLInputElement)?.value.trim();
-        const type = (document.getElementById('swal-type') as HTMLSelectElement)?.value;
-        const capacity = Number((document.getElementById('swal-capacity') as HTMLInputElement)?.value);
-        const status = (document.getElementById('swal-status') as HTMLSelectElement)?.value;
-
-        if (!vehicle || !type || !status) {
-          Swal.showValidationMessage('All fields are required');
-          return false;
-        }
-        if (isNaN(capacity)) {
-          Swal.showValidationMessage('Capacity must be a number');
-          return false;
-        }
-
-        return { vehicle, type, capacity, status };
-      }
-    });
-
-    if (formValues) {
-      const response = await api.put(`/trucks/updateTruck/${truck._id}`, formValues);
-      
-      if (response.data.success) {
-        await Swal.fire('Success!', 'Vehicle updated successfully', 'success');
-        await loadData();
-      }
-    }
-  } catch (err: any) {
-    await Swal.fire({
-      title: 'Error',
-      text: err.response?.data?.message || err.message,
-      icon: 'error'
-    });
   }
 };
 
@@ -619,20 +603,6 @@ onMounted(loadData)
 </script>
 
 <style>
-/* SweetAlert Custom Styles */
-.swal2-input, .swal2-select {
-  width: 100% !important;
-  padding: 0.75rem !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 0.75rem !important;
-  font-size: 0.875rem !important;
-  margin: 0.5rem 0 !important;
-  box-shadow: none !important;
-}
-.swal2-input:focus, .swal2-select:focus {
-  border-color: #D4AF37 !important;
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
-}
 .custom-confirm-button-delete {
   background-color: #dc2626 !important;
   color: white !important;

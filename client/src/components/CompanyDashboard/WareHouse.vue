@@ -245,27 +245,30 @@
       <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Chargement des données...</p>
     </div>
 
+
+    <Teleport to="body">
     <!-- External Warehouse Modal (Rental) -->
-    <div v-if="showExternalWarehouseModal" class="modal-overlay z-[100]">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
-      <div class="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-modal-in">
-        <div class="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div>
-            <h2 class="text-2xl font-display font-black text-premium-midnight">Entrepôts Externes Disponibles</h2>
-            <p class="text-slate-500 text-xs font-medium mt-1">Choisissez une capacité à louer auprès de nos partenaires.</p>
-          </div>
-          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center text-slate-400 transition-all shadow-sm">
+    <div v-if="showExternalWarehouseModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-content !max-w-4xl">
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <Handshake class="w-5 h-5 text-premium-gold" />
+            </div>
+            Entrepôts Externes Disponibles
+          </h2>
+          <button @click="closeModals" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
             <X class="w-5 h-5" />
           </button>
         </div>
         
-        <div class="flex-grow overflow-y-auto p-8">
+        <div class="modal-body">
           <div v-if="externalLoading" class="py-20 flex flex-col items-center gap-4">
             <div class="w-10 h-10 border-4 border-premium-gold/20 border-t-premium-gold rounded-full animate-spin"></div>
             <span class="text-xs font-black text-slate-300 uppercase tracking-[0.2em]">Chargement des offres...</span>
           </div>
           
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
             <div v-for="warehouse in externalWarehouses" :key="warehouse._id" class="p-6 rounded-3xl border border-slate-100 bg-slate-50/30 hover:border-premium-gold/30 transition-all group">
               <div class="flex items-start justify-between mb-6">
                 <div class="flex items-center gap-3">
@@ -337,91 +340,119 @@
     </div>
 
     <!-- Add/Edit Warehouse Modal -->
-    <div v-if="showWarehouseModal" class="modal-overlay z-[100]">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
-      <div class="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-modal-in">
-        <div class="p-8 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="text-2xl font-display font-black text-premium-midnight">{{ isEditing ? 'Modifier' : 'Ajouter' }} un Entrepôt</h3>
-          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-all">
+    <div v-if="showWarehouseModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-content !max-w-2xl">
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <WarehouseIcon class="w-5 h-5 text-premium-gold" />
+            </div>
+            {{ isEditing ? 'Modifier' : 'Ajouter' }} un Entrepôt
+          </h2>
+          <button @click="closeModals" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
             <X class="w-5 h-5" />
           </button>
         </div>
-        <div class="p-8">
-          <form @submit.prevent="handleSubmit" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="space-y-2">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Nom</label>
-                <input v-model="warehouseForm.name" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+        <div class="modal-body">
+          <form @submit.prevent="handleSubmit" id="warehouseForm" class="space-y-6">
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nom</label>
+              <div class="relative group">
+                <WarehouseIcon class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="warehouseForm.name" type="text" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
               </div>
-              <div class="space-y-2">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Localisation</label>
-                <input v-model="warehouseForm.location" type="text" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+            </div>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Localisation</label>
+              <div class="relative group">
+                <MapPin class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model="warehouseForm.location" type="text" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
               </div>
-              <div class="space-y-2">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Type de Stockage</label>
-                <select v-model="warehouseForm.storage_type" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+            </div>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Type de Stockage</label>
+              <div class="relative group">
+                <Box class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <select v-model="warehouseForm.storage_type" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
                   <option value="ambient">Ambiant</option>
                   <option value="freezer">Congélateur</option>
                   <option value="refrigerated">Réfrigéré</option>
                   <option value="controlled">Contrôlé</option>
                 </select>
               </div>
-              <div class="space-y-2">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Capacité (Unités)</label>
-                <input v-model.number="warehouseForm.capacity" type="number" required min="1" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all" />
+            </div>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Capacité (Unités)</label>
+              <div class="relative group">
+                <PackageOpen class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input v-model.number="warehouseForm.capacity" type="number" required min="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all" />
               </div>
-              <div class="space-y-2">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Statut</label>
-                <select v-model="warehouseForm.status" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
+            </div>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Statut</label>
+              <div class="relative group">
+                <ShieldCheck class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <select v-model="warehouseForm.status" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
                   <option value="available">Disponible</option>
                   <option value="occupied">Occupé</option>
                   <option value="maintenance">Maintenance</option>
                 </select>
               </div>
             </div>
-            <div class="flex gap-4 pt-4">
-              <button type="button" @click="closeModals" class="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Annuler</button>
-              <button type="submit" :disabled="isSubmitting" class="btn-gold flex-1 py-4 !text-xs font-black uppercase tracking-widest shadow-xl shadow-premium-gold/20">
-                {{ isEditing ? 'Mettre à jour' : 'Ajouter l\'entrepôt' }}
-              </button>
-            </div>
           </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" @click="closeModals" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Annuler</button>
+          <button type="submit" form="warehouseForm" :disabled="isSubmitting" class="flex-1 btn-gold">
+            {{ isEditing ? 'Mettre à jour' : 'Ajouter l\'entrepôt' }}
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Product Modal -->
-    <div v-if="showProductModal" class="modal-overlay z-[100]">
-      <div class="absolute inset-0 bg-premium-midnight/40 backdrop-blur-sm cursor-pointer" @click="closeModals"></div>
-      <div class="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-modal-in">
-        <div class="p-8 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="text-2xl font-display font-black text-premium-midnight">Ajouter un Produit</h3>
-          <button @click="closeModals" class="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-all">
+    <div v-if="showProductModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-content !max-w-lg">
+        <div class="modal-header">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <Box class="w-5 h-5 text-premium-gold" />
+            </div>
+            Ajouter un Produit
+          </h2>
+          <button @click="closeModals" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
             <X class="w-5 h-5" />
           </button>
         </div>
-        <div class="p-8">
-          <form @submit.prevent="handleProductSubmit" class="space-y-6">
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Sélectionner le produit</label>
-              <select v-model="productForm.productId" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
-                <option value="" disabled>Choisir un produit...</option>
-                <option v-for="product in availableProducts" :key="product._id" :value="product._id">{{ product.name }} ({{ product.category }})</option>
-              </select>
+        <div class="modal-body">
+          <form @submit.prevent="handleProductSubmit" id="productForm" class="space-y-6">
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Sélectionner le produit</label>
+              <div class="relative group">
+                <Box class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <select v-model="productForm.productId" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-10 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all appearance-none cursor-pointer">
+                  <option value="" disabled>Choisir un produit...</option>
+                  <option v-for="product in availableProducts" :key="product._id" :value="product._id">{{ product.name }} ({{ product.category }})</option>
+                </select>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Quantité</label>
-              <input type="number" v-model.number="productForm.quantity" required min="1" :max="maxQuantityForWarehouse" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-premium-midnight focus:outline-none focus:ring-4 focus:ring-premium-gold/5 focus:border-premium-gold/30 transition-all">
-              <p class="text-[10px] font-medium text-slate-400 ml-1">Capacité disponible : {{ maxQuantityForWarehouse }} unités</p>
-            </div>
-            <div class="flex gap-4 pt-4">
-              <button type="button" @click="closeModals" class="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Annuler</button>
-              <button type="submit" :disabled="isSubmitting || maxQuantityForWarehouse <= 0" class="btn-gold flex-1 py-4 !text-xs font-black uppercase tracking-widest shadow-xl shadow-premium-gold/20">Confirmer l'ajout</button>
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Quantité</label>
+              <div class="relative group">
+                <PackageOpen class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-premium-gold transition-colors" />
+                <input type="number" v-model.number="productForm.quantity" required min="1" :max="maxQuantityForWarehouse" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-premium-midnight focus:outline-none focus:ring-2 focus:ring-premium-gold/20 focus:border-premium-gold transition-all">
+              </div>
+              <p class="text-[10px] font-medium text-slate-400 ml-1 mt-1">Capacité disponible : {{ maxQuantityForWarehouse }} unités</p>
             </div>
           </form>
         </div>
+        <div class="modal-footer">
+          <button type="button" @click="closeModals" class="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Annuler</button>
+          <button type="submit" form="productForm" :disabled="isSubmitting || maxQuantityForWarehouse <= 0" class="flex-1 btn-gold">Confirmer l'ajout</button>
+        </div>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 

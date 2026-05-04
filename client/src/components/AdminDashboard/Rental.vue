@@ -400,48 +400,58 @@ onMounted(() => {
     </div>
 
     <!-- Details Modal -->
-    <div v-if="showDetailsModal" class="modal" @click.self="closeModal">
-      <div class="modal-content">
+    <div v-if="showDetailsModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content !max-w-2xl">
         <div class="modal-header">
-          <h2>Request Details</h2>
-          <button @click="closeModal" class="btn-close">
+          <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
+              <i class="fas fa-info-circle text-premium-gold"></i>
+            </div>
+            Request Details
+          </h2>
+          <button @click="closeModal" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-premium-midnight transition-colors">
             <i class="fas fa-times"></i>
           </button>
         </div>
         <div class="modal-body" v-if="selectedRequest">
-          <div class="detail-grid">
-            
-            <div class="detail-item">
-              <span class="detail-label">Status</span>
+          <div class="space-y-8">
+            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</span>
               <span class="status-badge" :class="selectedRequest.status">
                 {{ selectedRequest.status }}
-              >
               </span>
             </div>
             
-            <div class="detail-item">
-              <span class="detail-label">Company</span>
-              <span class="detail-value">{{ selectedRequest.company_id?.companyName }}</span>
+            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Company</span>
+              <span class="text-sm font-bold text-premium-midnight">{{ selectedRequest.company_id?.companyName }}</span>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Warehouse</span>
-              <span class="detail-value">{{ selectedRequest.warehouse_id?.name }}</span>
+            
+            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Warehouse</span>
+              <span class="text-sm font-bold text-premium-midnight">{{ selectedRequest.warehouse_id?.name }}</span>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Capacity</span>
-              <span class="detail-value">
+            
+            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capacity</span>
+              <span class="text-sm font-bold text-premium-midnight">
                 {{ selectedRequest.requested_capacity }} / {{ selectedRequest.warehouse_id?.capacity || 'N/A' }} units
               </span>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Period</span>
-              <span class="detail-value">
+            
+            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Period</span>
+              <span class="text-sm font-bold text-premium-midnight">
                 {{ formatDate(selectedRequest.start_date) }} - {{ formatDate(selectedRequest.end_date) }}
                 ({{ calculateRentalDays(selectedRequest) }} days)
               </span>
             </div>
-           
           </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closeModal" class="px-8 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold hover:bg-slate-200 transition-all w-full">
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -707,96 +717,5 @@ onMounted(() => {
   margin-top: 1.5rem;
 }
 
-/* Modal */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: #ffffff; /* White background */
-  border-radius: 0.5rem;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  padding: 1rem;
-  border-bottom: 1px solid #e5e7eb; /* Light gray for borders */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  color: #6b7280; /* Lighter gray for secondary text */
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.detail-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb; /* Light gray for borders */
-}
-
-.detail-label {
-  font-weight: 500;
-  color: #6b7280; /* Lighter gray for secondary text */
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filter-controls {
-    flex-direction: column;
-  }
-
-  .data-table {
-    display: block;
-    overflow-x: auto;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-  }
-
-  .modal-content {
-    width: 95%;
-    margin: 1rem;
-  }
-}
+/* Modal styles removed to use global index.css rules */
 </style>

@@ -2145,10 +2145,8 @@ watch(
     </div>
 
     <!-- Contract Modal -->
-    <div v-if="showModal" class="modal-overlay z-50">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="closeModal"></div>
-
-      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content !max-w-4xl">
         <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
@@ -2447,11 +2445,9 @@ watch(
     </div>
 
     <!-- Contract Details Modal -->
-    <div v-if="showContractDetails && detailedContract" class="modal-overlay z-50 fixed inset-0 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showContractDetails = false"></div>
-
-      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
-        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div v-if="showContractDetails && detailedContract" class="modal-overlay" @click.self="showContractDetails = false">
+      <div class="modal-content !max-w-2xl">
+        <div class="modal-header">
           <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
               <i class="fas fa-info-circle text-premium-gold"></i>
@@ -2463,7 +2459,7 @@ watch(
           </button>
         </div>
 
-        <div class="p-8 space-y-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
+        <div class="modal-body">
           <div class="grid grid-cols-2 gap-6">
             <div class="space-y-1">
               <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nom du Contrat</p>
@@ -2529,7 +2525,7 @@ watch(
           </div>
         </div>
 
-        <div class="px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+        <div class="modal-footer">
           <button @click="showContractDetails = false" class="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-500 hover:bg-white transition-all">
             Fermer
           </button>
@@ -2541,11 +2537,9 @@ watch(
     </div>
 
     <!-- Transporter Config Modal -->
-    <div v-if="showTransporterConfig" class="modal-overlay z-50">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showTransporterConfig = false"></div>
-
-      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
-        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div v-if="showTransporterConfig" class="modal-overlay" @click.self="showTransporterConfig = false">
+      <div class="modal-content !max-w-lg">
+        <div class="modal-header">
           <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
               <i class="fas fa-truck-loading text-premium-gold"></i>
@@ -2557,7 +2551,7 @@ watch(
           </button>
         </div>
 
-        <div class="p-8 space-y-6">
+        <div class="modal-body">
           <p class="text-xs font-medium text-slate-500 leading-relaxed">
             Définissez les contraintes de travail pour tous les transporteurs lors de la génération automatique du plan.
           </p>
@@ -2579,7 +2573,7 @@ watch(
           </div>
         </div>
 
-        <div class="px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+        <div class="modal-footer">
           <button @click="showTransporterConfig = false" class="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-500 hover:bg-white transition-all">Annuler</button>
           <button @click="confirmTransporterConfig" class="btn-gold px-10 shadow-premium">Générer le Plan</button>
         </div>
@@ -2587,11 +2581,9 @@ watch(
     </div>
 
     <!-- Distribution Plan Modal -->
-    <div v-if="showDistributionPlan" class="modal-overlay z-50">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showDistributionPlan = false"></div>
-
-      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
-        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div v-if="showDistributionPlan" class="modal-overlay" @click.self="showDistributionPlan = false">
+      <div class="modal-content !max-w-6xl !max-h-[95vh] flex flex-col">
+        <div class="modal-header shrink-0">
           <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
               <i class="fas fa-route text-premium-gold"></i>
@@ -2607,7 +2599,7 @@ watch(
           </div>
         </div>
 
-        <div class="overflow-y-auto p-8 custom-scrollbar flex-1">
+        <div class="modal-body !p-8 flex-1 overflow-y-auto">
           <div v-if="optimizingRoute" class="flex flex-col items-center justify-center py-20 text-premium-gold">
             <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
             <span class="text-sm font-bold uppercase tracking-[0.2em] animate-pulse">Calcul de l'itinéraire optimal...</span>
@@ -2742,7 +2734,7 @@ watch(
           </div>
         </div>
 
-        <div class="px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+        <div class="modal-footer shrink-0">
           <button class="btn-outline px-6" @click="downloadPDF" :disabled="!distributionPlan.length">
             <i class="fas fa-file-pdf mr-2"></i> Export PDF
           </button>
@@ -2757,11 +2749,9 @@ watch(
     </div>
 
     <!-- Resource Management Modal -->
-    <div v-if="showResourceManagement" class="modal-overlay z-50">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-sm cursor-pointer" @click="showResourceManagement = false"></div>
-
-      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300">
-        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div v-if="showResourceManagement" class="modal-overlay" @click.self="showResourceManagement = false">
+      <div class="modal-content !max-w-5xl">
+        <div class="modal-header">
           <h2 class="text-xl font-display font-bold text-premium-midnight flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-premium-gold/10 flex items-center justify-center">
               <i class="fas fa-boxes text-premium-gold"></i>
@@ -2773,7 +2763,7 @@ watch(
           </button>
         </div>
 
-        <div class="p-8 space-y-10 overflow-y-auto custom-scrollbar">
+        <div class="modal-body !p-8">
           <div class="space-y-6">
             <div class="flex items-center justify-between">
               <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -2846,17 +2836,15 @@ watch(
           </div>
         </div>
 
-        <div class="px-8 py-6 border-t border-slate-100 flex justify-end bg-slate-50/50">
+        <div class="modal-footer">
           <button @click="showResourceManagement = false" class="px-10 py-3 rounded-xl bg-premium-midnight text-white text-sm font-bold hover:bg-slate-800 transition-all">Fermer</button>
         </div>
       </div>
     </div>
 
     <!-- Confirmation Modal -->
-    <div v-if="showConfirmation" class="modal-overlay z-[60]">
-      <div class="absolute inset-0 bg-premium-midnight/80 backdrop-blur-md cursor-pointer" @click="closeConfirmation"></div>
-
-      <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-10 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-500">
+    <div v-if="showConfirmation" class="modal-overlay z-[60]" @click.self="closeConfirmation">
+      <div class="modal-content !max-w-md p-10 flex flex-col items-center text-center">
         <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-emerald-50/50">
           <i class="fas fa-check text-3xl text-emerald-500"></i>
         </div>
