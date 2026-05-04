@@ -1,11 +1,11 @@
-import DistanceService from '../../services/distanceService.js';
+import DistanceService from '../../services/DistanceSservice.js';
 import Warehouse from '../../models/warehouse.js';
 
 export default {
     async recalculateAll(req, res) {
         try {
             await DistanceService.recalculateAllDistances();
-            res.json({ 
+            res.json({
                 success: true,
                 message: 'Recalcul de toutes les distances terminé',
                 data: {
@@ -26,7 +26,7 @@ export default {
         try {
             const { warehouseId } = req.params;
             const warehouse = await Warehouse.findById(warehouseId);
-            
+
             if (!warehouse) {
                 return res.status(404).json({
                     success: false,
@@ -35,7 +35,7 @@ export default {
             }
 
             const results = await DistanceService.updateDistancesForEntity('warehouse', warehouse);
-            
+
             res.json({
                 success: true,
                 message: 'Distances mises à jour pour cet entrepôt',
