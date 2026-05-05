@@ -32,11 +32,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middlewares
-app.use(express.json({limit: '50mb'}));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true,
+  origin: ['http://localhost:5173', 'https://logistics-distribution-management-system-bxnn-aqq8xm1ug.vercel.app'],
+  credentials: true,
 }));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
@@ -67,8 +67,8 @@ app.use('/api/routes', routess);
 
 // Gestion des erreurs globales
 app.use((err, req, res, next) => {
-    console.error('Erreur globale:', err);
-    res.status(500).json({ error: 'Une erreur interne est survenue' });
+  console.error('Erreur globale:', err);
+  res.status(500).json({ error: 'Une erreur interne est survenue' });
 });
 
 // Démarrage du serveur
@@ -76,29 +76,29 @@ const PORT = process.env.PORT || 3000;
 // app.js
 // app.js
 const startServer = async () => {
+  try {
+    // Attendre que la connexion DB soit établie
+    await connection();
+
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+    });
+
+    // Initialisation asynchrone des services
     try {
-      // Attendre que la connexion DB soit établie
-      await connection(); 
-      
-      const server = app.listen(PORT, () => {
-        console.log(`🚀 Server is running on port ${PORT}`);
-      });
-  
-      // Initialisation asynchrone des services
-      try {
-        await DistanceService.updateAll();
-        console.log('✅ Distance services initialized');
-      } catch (error) {
-        console.error('⚠️ Failed to initialize distance services:', error);
-        // Ne pas crasher le serveur pour cette erreur
-      }
-  
-      return server;
+      await DistanceService.updateAll();
+      console.log('✅ Distance services initialized');
     } catch (error) {
-      console.error("❌ Server startup error:", error);
-      process.exit(1);
+      console.error('⚠️ Failed to initialize distance services:', error);
+      // Ne pas crasher le serveur pour cette erreur
     }
-  };
-  
-  startServer();
+
+    return server;
+  } catch (error) {
+    console.error("❌ Server startup error:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
 export default app;
