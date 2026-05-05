@@ -15,7 +15,7 @@ app.use(cors({
 // Serveur Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // front Vue
+    origin: ['http://localhost:5173', 'https://logistics-distribution-management-system-bxnn-aqq8xm1ug.vercel.app'], // front Vue
     methods: ["GET", "POST"],
     credentials: true,
   },
