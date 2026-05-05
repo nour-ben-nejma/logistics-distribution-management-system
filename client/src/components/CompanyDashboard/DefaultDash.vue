@@ -124,7 +124,7 @@
 import { ref, shallowRef, onMounted, onBeforeUnmount } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import axios from 'axios';
+import api from '../../services/Api';
 import { 
   Store, 
   Warehouse, 
@@ -136,9 +136,6 @@ import {
 } from 'lucide-vue-next';
 
 const activeView = ref('Map');
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-});
 
 const map = shallowRef<any>(null);
 const markers = shallowRef<L.Marker[]>([]);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import api from '../../services/Api'
 import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 
@@ -47,10 +48,7 @@ const newCompany = ref<NewCompany>({
   phoneNumber: ''
 })
 // API Configuration
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  headers: { 'Content-Type': 'application/json' }
-})
+// Local API instance removed in favor of shared service
 
 // Computed properties
 const stats = computed(() => ({
@@ -204,7 +202,7 @@ const fetchCompanies = async () => {
       headers: { Authorization: `Bearer ${token}` }
     })
     companies.value = response.data
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching companies:', error)
     Swal.fire({
       title: 'Error',
@@ -232,7 +230,7 @@ const approveCompany = async (id: string) => {
     })
 
     await fetchCompanies()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error approving company:', error)
     Swal.fire({
       title: 'Error',

@@ -318,7 +318,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
+import api from '../../services/Api';
 import dayjs from 'dayjs';
 import Swal from 'sweetalert2';
 import { Plus, Users, CheckCircle2, Truck, Calendar, Search, Phone, IdCard, Pencil, Trash2, ShieldCheck, User, X } from 'lucide-vue-next';
@@ -350,12 +350,7 @@ const transporterForm = ref({
 });
 
 // API Configuration
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api/users',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+// Local API instance removed in favor of shared service
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('accessToken');
@@ -423,7 +418,7 @@ const resetFilters = () => {
 const fetchTransporters = async () => {
   try {
     loading.value = true;
-    const response = await api.get('/transporters');
+    const response = await api.get('/users/transporters');
     
     if (response.data.success && response.data.data) {
       transporters.value = response.data.data.map((t: any) => ({

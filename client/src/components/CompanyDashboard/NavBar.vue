@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import api from '../../services/Api'
 import { 
   Search, 
   Bell, 
@@ -41,9 +41,7 @@ const fetchCompanyInfo = async () => {
     const token = localStorage.getItem('accessToken')
     if (!token) return
 
-    const response = await axios.get('http://localhost:3000/api/users/me', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const response = await api.get('/users/me')
 
     if (response.data.company) {
       companyInfo.value = {
@@ -63,11 +61,7 @@ const toggleProfileDropdown = (e: Event) => {
 
 const logout = async () => {
   try {
-    await axios.post('http://localhost:3000/api/auth/logout', {}, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-      }
-    })
+    await api.post('/auth/logout')
   } catch (error) {
     console.error('Error during logout:', error)
   } finally {

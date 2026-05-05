@@ -337,6 +337,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
+import api from '../../services/Api';
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
 
@@ -404,9 +405,7 @@ const currentProduct = ref({
 const formErrors = ref<Record<string, string>>({})
 const hasFormErrors = computed(() => Object.values(formErrors.value).some(err => !!err))
 
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api'
-})
+// Local API instance removed in favor of shared service
 
 // Validation functions
 const validateSupplier = (supplier: NewSupplier) => {
@@ -523,6 +522,18 @@ const applyFilters = () => {
   })
   
   currentPage.value = 1
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
 }
 
 // Reset filters

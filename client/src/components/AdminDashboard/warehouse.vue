@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import api from '../../services/Api'
 
 // Types
 interface Warehouse {
@@ -39,10 +40,7 @@ const warehouseForm = ref<Warehouse>({
 })
 
 // API Configuration
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  headers: { 'Content-Type': 'application/json' }
-})
+// Local API instance removed in favor of shared service
 
 // Computed Properties
 const filteredWarehouses = computed(() => {
@@ -148,9 +146,9 @@ const handleSubmit = async () => {
     if (!token) throw new Error('Authentication required')
     
     // Récupération des données utilisateur de manière sécurisée
-    let userData = {}
+    let userData: any = {}
     try {
-      const userDataString = localStorage.getItem('userData')
+      const userDataString = localStorage.getItem('user') || localStorage.getItem('userData')
       userData = userDataString ? JSON.parse(userDataString) : {}
     } catch (e) {
       console.error('Error parsing user data:', e)
@@ -167,9 +165,9 @@ const handleSubmit = async () => {
     // Pour les admins, on peut soit:
     // 1. Passer une companyId null/défaut
     // 2. Demander à sélectionner une company
-    if (isAdmin && !warehouseForm.value.companyId) {
+    if (isAdmin && !warehouseForm.value.company_id) {
       // Option 1: Assigner une company par défaut ou null
-      warehouseForm.value.companyId = null
+      warehouseForm.value.company_id = null
       
       // Option 2: Demander à l'admin de choisir une company
       // throw new Error('Veuillez sélectionner une entreprise')

@@ -204,6 +204,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import axios from 'axios'
+import api from '../../services/Api';
 import Swal from 'sweetalert2'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -243,9 +244,7 @@ const salePointForm = ref({
   address: ''
 })
 
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api'
-})
+// Local API instance removed in favor of shared service
 const getCoordinatesFromAddress = async (address: string): Promise<[number, number]> => {
   try {
     const encoded = encodeURIComponent(address)

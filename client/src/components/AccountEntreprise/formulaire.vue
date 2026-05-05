@@ -303,6 +303,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import api from '../../services/Api';
 import axios from 'axios';
 import { 
   CheckCircle, 
@@ -323,9 +324,7 @@ import {
   ChevronLeft
 } from 'lucide-vue-next';
 
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api'
-});
+// Local API instance removed in favor of shared service
 
 const features = [
   { icon: Truck, text: 'Logistique Globale' },

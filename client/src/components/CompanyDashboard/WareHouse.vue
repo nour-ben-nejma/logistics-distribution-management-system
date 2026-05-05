@@ -461,6 +461,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import api from '../../services/Api'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { Warehouse as WarehouseIcon, Plus, Handshake, Box, CheckCircle2, ShieldCheck, Search, MapPin, Pencil, Trash2, Minus, PackageOpen, X } from 'lucide-vue-next'
@@ -548,22 +549,7 @@ const productForm = ref({
   quantity: 1
 })
 
-// API Configuration
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
-
-// Auth interceptor
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Local API instance and interceptors removed in favor of shared service
 
 // Computed Properties
 const filteredWarehouses = computed(() => {

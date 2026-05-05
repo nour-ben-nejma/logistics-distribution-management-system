@@ -225,6 +225,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import api from '../../services/Api';
 import { 
   AlertCircle, Building2, Building, Scale, Hash, Phone, MapPin, 
   Key, Lock, Eye, EyeOff, ShieldCheck, Save, X, Camera, ChevronDown, Mail 
@@ -254,21 +255,7 @@ const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
 
 // API configuration
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Token interceptor
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Local API instance removed in favor of shared service
 
 // Fetch company profile
 const fetchCompanyProfile = async () => {

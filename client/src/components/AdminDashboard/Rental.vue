@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import api from '../../services/Api'
 import { useRouter } from 'vue-router'
 
 // Types
@@ -53,10 +54,7 @@ const stats = ref({
 })
 
 // API Configuration
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api/Request',
-  headers: { 'Content-Type': 'application/json' }
-})
+// Local API instance removed in favor of shared service
 
 // Computed Properties
 const filteredRequests = computed(() => {
@@ -97,7 +95,7 @@ const fetchRentalRequests = async () => {
     const token = localStorage.getItem('accessToken')
     if (!token) throw new Error('Authentication required')
     
-    const response = await api.get('/', {
+    const response = await api.get('/Request/', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
 
@@ -144,7 +142,7 @@ const updateRequestStatus = async (requestId: string, status: 'approved' | 'reje
     // Sauvegardez les données actuelles avant la mise à jour
     const currentRequest = requests.value.find(req => req._id === requestId)
     
-    const response = await api.put(`/${requestId}/status`, 
+    const response = await api.put(`/Request/${requestId}/status`, 
       { status },
       { headers: { 'Authorization': `Bearer ${token}` }}
     )

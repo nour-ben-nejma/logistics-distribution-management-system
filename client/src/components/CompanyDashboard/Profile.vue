@@ -143,6 +143,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import api from '../../services/Api';
 import { AlertCircle, Building2, Phone, Mail, FileText, MapPin, Hash, Pencil } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -161,30 +162,7 @@ const company = ref<Company>({})
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  withCredentials: true
-})
-
-api.interceptors.response.use(
-  response => response,
-  async error => {
-    const originalRequest = error.config
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-      try {
-        const { data } = await api.post('/refresh-token')
-        localStorage.setItem('accessToken', data.accessToken)
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
-        return api(originalRequest)
-      } catch (refreshError) {
-        router.push('/login')
-        return Promise.reject(refreshError)
-      }
-    }
-    return Promise.reject(error)
-  }
-)
+// Local API instance removed in favor of shared service
 
 const fetchCompanyProfile = async () => {
   try {

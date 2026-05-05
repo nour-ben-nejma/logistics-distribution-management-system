@@ -1,20 +1,28 @@
 import { defineStore } from "pinia";
-import axios from "axios";
+import api from "../services/Api";
 
-// Create an axios instance with the base URL
-const api = axios.create({
-  baseURL: "http://localhost:3000/api", // Base URL for all requests
-});
+interface SalePoint {
+  _id?: string;
+  name: string;
+  location: string;
+  // Add other properties as needed
+}
+
+interface SalePointState {
+  salePoints: SalePoint[];
+  loading: boolean;
+  error: string | null;
+}
 
 export const useSalePointStore = defineStore("salePoint", {
-  state: () => ({
+  state: (): SalePointState => ({
     salePoints: [],
     loading: false,
     error: null,
   }),
 
   actions: {
-    async addSalePoint(newSalePoint) {
+    async addSalePoint(newSalePoint: any) {
       try {
         this.loading = true;
         this.error = null;
@@ -31,7 +39,7 @@ export const useSalePointStore = defineStore("salePoint", {
         await this.fetchSalePoints();
 
         return response.data;  // Return the response data
-      } catch (error) {
+      } catch (error: any) {
         this.error = error.response?.data?.message || "Error adding sales point";
         console.error("Error:", error); // Log the error for debugging
         throw error;
@@ -51,7 +59,7 @@ export const useSalePointStore = defineStore("salePoint", {
 
         // Update the state with the fetched sale points
         this.salePoints = response.data;
-      } catch (error) {
+      } catch (error: any) {
         this.error = error.response?.data?.message || "Error fetching sales points";
         console.error("Error:", error); // Log the error for debugging
         throw error;

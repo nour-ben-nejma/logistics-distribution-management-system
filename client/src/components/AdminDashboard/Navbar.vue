@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import api from '../../services/Api'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -38,9 +39,7 @@ const fetchUserInfo = async () => {
     const token = localStorage.getItem('accessToken')
     if (!token) return
 
-    const response = await axios.get('http://localhost:3000/api/users/meAdmin', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const response = await api.get('/users/meAdmin')
 
     if (response.data.success) {
       const userData = response.data.user
@@ -85,11 +84,7 @@ const updateProfile = async () => {
       })
     }
 
-    const response = await axios.put('http://localhost:3000/api/users/profileAdmin', payload, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-      }
-    })
+    const response = await api.put('/users/profileAdmin', payload)
 
     // Refresh user info after update
     await fetchUserInfo()

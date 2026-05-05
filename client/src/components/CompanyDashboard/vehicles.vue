@@ -255,7 +255,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import axios from 'axios'
+import api from '../../services/Api'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
 import { 
@@ -295,9 +295,7 @@ const truckForm = ref({
   status: ''
 })
 
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api'
-})
+// Local API instance removed in favor of shared service
 
 // Available truck types
 const truckTypes = ref([

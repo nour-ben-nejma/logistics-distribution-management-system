@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import axios from 'axios';
+import api from '../../services/Api';
 import { 
   Box, 
   LayoutDashboard, 
@@ -122,11 +122,7 @@ const menuItems = [
 
 const logout = async () => {
   try {
-    await axios.post('http://localhost:3000/api/auth/logout', {}, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-      }
-    });
+    await api.post('/auth/logout');
   } catch (error) {
     console.error('Error during logout:', error);
   } finally {

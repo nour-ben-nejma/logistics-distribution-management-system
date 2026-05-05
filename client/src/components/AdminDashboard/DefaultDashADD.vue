@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="tunisia-map-container">
     <div class="header-section">
@@ -39,11 +38,9 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import axios from 'axios'
+import api from '../../services/Api'
 
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api'
-})
+// Local API instance removed in favor of shared service
 
 // Map configuration
 const map = ref<L.Map | null>(null)
@@ -234,7 +231,7 @@ const updateMap = () => {
   if (!map.value) return
 
   // Clear existing markers
-  markers.value.forEach((marker) => map.value?.removeLayer(marker))
+  markers.value.forEach((marker) => map.value?.removeLayer(marker as any))
   markers.value = []
 
   // Add new markers
@@ -256,13 +253,13 @@ const updateMap = () => {
   })
 
   // Adjust view
-  if (markers.value.length > 0) {
-    const group = new L.FeatureGroup(markers.value as unknown as L.Layer[])
+  if (markers.value.length > 0 && map.value) {
+    const group = new L.FeatureGroup(markers.value as any)
     map.value.fitBounds(group.getBounds().pad(0.5), {
       maxZoom: 10,
       animate: true
     })
-  } else {
+  } else if (map.value) {
     map.value.flyTo([34.0, 9.0], 6, {
       duration: 1
     })
@@ -494,4 +491,3 @@ h1 {
   background-image: none !important;
 }
 </style>
-```

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, shallowRef, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
+import api from '../../services/Api';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -186,14 +187,7 @@ const FREQUENCY_LABELS: Record<string, string> = {
   custom: 'Personnalisée'
 };
 
-// API Configuration
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-  }
-});
+// Local API instance removed in favor of shared service
 
 // State
 const contracts = ref<Contract[]>([]);

@@ -139,6 +139,7 @@ import {
   Zap,
   ChevronLeft 
 } from 'lucide-vue-next';
+import api from '../../services/Api';
 
 interface LoginData {
   identifier: string;
@@ -162,18 +163,12 @@ const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    const response = await fetch('http://localhost:3000/api/authCompany/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: loginData.value.identifier,
-        password: loginData.value.password
-      }),
+    const response = await api.post('/authCompany/login', {
+      email: loginData.value.identifier,
+      password: loginData.value.password
     });
 
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(data.error || 'Login failed');
+    const data = response.data;
 
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
