@@ -8,7 +8,7 @@ const server = createServer(app);
 
 // Middleware CORS
 app.use(cors({
-  origin: "http://localhost:5173", // remplace par ton vrai front si besoin
+  origin: ['http://localhost:5173', 'https://logistics-distribution-management-system-bxnn-aqq8xm1ug.vercel.app'],
   credentials: true,
 }));
 
